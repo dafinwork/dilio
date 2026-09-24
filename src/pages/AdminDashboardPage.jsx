@@ -190,17 +190,11 @@ export default function AdminDashboardPage() {
                 required
                 className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-center text-lg font-bold tracking-widest focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
               />
-              <div className="mt-2.5 text-[11px] text-neutral-500 bg-neutral-100/90 p-3 rounded-xl space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-neutral-800">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Enkripsi SHA-256 + Anti Brute-Force</span>
-                </div>
-                <p className="text-[10.5px] text-neutral-500 leading-relaxed">
-                  Salah 5 kali akun otomatis terkunci 5 menit. Sesi kedaluwarsa dalam 1 jam.
-                </p>
-                <div className="pt-1 text-[11px] text-neutral-600">
-                  Default PIN: <code className="text-neutral-900 font-bold bg-white px-1.5 py-0.5 rounded border border-neutral-200">admin123</code>
-                </div>
+              <div className="mt-2 text-center">
+                <span className="text-[11px] text-neutral-400 font-medium inline-flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
+                  Akses terbatas untuk administrator katalog
+                </span>
               </div>
             </div>
 
