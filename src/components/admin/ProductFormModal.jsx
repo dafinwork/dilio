@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Check } from 'lucide-react';
+import { X, Plus, Trash2, Check, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 const PRESET_BG_COLORS = [
   { name: 'Soft Lilac Grey', hex: '#E5E7EB', text: '#374151' },
@@ -49,6 +50,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   });
 
   const [customColor, setCustomColor] = useState('#000000');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -98,13 +100,42 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
 
   if (!isOpen) return null;
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Ukuran file maksimal 2MB.');
-        return;
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran file maksimal 5MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (!uploadError && uploadData) {
+        const { data: publicUrlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        if (publicUrlData?.publicUrl) {
+          setFormData((prev) => ({
+            ...prev,
+            image_url: publicUrlData.publicUrl,
+            visual_mode: 'image',
+          }));
+          setIsUploading(false);
+          return;
+        }
       }
+
+      // Fallback to base64 if storage bucket not initialized
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({
@@ -112,6 +143,18 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
           image_url: reader.result,
           visual_mode: 'image',
         }));
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          image_url: reader.result,
+          visual_mode: 'image',
+        }));
+        setIsUploading(false);
       };
       reader.readAsDataURL(file);
     }
@@ -451,14 +494,23 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 {formData.visual_mode === 'image' ? (
                   <div className="space-y-3 bg-neutral-50 p-4 rounded-2xl border border-neutral-200/70">
                     <div>
-                      <label className="block text-xs font-bold text-neutral-700 mb-1">
-                        Upload Foto dari HP / Laptop (Maks 2MB)
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-neutral-700">
+                          Upload Foto Produk (Maks 5MB)
+                        </label>
+                        {isUploading && (
+                          <span className="text-[11px] font-bold text-neutral-900 inline-flex items-center gap-1 animate-pulse">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Mengunggah ke Cloud...
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="file"
                         accept="image/*"
+                        disabled={isUploading}
                         onChange={handleImageUpload}
-                        className="w-full text-xs text-neutral-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neutral-900 file:text-white hover:file:bg-neutral-800 cursor-pointer"
+                        className="w-full text-xs text-neutral-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neutral-900 file:text-white hover:file:bg-neutral-800 cursor-pointer disabled:opacity-50"
                       />
                     </div>
 

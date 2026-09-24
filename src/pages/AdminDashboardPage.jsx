@@ -25,6 +25,7 @@ import ProductFormModal from '../components/admin/ProductFormModal';
 export default function AdminDashboardPage() {
   const {
     products,
+    cloudStatus,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -242,9 +243,22 @@ export default function AdminDashboardPage() {
               <span className="text-lg sm:text-xl font-black text-neutral-900">
                 Kaos Dilio <span className="text-neutral-400 font-normal">| CMS</span>
               </span>
-              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
-                Mode Katalog
-              </span>
+              {cloudStatus === 'connected' ? (
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                  Supabase Cloud Active
+                </span>
+              ) : cloudStatus === 'connecting' ? (
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                  Menghubungkan Cloud...
+                </span>
+              ) : (
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                  Local Cache Active
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2.5">

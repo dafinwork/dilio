@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import initialProductsData from '../data/products.json';
+import { supabase } from '../lib/supabase';
 
 const ProductContext = createContext();
 
@@ -38,6 +39,41 @@ export function ProductProvider({ children }) {
     }
     return initialProductsData;
   });
+
+  const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connected' | 'connecting' | 'offline'
+
+  // Fetch live products from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCloudProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          if (isMounted) {
+            setProducts(data);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            setCloudStatus('connected');
+          }
+        } else {
+          if (isMounted) {
+            setCloudStatus('offline');
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase fetch notice (fallback to local cache):', err);
+        if (isMounted) setCloudStatus('offline');
+      }
+    }
+
+    loadCloudProducts();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Admin authentication state with session expiration (1 hour)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
@@ -140,7 +176,7 @@ export function ProductProvider({ children }) {
   };
 
   // Add new product
-  const addProduct = (productData) => {
+  const addProduct = async (productData) => {
     const slug = productData.name
       .toLowerCase()
       .trim()
@@ -154,18 +190,34 @@ export function ProductProvider({ children }) {
       price: Number(productData.price) || 0,
       created_at: new Date().toISOString(),
       extra_colors_count: Number(productData.extra_colors_count) || 0,
+      colors: Array.isArray(productData.colors) ? productData.colors : [],
+      is_new: !!productData.is_new,
+      is_exclusive: !!productData.is_exclusive,
     };
 
+    // Optimistic local state update
     setProducts((prev) => [newProduct, ...prev]);
+
+    // Background sync to Supabase
+    try {
+      const { error } = await supabase.from('products').insert([newProduct]);
+      if (error) {
+        console.warn('Supabase insert warning (offline mode):', error.message);
+      }
+    } catch (err) {
+      console.warn('Supabase insert error:', err);
+    }
+
     return newProduct;
   };
 
   // Update existing product
-  const updateProduct = (id, updatedFields) => {
+  const updateProduct = async (id, updatedFields) => {
+    let finalUpdated = null;
     setProducts((prev) =>
       prev.map((item) => {
         if (item.id === id) {
-          return {
+          finalUpdated = {
             ...item,
             ...updatedFields,
             price: Number(updatedFields.price !== undefined ? updatedFields.price : item.price),
@@ -175,15 +227,36 @@ export function ProductProvider({ children }) {
                 : item.extra_colors_count
             ),
           };
+          return finalUpdated;
         }
         return item;
       })
     );
+
+    // Background sync to Supabase
+    try {
+      if (finalUpdated) {
+        const { error } = await supabase.from('products').update(finalUpdated).eq('id', id);
+        if (error) {
+          console.warn('Supabase update warning:', error.message);
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase update error:', err);
+    }
   };
 
   // Delete product
-  const deleteProduct = (id) => {
+  const deleteProduct = async (id) => {
     setProducts((prev) => prev.filter((item) => item.id !== id));
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) {
+        console.warn('Supabase delete warning:', error.message);
+      }
+    } catch (err) {
+      console.warn('Supabase delete error:', err);
+    }
   };
 
   // Reset to default sample data
@@ -217,6 +290,7 @@ export function ProductProvider({ children }) {
     <ProductContext.Provider
       value={{
         products,
+        cloudStatus,
         addProduct,
         updateProduct,
         deleteProduct,
