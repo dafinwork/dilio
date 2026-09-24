@@ -698,9 +698,11 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-neutral-900 text-white font-bold text-xs shadow-md hover:bg-neutral-800 transition-colors"
+              disabled={isUploading}
+              className="px-6 py-2.5 rounded-xl bg-neutral-900 text-white font-bold text-xs shadow-md hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
-              {isEditing ? 'Simpan Perubahan' : 'Tambah Produk'}
+              {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isUploading ? 'Mengunggah Foto...' : isEditing ? 'Simpan Perubahan' : 'Tambah Produk'}</span>
             </button>
           </div>
         </form>

@@ -437,15 +437,23 @@ export default function AdminDashboardPage() {
                       {/* Product Preview & Name */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div
-                            className="w-12 h-14 rounded-lg flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[9px] leading-tight"
-                            style={{
-                              backgroundColor: item.placeholder_bg || '#E5E7EB',
-                              color: item.placeholder_text_color || '#1E293B',
-                            }}
-                          >
-                            {item.placeholder_title ? item.placeholder_title.slice(0, 14) : item.name.slice(0, 10)}
-                          </div>
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="w-12 h-14 rounded-lg object-cover shrink-0 border border-neutral-200/80 shadow-2xs"
+                            />
+                          ) : (
+                            <div
+                              className="w-12 h-14 rounded-lg flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[9px] leading-tight overflow-hidden"
+                              style={{
+                                backgroundColor: item.placeholder_bg || '#E5E7EB',
+                                color: item.placeholder_text_color || '#1E293B',
+                              }}
+                            >
+                              {item.placeholder_title ? item.placeholder_title.slice(0, 14) : item.name.slice(0, 10)}
+                            </div>
+                          )}
                           <div>
                             <div className="flex items-center gap-1.5">
                               <span className="font-extrabold text-neutral-900">{item.name}</span>
