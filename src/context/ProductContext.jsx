@@ -4,7 +4,23 @@ import initialProductsData from '../data/products.json';
 const ProductContext = createContext();
 
 const STORAGE_KEY = 'kaos_dilio_catalog_products';
-const AUTH_KEY = 'kaos_dilio_admin_auth';
+const AUTH_KEY = 'kaos_dilio_admin_session';
+const PWD_HASH_KEY = 'kaos_dilio_admin_pwd_hash';
+const ATTEMPTS_KEY = 'kaos_dilio_admin_attempts';
+const LOCKOUT_KEY = 'kaos_dilio_admin_lockout';
+
+// Default password hash for "admin123" with salt "_kaos_dilio_secure_salt_2026"
+const DEFAULT_PASSWORD_HASH = '66e3c12c368201c2e53d0f300581cca4aa8275bbcec0fd31a301ecdb319a2044';
+const SALT = '_kaos_dilio_secure_salt_2026';
+
+// Cryptographic hash using Web Crypto API
+async function hashPassword(plainText) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plainText + SALT);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 export function ProductProvider({ children }) {
   // Load products from localStorage, or fallback to default products.json
@@ -23,9 +39,20 @@ export function ProductProvider({ children }) {
     return initialProductsData;
   });
 
-  // Admin authentication state
+  // Admin authentication state with session expiration (1 hour)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    return sessionStorage.getItem(AUTH_KEY) === 'true';
+    try {
+      const sessionRaw = sessionStorage.getItem(AUTH_KEY);
+      if (sessionRaw) {
+        const session = JSON.parse(sessionRaw);
+        if (session.expiresAt && Date.now() < session.expiresAt) {
+          return true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return false;
   });
 
   // Save products to localStorage whenever they change
@@ -37,14 +64,74 @@ export function ProductProvider({ children }) {
     }
   }, [products]);
 
-  // Admin login helper (default PIN: 123456 or admin)
-  const loginAdmin = (password) => {
-    if (password === 'admin123' || password === '123456') {
-      setIsAdminAuthenticated(true);
-      sessionStorage.setItem(AUTH_KEY, 'true');
-      return { success: true };
+  // Secure Admin Login with Brute-Force Rate Limiting
+  const loginAdmin = async (passwordInput) => {
+    // 1. Check if currently locked out
+    const lockoutUntil = Number(localStorage.getItem(LOCKOUT_KEY) || 0);
+    const now = Date.now();
+    if (lockoutUntil && now < lockoutUntil) {
+      const remainingSeconds = Math.ceil((lockoutUntil - now) / 1000);
+      return {
+        success: false,
+        message: `Terlalu banyak percobaan salah! Akun terkunci demi keamanan. Coba lagi dalam ${remainingSeconds} detik.`,
+      };
     }
-    return { success: false, message: 'Password / PIN salah (Gunakan: admin123 atau 123456)' };
+
+    // 2. Compute input hash
+    const inputHash = await hashPassword(passwordInput);
+    const storedHash = localStorage.getItem(PWD_HASH_KEY) || DEFAULT_PASSWORD_HASH;
+
+    if (inputHash === storedHash) {
+      // Success: Reset failed attempts & lockout
+      localStorage.removeItem(ATTEMPTS_KEY);
+      localStorage.removeItem(LOCKOUT_KEY);
+
+      // Create session valid for 1 hour
+      const sessionData = {
+        authenticated: true,
+        expiresAt: now + 60 * 60 * 1000,
+      };
+      sessionStorage.setItem(AUTH_KEY, JSON.stringify(sessionData));
+      setIsAdminAuthenticated(true);
+      return { success: true };
+    } else {
+      // Failed: Increase attempt counter
+      let attempts = Number(localStorage.getItem(ATTEMPTS_KEY) || 0) + 1;
+      localStorage.setItem(ATTEMPTS_KEY, attempts.toString());
+
+      if (attempts >= 5) {
+        // Lock out for 5 minutes
+        const lockDuration = 5 * 60 * 1000;
+        localStorage.setItem(LOCKOUT_KEY, (now + lockDuration).toString());
+        return {
+          success: false,
+          message: 'Akun dikunci selama 5 menit karena 5 kali percobaan password salah berturut-turut.',
+        };
+      }
+
+      return {
+        success: false,
+        message: `Password salah! Sisa percobaan: ${5 - attempts} kali sebelum akun dikunci.`,
+      };
+    }
+  };
+
+  // Change Admin Password
+  const changeAdminPassword = async (oldPassword, newPassword) => {
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, message: 'Password baru minimal harus 6 karakter.' };
+    }
+
+    const oldHash = await hashPassword(oldPassword);
+    const currentStoredHash = localStorage.getItem(PWD_HASH_KEY) || DEFAULT_PASSWORD_HASH;
+
+    if (oldHash !== currentStoredHash) {
+      return { success: false, message: 'Password lama salah.' };
+    }
+
+    const newHash = await hashPassword(newPassword);
+    localStorage.setItem(PWD_HASH_KEY, newHash);
+    return { success: true, message: 'Password admin berhasil diganti!' };
   };
 
   const logoutAdmin = () => {
@@ -139,6 +226,7 @@ export function ProductProvider({ children }) {
         isAdminAuthenticated,
         loginAdmin,
         logoutAdmin,
+        changeAdminPassword,
       }}
     >
       {children}
