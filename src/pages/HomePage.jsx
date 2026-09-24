@@ -42,7 +42,7 @@ export default function HomePage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('/hero-bg-clean.png')`,
+            backgroundImage: `url('${import.meta.env.BASE_URL}hero-bg-clean.png')`,
           }}
         />
 
@@ -68,7 +68,7 @@ export default function HomePage() {
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 shrink-0 rounded-2xl bg-amber-50 flex items-center justify-center overflow-hidden">
                 <img
-                  src="/badge-trophy.png"
+                  src={`${import.meta.env.BASE_URL}badge-trophy.png`}
                   alt="Pesanan Minimum"
                   className="w-12 h-12 object-contain"
                   onError={(e) => {
@@ -91,7 +91,7 @@ export default function HomePage() {
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 shrink-0 rounded-2xl bg-sky-50 flex items-center justify-center overflow-hidden">
                 <img
-                  src="/badge-speed.png"
+                  src={`${import.meta.env.BASE_URL}badge-speed.png`}
                   alt="Desain Cepat"
                   className="w-12 h-12 object-contain"
                   onError={(e) => {
@@ -114,7 +114,7 @@ export default function HomePage() {
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 shrink-0 rounded-2xl bg-emerald-50 flex items-center justify-center overflow-hidden">
                 <img
-                  src="/badge-store.png"
+                  src={`${import.meta.env.BASE_URL}badge-store.png`}
                   alt="Toko Nasional"
                   className="w-12 h-12 object-contain"
                   onError={(e) => {
