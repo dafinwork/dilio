@@ -186,6 +186,30 @@ export function ProductProvider({ children }) {
     sessionStorage.removeItem(AUTH_KEY);
   };
 
+  // Format and sanitize object strictly for public.products database columns
+  const toDatabasePayload = (p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug || `prod-${Date.now()}`,
+    description: p.description || '',
+    price: Number(p.price) || 0,
+    image_url: p.image_url || '',
+    material: p.material || '',
+    colors: safeColors(p.colors),
+    is_new: Boolean(p.is_new),
+    is_exclusive: Boolean(p.is_exclusive),
+    product_group: p.product_group || 'harian',
+    cutting_type: p.product_group === 'harian' ? (p.cutting_type || 'oversized') : null,
+    sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
+    exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
+    category_label: p.category_label || '',
+    placeholder_title: p.placeholder_title || p.name,
+    placeholder_bg: p.placeholder_bg || '#E5E7EB',
+    placeholder_text_color: p.placeholder_text_color || '#374151',
+    extra_colors_count: Number(p.extra_colors_count) || 0,
+    created_at: p.created_at || new Date().toISOString(),
+  });
+
   // Add new product
   const addProduct = async (productData) => {
     const slug = productData.name
@@ -194,32 +218,37 @@ export function ProductProvider({ children }) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    const newProduct = {
+    const newProduct = toDatabasePayload({
       ...productData,
       id: productData.id || `prod-${Date.now()}`,
       slug: slug || `product-${Date.now()}`,
-      price: Number(productData.price) || 0,
       created_at: new Date().toISOString(),
-      extra_colors_count: Number(productData.extra_colors_count) || 0,
-      colors: Array.isArray(productData.colors) ? productData.colors : [],
-      is_new: !!productData.is_new,
-      is_exclusive: !!productData.is_exclusive,
-    };
+    });
 
     // Optimistic local state update
     setProducts((prev) => [newProduct, ...prev]);
 
-    // Background sync to Supabase
+    // Save to localStorage immediately
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([newProduct, ...parsed]));
+    } catch (e) {
+      console.warn('LocalStorage save warning:', e);
+    }
+
+    // Direct sync to Supabase Cloud
     try {
       const { error } = await supabase.from('products').insert([newProduct]);
       if (error) {
-        console.warn('Supabase insert warning (offline mode):', error.message);
+        console.error('Supabase insert error:', error.message);
+        return { success: false, error: error.message };
       }
+      return { success: true, data: newProduct };
     } catch (err) {
-      console.warn('Supabase insert error:', err);
+      console.error('Supabase insert error:', err);
+      return { success: false, error: err.message };
     }
-
-    return newProduct;
   };
 
   // Update existing product
@@ -228,32 +257,29 @@ export function ProductProvider({ children }) {
     setProducts((prev) =>
       prev.map((item) => {
         if (item.id === id) {
-          finalUpdated = {
+          finalUpdated = toDatabasePayload({
             ...item,
             ...updatedFields,
-            price: Number(updatedFields.price !== undefined ? updatedFields.price : item.price),
-            extra_colors_count: Number(
-              updatedFields.extra_colors_count !== undefined
-                ? updatedFields.extra_colors_count
-                : item.extra_colors_count
-            ),
-          };
+          });
           return finalUpdated;
         }
         return item;
       })
     );
 
-    // Background sync to Supabase
+    // Direct sync to Supabase Cloud
     try {
       if (finalUpdated) {
         const { error } = await supabase.from('products').update(finalUpdated).eq('id', id);
         if (error) {
-          console.warn('Supabase update warning:', error.message);
+          console.error('Supabase update warning:', error.message);
+          return { success: false, error: error.message };
         }
+        return { success: true };
       }
     } catch (err) {
-      console.warn('Supabase update error:', err);
+      console.error('Supabase update error:', err);
+      return { success: false, error: err.message };
     }
   };
 

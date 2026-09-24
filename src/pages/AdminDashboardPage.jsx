@@ -134,13 +134,21 @@ export default function AdminDashboardPage() {
   };
 
   // Handle Add / Edit save
-  const handleSaveProduct = (productData) => {
+  const handleSaveProduct = async (productData) => {
     if (editingProduct) {
-      updateProduct(editingProduct.id, productData);
-      showToast(`Produk "${productData.name}" berhasil diperbarui!`);
+      const res = await updateProduct(editingProduct.id, productData);
+      if (res && res.success === false) {
+        showToast(`Peringatan: ${res.error}`);
+      } else {
+        showToast(`Produk "${productData.name}" berhasil diperbarui!`);
+      }
     } else {
-      addProduct(productData);
-      showToast(`Produk baru "${productData.name}" berhasil ditambahkan!`);
+      const res = await addProduct(productData);
+      if (res && res.success === false) {
+        showToast(`Peringatan: Gagal simpan ke Cloud: ${res.error}`);
+      } else {
+        showToast(`Produk baru "${productData.name}" berhasil disimpan ke Cloud!`);
+      }
     }
     setModalOpen(false);
     setEditingProduct(null);

@@ -208,8 +208,9 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       return;
     }
 
+    const { visual_mode, ...cleanFormData } = formData;
     const payload = {
-      ...formData,
+      ...cleanFormData,
       cutting_type: formData.product_group === 'harian' ? formData.cutting_type : null,
       sablon_type: formData.product_group === 'custom' ? formData.sablon_type : null,
       exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
