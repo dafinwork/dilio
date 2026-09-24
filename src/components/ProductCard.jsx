@@ -8,11 +8,11 @@ export default function ProductCard({ product, onSelect }) {
       onClick={() => onSelect && onSelect(product)}
       className="group cursor-pointer flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-100/80 shadow-2xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
     >
-      {/* Visual Placeholder Box (Replicating exact mockup style) */}
+      {/* Visual Image / Placeholder Box */}
       <div
         className="relative w-full aspect-[4/5] rounded-2xl flex items-center justify-center p-6 text-center select-none overflow-hidden transition-transform duration-500 group-hover:scale-[1.01]"
         style={{
-          backgroundColor: product.placeholder_bg || '#E5E7EB',
+          backgroundColor: product.image_url ? '#F3F4F6' : product.placeholder_bg || '#E5E7EB',
         }}
       >
         {/* Floating Badges */}
@@ -29,15 +29,23 @@ export default function ProductCard({ product, onSelect }) {
           )}
         </div>
 
-        {/* Center Mockup Typography */}
-        <div
-          className="font-extrabold text-2xl sm:text-3xl lg:text-3xl tracking-tight leading-[1.15] whitespace-pre-line drop-shadow-2xs"
-          style={{
-            color: product.placeholder_text_color || '#1E293B',
-          }}
-        >
-          {product.placeholder_title || product.name}
-        </div>
+        {/* Real Image or Mockup Typography */}
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className="font-extrabold text-2xl sm:text-3xl lg:text-3xl tracking-tight leading-[1.15] whitespace-pre-line drop-shadow-2xs"
+            style={{
+              color: product.placeholder_text_color || '#1E293B',
+            }}
+          >
+            {product.placeholder_title || product.name}
+          </div>
+        )}
 
         {/* Subtle hover overlay hint */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none rounded-2xl" />

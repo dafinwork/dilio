@@ -49,12 +49,20 @@ export default function ProductModal({ product, onClose }) {
               )}
             </div>
 
-            <div
-              className="font-extrabold text-3xl tracking-tight leading-tight whitespace-pre-line"
-              style={{ color: product.placeholder_text_color || '#1E293B' }}
-            >
-              {product.placeholder_title || product.name}
-            </div>
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="font-extrabold text-3xl tracking-tight leading-tight whitespace-pre-line"
+                style={{ color: product.placeholder_text_color || '#1E293B' }}
+              >
+                {product.placeholder_title || product.name}
+              </div>
+            )}
           </div>
 
           {/* Details Content */}

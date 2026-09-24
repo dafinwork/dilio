@@ -37,6 +37,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     material: 'Cotton Combed 24s',
     price: 65000,
     description: '',
+    image_url: '',
+    visual_mode: 'mockup',
     is_new: false,
     is_exclusive: false,
     placeholder_title: '',
@@ -60,6 +62,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         material: product.material || '',
         price: product.price || 0,
         description: product.description || '',
+        image_url: product.image_url || '',
+        visual_mode: product.image_url ? 'image' : 'mockup',
         is_new: Boolean(product.is_new),
         is_exclusive: Boolean(product.is_exclusive),
         placeholder_title: product.placeholder_title || product.name || '',
@@ -79,6 +83,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         material: 'Cotton Combed 24s',
         price: 65000,
         description: 'Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear.',
+        image_url: '',
+        visual_mode: 'mockup',
         is_new: false,
         is_exclusive: false,
         placeholder_title: 'Oversized\nFit',
@@ -91,6 +97,25 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   }, [product, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Ukuran file maksimal 2MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          image_url: reader.result,
+          visual_mode: 'image',
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -352,86 +377,179 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
             </div>
           </div>
 
-          {/* 4. Mockup Visual Preview & Settings */}
+          {/* 4. Visual Card Appearance (Mockup Pastel vs Real Photo) */}
           <div className="border-t border-neutral-100 pt-5 space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-              Visual Mockup Placeholder Card
-            </h4>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                Tampilan Visual Produk (Card Preview)
+              </h4>
+
+              {/* Mode Toggle Buttons */}
+              <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, visual_mode: 'mockup' }))}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    formData.visual_mode === 'mockup'
+                      ? 'bg-white text-neutral-900 shadow-2xs'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  🎨 Mockup Pastel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, visual_mode: 'image' }))}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    formData.visual_mode === 'image'
+                      ? 'bg-white text-neutral-900 shadow-2xs'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  📷 Foto Asli Produk
+                </button>
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-6 items-start">
               {/* Live Preview Card */}
               <div
-                className="w-36 h-44 rounded-2xl flex flex-col items-center justify-center p-3 text-center shadow-xs border border-neutral-200/50 shrink-0 relative"
-                style={{ backgroundColor: formData.placeholder_bg }}
+                className="w-36 h-44 rounded-2xl flex flex-col items-center justify-center p-3 text-center shadow-xs border border-neutral-200/50 shrink-0 relative overflow-hidden"
+                style={{
+                  backgroundColor: formData.visual_mode === 'image' && formData.image_url ? '#F3F4F6' : formData.placeholder_bg,
+                }}
               >
                 {formData.is_exclusive && (
-                  <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-black text-white text-[9px] font-bold rounded-xs">
+                  <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black text-white text-[9px] font-bold rounded-xs shadow-xs">
                     EXCLUSIVE
                   </span>
                 )}
                 {formData.is_new && (
-                  <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs">
+                  <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs shadow-xs">
                     NEW
                   </span>
                 )}
-                <span
-                  className="text-base font-extrabold whitespace-pre-line leading-tight"
-                  style={{ color: formData.placeholder_text_color }}
-                >
-                  {formData.placeholder_title || 'Teks Produk'}
-                </span>
+
+                {formData.visual_mode === 'image' && formData.image_url ? (
+                  <img
+                    src={formData.image_url}
+                    alt="Preview"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="text-base font-extrabold whitespace-pre-line leading-tight"
+                    style={{ color: formData.placeholder_text_color }}
+                  >
+                    {formData.placeholder_title || 'Teks Produk'}
+                  </span>
+                )}
               </div>
 
-              {/* Controls */}
+              {/* Controls depending on mode */}
               <div className="flex-1 space-y-3 w-full">
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                    Teks Mockup (Gunakan enter/baris baru)
-                  </label>
-                  <input
-                    type="text"
-                    name="placeholder_title"
-                    value={formData.placeholder_title}
-                    onChange={handleChange}
-                    placeholder="Contoh: Oversized\nFit"
-                    className="w-full px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
-                  />
-                </div>
+                {formData.visual_mode === 'image' ? (
+                  <div className="space-y-3 bg-neutral-50 p-4 rounded-2xl border border-neutral-200/70">
+                    <div>
+                      <label className="block text-xs font-bold text-neutral-700 mb-1">
+                        Upload Foto dari HP / Laptop (Maks 2MB)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="w-full text-xs text-neutral-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neutral-900 file:text-white hover:file:bg-neutral-800 cursor-pointer"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                    Pilih Warna Background Card (Preset Mockup)
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESET_BG_COLORS.map((preset) => (
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                        Atau Tempel URL Gambar Online
+                      </label>
+                      <input
+                        type="url"
+                        name="image_url"
+                        value={formData.image_url}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            image_url: e.target.value,
+                            visual_mode: 'image',
+                          }))
+                        }
+                        placeholder="https://images.unsplash.com/... atau link foto"
+                        className="w-full px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-neutral-900"
+                      />
+                    </div>
+
+                    {formData.image_url && (
                       <button
                         type="button"
-                        key={preset.hex}
                         onClick={() =>
                           setFormData((prev) => ({
                             ...prev,
-                            placeholder_bg: preset.hex,
-                            placeholder_text_color: preset.text,
+                            image_url: '',
+                            visual_mode: 'mockup',
                           }))
                         }
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
-                          formData.placeholder_bg === preset.hex
-                            ? 'ring-2 ring-neutral-900 border-transparent scale-110'
-                            : 'border-neutral-300 hover:scale-105'
-                        }`}
-                        style={{ backgroundColor: preset.hex }}
-                        title={preset.name}
+                        className="text-xs text-red-600 hover:underline font-semibold block"
                       >
-                        {formData.placeholder_bg === preset.hex && (
-                          <Check
-                            className="w-3.5 h-3.5"
-                            style={{ color: preset.text }}
-                          />
-                        )}
+                        Hapus Foto &amp; Kembali ke Mockup Pastel
                       </button>
-                    ))}
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                        Teks Mockup (Gunakan enter/baris baru)
+                      </label>
+                      <input
+                        type="text"
+                        name="placeholder_title"
+                        value={formData.placeholder_title}
+                        onChange={handleChange}
+                        placeholder="Contoh: Oversized\nFit"
+                        className="w-full px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                        Pilih Warna Background Card (Preset Mockup)
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {PRESET_BG_COLORS.map((preset) => (
+                          <button
+                            type="button"
+                            key={preset.hex}
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                placeholder_bg: preset.hex,
+                                placeholder_text_color: preset.text,
+                              }))
+                            }
+                            className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
+                              formData.placeholder_bg === preset.hex
+                                ? 'ring-2 ring-neutral-900 border-transparent scale-110'
+                                : 'border-neutral-300 hover:scale-105'
+                            }`}
+                            style={{ backgroundColor: preset.hex }}
+                            title={preset.name}
+                          >
+                            {formData.placeholder_bg === preset.hex && (
+                              <Check
+                                className="w-3.5 h-3.5"
+                                style={{ color: preset.text }}
+                              />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
