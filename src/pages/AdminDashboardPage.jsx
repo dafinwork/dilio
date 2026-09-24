@@ -19,7 +19,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
-import { formatRupiah } from '../utils/helpers';
+import { formatRupiah, safeColors } from '../utils/helpers';
 import ProductFormModal from '../components/admin/ProductFormModal';
 
 export default function AdminDashboardPage() {
@@ -486,9 +486,9 @@ export default function AdminDashboardPage() {
 
                       {/* Color Dots */}
                       <td className="py-3.5 px-4">
-                        {item.colors && item.colors.length > 0 ? (
+                        {safeColors(item.colors).length > 0 ? (
                           <div className="flex items-center gap-1">
-                            {item.colors.slice(0, 3).map((hex, idx) => (
+                            {safeColors(item.colors).slice(0, 3).map((hex, idx) => (
                               <span
                                 key={idx}
                                 className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
@@ -496,7 +496,7 @@ export default function AdminDashboardPage() {
                                 title={hex}
                               />
                             ))}
-                            {item.extra_colors_count > 0 && (
+                            {Number(item.extra_colors_count) > 0 && (
                               <span className="text-[10px] font-semibold text-neutral-400 pl-0.5">
                                 +{item.extra_colors_count}
                               </span>

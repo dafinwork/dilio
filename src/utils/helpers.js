@@ -1,10 +1,27 @@
 /**
- * Formats a number to Indonesian Rupiah currency format.
+ * Formats a number or numeric string to Indonesian Rupiah currency format.
  * Example: 65000 -> "Rp 65.000"
  */
 export function formatRupiah(number) {
-  if (typeof number !== 'number') return 'Rp 0';
-  return 'Rp ' + number.toLocaleString('id-ID');
+  const num = Number(number);
+  if (isNaN(num)) return 'Rp 0';
+  return 'Rp ' + num.toLocaleString('id-ID');
+}
+
+/**
+ * Ensures colors is always a valid array of hex color strings.
+ */
+export function safeColors(colors) {
+  if (Array.isArray(colors)) return colors;
+  if (typeof colors === 'string') {
+    try {
+      const parsed = JSON.parse(colors);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 /**

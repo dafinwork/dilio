@@ -1,7 +1,8 @@
-import { formatRupiah } from '../utils/helpers';
+import { formatRupiah, safeColors } from '../utils/helpers';
 
 export default function ProductCard({ product, onSelect }) {
   const isMinimalist = product.category_label === 'MINIMALIST';
+  const colorList = safeColors(product.colors);
 
   return (
     <div
@@ -81,9 +82,9 @@ export default function ProductCard({ product, onSelect }) {
           </span>
 
           {/* Color Dots */}
-          {product.colors && product.colors.length > 0 && (
+          {colorList.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0">
-              {product.colors.slice(0, 3).map((hex, idx) => (
+              {colorList.slice(0, 3).map((hex, idx) => (
                 <span
                   key={idx}
                   className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
@@ -92,7 +93,7 @@ export default function ProductCard({ product, onSelect }) {
                 />
               ))}
 
-              {product.extra_colors_count > 0 && (
+              {Number(product.extra_colors_count) > 0 && (
                 <span className="text-[11px] font-semibold text-neutral-400 pl-0.5">
                   +{product.extra_colors_count}
                 </span>

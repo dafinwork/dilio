@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { X, MessageCircle, Check, Tag } from 'lucide-react';
-import { formatRupiah, getWhatsAppUrl } from '../utils/helpers';
+import { formatRupiah, getWhatsAppUrl, safeColors } from '../utils/helpers';
 
 export default function ProductModal({ product, onClose }) {
   useEffect(() => {
@@ -119,18 +119,18 @@ export default function ProductModal({ product, onClose }) {
               </div>
 
               {/* Available Colors */}
-              {product.colors && product.colors.length > 0 && (
+              {safeColors(product.colors).length > 0 && (
                 <div className="pt-2">
                   <span className="text-xs text-neutral-400 block mb-1.5">Pilihan Warna:</span>
                   <div className="flex items-center gap-2">
-                    {product.colors.map((hex, idx) => (
+                    {safeColors(product.colors).map((hex, idx) => (
                       <span
                         key={idx}
                         className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs inline-block"
                         style={{ backgroundColor: hex }}
                       />
                     ))}
-                    {product.extra_colors_count > 0 && (
+                    {Number(product.extra_colors_count) > 0 && (
                       <span className="text-xs text-neutral-500 font-medium">
                         +{product.extra_colors_count} varian lainnya
                       </span>

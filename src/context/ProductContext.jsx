@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import initialProductsData from '../data/products.json';
 import { supabase } from '../lib/supabase';
+import { safeColors } from '../utils/helpers';
 
 const ProductContext = createContext();
 
@@ -23,6 +24,15 @@ async function hashPassword(plainText) {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+const sanitizeProduct = (p) => ({
+  ...p,
+  price: Number(p.price) || 0,
+  extra_colors_count: Number(p.extra_colors_count) || 0,
+  colors: safeColors(p.colors),
+  is_new: Boolean(p.is_new),
+  is_exclusive: Boolean(p.is_exclusive),
+});
+
 export function ProductProvider({ children }) {
   // Load products from localStorage, or fallback to default products.json
   const [products, setProducts] = useState(() => {
@@ -31,13 +41,13 @@ export function ProductProvider({ children }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return parsed.map(sanitizeProduct);
         }
       }
     } catch (e) {
       console.error('Error loading products from localStorage:', e);
     }
-    return initialProductsData;
+    return initialProductsData.map(sanitizeProduct);
   });
 
   const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connected' | 'connecting' | 'offline'
@@ -53,9 +63,10 @@ export function ProductProvider({ children }) {
           .order('created_at', { ascending: false });
 
         if (!error && Array.isArray(data) && data.length > 0) {
+          const sanitized = data.map(sanitizeProduct);
           if (isMounted) {
-            setProducts(data);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            setProducts(sanitized);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
             setCloudStatus('connected');
           }
         } else {
