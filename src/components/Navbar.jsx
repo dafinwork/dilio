@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { Crown, Shirt, Sparkles, MessageCircle, Menu, X } from 'lucide-react';
+import { Shirt, Sparkles, MessageCircle, Menu, X } from 'lucide-react';
 import { getWhatsAppUrl } from '../utils/helpers';
 
 export default function Navbar() {
@@ -15,9 +15,9 @@ export default function Navbar() {
     },
     {
       to: '/bikin-kaos-custom',
-      label: 'Bikin Custom',
+      label: 'Bikin Kaos Custom',
       icon: Sparkles,
-      iconColor: 'text-neutral-700',
+      iconColor: 'text-amber-500',
     },
   ];
 

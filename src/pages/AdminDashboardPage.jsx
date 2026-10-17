@@ -335,7 +335,7 @@ export default function AdminDashboardPage() {
 
           <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-2xs">
             <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider">Desain Eksklusif</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Limited Edition (Banner)</span>
               <Crown className="w-4 h-4" />
             </div>
             <p className="text-2xl sm:text-3xl font-black text-neutral-900">{stats.eksklusif}</p>
@@ -396,7 +396,7 @@ export default function AdminDashboardPage() {
               { label: 'Semua Kategori', value: 'all' },
               { label: '👕 Kaos Harian', value: 'harian' },
               { label: '✨ Kaos Custom', value: 'custom' },
-              { label: '👑 Desain Eksklusif', value: 'eksklusif' },
+              { label: '👑 Limited Edition (Banner Exclusive)', value: 'eksklusif' },
             ].map((tab) => {
               const isActive = categoryFilter === tab.value;
               return (
@@ -455,21 +455,16 @@ export default function AdminDashboardPage() {
                             </div>
                           )}
                           <div>
-                            <div className="flex flex-wrap items-center gap-1.5">
+                            <div className="flex items-center gap-1.5">
                               <span className="font-extrabold text-neutral-900">{item.name}</span>
-                              {item.show_on_homepage && (
-                                <span className="px-1.5 py-0.5 bg-sky-100 text-sky-800 border border-sky-200 text-[9px] font-extrabold rounded-xs flex items-center gap-0.5">
-                                  ⭐ Homepage
-                                </span>
-                              )}
                               {item.is_new && (
                                 <span className="px-1.5 py-0.2 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs">
                                   NEW
                                 </span>
                               )}
-                              {item.is_exclusive && (
-                                <span className="px-1.5 py-0.2 bg-black text-white text-[9px] font-bold rounded-xs">
-                                  EXCLUSIVE
+                              {(item.is_exclusive || item.product_group === 'eksklusif') && (
+                                <span className="px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
+                                  LIMITED EDITION
                                 </span>
                               )}
                             </div>
@@ -483,7 +478,7 @@ export default function AdminDashboardPage() {
                       {/* Group & Sub-type */}
                       <td className="py-3.5 px-4">
                         <span className="capitalize font-semibold text-neutral-800 block">
-                          {item.product_group}
+                          {item.product_group === 'eksklusif' ? 'Limited Edition' : item.product_group}
                         </span>
                         <span className="text-[11px] text-neutral-500 uppercase">
                           {item.cutting_type || item.sablon_type || item.exclusive_category || '-'}
@@ -505,22 +500,23 @@ export default function AdminDashboardPage() {
                         {formatRupiah(item.price)}
                       </td>
 
-                      {/* Color & Hex (PRD 6.2) */}
+                      {/* Color Dots */}
                       <td className="py-3.5 px-4">
                         {safeColors(item.colors).length > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-4 h-4 rounded-full border border-neutral-300 shadow-2xs inline-block shrink-0"
-                              style={{ backgroundColor: safeColors(item.colors)[0].hex }}
-                            />
-                            <div>
-                              <span className="font-semibold text-neutral-800 text-xs block leading-tight">
-                                {safeColors(item.colors)[0].name}
+                          <div className="flex items-center gap-1">
+                            {safeColors(item.colors).slice(0, 3).map((hex, idx) => (
+                              <span
+                                key={idx}
+                                className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
+                                style={{ backgroundColor: hex }}
+                                title={hex}
+                              />
+                            ))}
+                            {Number(item.extra_colors_count) > 0 && (
+                              <span className="text-[10px] font-semibold text-neutral-400 pl-0.5">
+                                +{item.extra_colors_count}
                               </span>
-                              <span className="font-mono text-[10px] text-neutral-400 uppercase">
-                                {safeColors(item.colors)[0].hex}
-                              </span>
-                            </div>
+                            )}
                           </div>
                         ) : (
                           <span className="text-neutral-400 text-xs">-</span>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2, Palette } from 'lucide-react';
+import { X, Plus, Trash2, Check, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getColorName, safeColors, COLOR_DICTIONARY } from '../../utils/helpers';
 
 const PRESET_BG_COLORS = [
   { name: 'Soft Lilac Grey', hex: '#E5E7EB', text: '#374151' },
@@ -13,23 +12,17 @@ const PRESET_BG_COLORS = [
   { name: 'Cyber Ice Grey', hex: '#DCE4EC', text: '#1E293B' },
 ];
 
-// Presets for quick single-color fabric selection
-const PRESET_FABRIC_COLORS = [
-  { hex: '#000000', name: 'Hitam' },
-  { hex: '#FFFFFF', name: 'Putih' },
-  { hex: '#15803D', name: 'Hijau Botol' },
-  { hex: '#16A34A', name: 'Hijau Daun' },
-  { hex: '#2563EB', name: 'Biru Royal' },
-  { hex: '#1E40AF', name: 'Biru Benhur' },
-  { hex: '#1E293B', name: 'Navy / Dark Slate' },
-  { hex: '#DC2626', name: 'Merah Cabe' },
-  { hex: '#B91C1C', name: 'Merah Maroon' },
-  { hex: '#FACC15', name: 'Kuning Kenari' },
-  { hex: '#F59E0B', name: 'Kuning Mustard' },
-  { hex: '#94A3B8', name: 'Abu Muda / Misty' },
-  { hex: '#64748B', name: 'Abu Tua / Charcoal' },
-  { hex: '#D8B4FE', name: 'Lilac Purple' },
-  { hex: '#A16207', name: 'Cokelat Karamel' },
+const PRESET_DOT_COLORS = [
+  '#000000',
+  '#FFFFFF',
+  '#15803D',
+  '#2563EB',
+  '#DC2626',
+  '#FACC15',
+  '#1E293B',
+  '#94A3B8',
+  '#1E40AF',
+  '#64748B',
 ];
 
 export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
@@ -38,7 +31,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: '',
     product_group: 'harian',
-    cutting_type: 'oversize',
+    cutting_type: 'oversized',
     sablon_type: 'dtf',
     exclusive_category: 'dilio',
     category_label: 'COTTON COMBED 24S',
@@ -49,26 +42,22 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     visual_mode: 'mockup',
     is_new: false,
     is_exclusive: false,
-    show_on_homepage: false,
     placeholder_title: '',
     placeholder_bg: '#E5E7EB',
     placeholder_text_color: '#374151',
+    colors: ['#000000', '#FFFFFF', '#15803D'],
+    extra_colors_count: 12,
   });
 
-  // PRD 6.2: Single color variant per card (Color picker + Hex code)
-  const [selectedHex, setSelectedHex] = useState('#000000');
-  const [selectedColorName, setSelectedColorName] = useState('Hitam');
+  const [customColor, setCustomColor] = useState('#000000');
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (product) {
-      const initialColors = safeColors(product.colors);
-      const firstColor = initialColors[0] || { hex: '#000000', name: 'Hitam' };
-
       setFormData({
         name: product.name || '',
         product_group: product.product_group || 'harian',
-        cutting_type: product.cutting_type || 'oversize',
+        cutting_type: product.cutting_type || 'oversized',
         sablon_type: product.sablon_type || 'dtf',
         exclusive_category: product.exclusive_category || 'dilio',
         category_label: product.category_label || '',
@@ -79,24 +68,17 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         visual_mode: product.image_url ? 'image' : 'mockup',
         is_new: Boolean(product.is_new),
         is_exclusive: Boolean(product.is_exclusive),
-        show_on_homepage: Boolean(
-          product.show_on_homepage ??
-          product.show_in_homepage ??
-          (initialColors[0]?.show_on_homepage) ??
-          (product.is_exclusive && product.product_group === 'eksklusif')
-        ),
         placeholder_title: product.placeholder_title || product.name || '',
         placeholder_bg: product.placeholder_bg || '#E5E7EB',
         placeholder_text_color: product.placeholder_text_color || '#374151',
+        colors: product.colors || [],
+        extra_colors_count: product.extra_colors_count || 0,
       });
-
-      setSelectedHex(firstColor.hex);
-      setSelectedColorName(firstColor.name || getColorName(firstColor.hex));
     } else {
       setFormData({
         name: '',
         product_group: 'harian',
-        cutting_type: 'oversize',
+        cutting_type: 'oversized',
         sablon_type: 'dtf',
         exclusive_category: 'dilio',
         category_label: 'COTTON COMBED 24S',
@@ -107,14 +89,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         visual_mode: 'mockup',
         is_new: false,
         is_exclusive: false,
-        show_on_homepage: false,
         placeholder_title: 'Oversized\nFit',
         placeholder_bg: '#E5E7EB',
         placeholder_text_color: '#374151',
+        colors: ['#000000', '#FFFFFF', '#15803D'],
+        extra_colors_count: 12,
       });
-
-      setSelectedHex('#000000');
-      setSelectedColorName('Hitam');
     }
   }, [product, isOpen]);
 
@@ -166,32 +146,59 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Upload catch error:', err);
-      setIsUploading(false);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          image_url: reader.result,
+          visual_mode: 'image',
+        }));
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      };
+
+      // Auto adjust labels based on selections
+      if (name === 'product_group') {
+        if (value === 'harian') {
+          updated.category_label = 'COTTON COMBED 24S';
+          updated.is_exclusive = false;
+        } else if (value === 'custom') {
+          updated.category_label = 'GRAPHIC TEES';
+          updated.is_exclusive = false;
+        } else if (value === 'eksklusif') {
+          updated.category_label = 'STREETWEAR';
+          updated.is_exclusive = true;
+        }
+      }
+      return updated;
+    });
+  };
+
+  const addColorDot = (hex) => {
+    if (!formData.colors.includes(hex)) {
+      setFormData((prev) => ({
+        ...prev,
+        colors: [...prev.colors, hex],
+      }));
+    }
+  };
+
+  const removeColorDot = (indexToRemove) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      colors: prev.colors.filter((_, idx) => idx !== indexToRemove),
     }));
-  };
-
-  const handleSelectColorPreset = (preset) => {
-    setSelectedHex(preset.hex);
-    setSelectedColorName(preset.name);
-  };
-
-  const handleHexInputChange = (newHex) => {
-    setSelectedHex(newHex);
-    // Auto-fill color name if found in dictionary
-    const detected = getColorName(newHex);
-    if (detected && detected !== newHex) {
-      setSelectedColorName(detected);
-    }
   };
 
   const handleSubmit = (e) => {
@@ -202,23 +209,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     }
 
     const { visual_mode, ...cleanFormData } = formData;
-
-    // PRD Section 4 & 6.2: 1 varian warna = 1 kartu
-    const finalColorObject = {
-      hex: selectedHex,
-      name: selectedColorName || getColorName(selectedHex),
-      show_on_homepage: formData.show_on_homepage,
-    };
-
     const payload = {
       ...cleanFormData,
-      colors: [finalColorObject],
-      extra_colors_count: 0,
-      cutting_type: formData.cutting_type || 'regular',
+      cutting_type: formData.product_group === 'harian' ? formData.cutting_type : null,
       sablon_type: formData.product_group === 'custom' ? formData.sablon_type : null,
       exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
       placeholder_title: formData.placeholder_title || formData.name,
-      show_on_homepage: formData.show_on_homepage,
     };
 
     onSave(payload);
@@ -234,7 +230,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               {isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}
             </h3>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Kelola data katalog produk Kaos Dilio (1 Varian Warna = 1 Kartu Katalog).
+              Kelola data katalog produk Kaos Dilio (Otomatis sync ke website).
             </p>
           </div>
           <button
@@ -258,7 +254,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Contoh: Oversized Fit - Hitam"
+                placeholder="Contoh: Oversized Fit"
                 required
                 className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
               />
@@ -276,8 +272,16 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               >
                 <option value="harian">Kaos Harian (Koleksi Kaos)</option>
                 <option value="custom">Bikin Kaos Custom (Sablon)</option>
-                <option value="eksklusif">Desain Eksklusif (Limited)</option>
+                <option value="eksklusif">👑 LIMITED EDITION (Banner Exclusive Homepage)</option>
               </select>
+              {formData.product_group === 'eksklusif' && (
+                <div className="mt-2.5 p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex items-center gap-2 text-xs text-amber-900">
+                  <span className="text-base shrink-0">👑</span>
+                  <span>
+                    <strong>Banner Exclusive:</strong> Produk ini otomatis tampil di banner <strong>[LIMITED EDITION]</strong> di Homepage!
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -292,220 +296,140 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 placeholder="65000"
                 required
                 min="0"
+                step="1000"
                 className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
               />
             </div>
           </div>
 
-          {/* 2. Tipe Cutting (PRD 5.1 & 6.3) & Kategori */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-neutral-100 pt-5">
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                Tipe Cutting Kaos *
-              </label>
-              <select
-                name="cutting_type"
-                value={formData.cutting_type}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
-              >
-                <option value="regular">Regular Fit</option>
-                <option value="oversize">Oversized Fit</option>
-                <option value="boxy">Boxy Cut</option>
-                <option value="long-sleeve">Long Sleeve</option>
-                <option value="fitted">Fitted</option>
-              </select>
-            </div>
-
-            {formData.product_group === 'custom' ? (
+          {/* 2. Category Sub-filter */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+            {formData.product_group === 'harian' && (
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                  Jenis Sablon
+                  Tipe Cutting (Filter Harian)
+                </label>
+                <select
+                  name="cutting_type"
+                  value={formData.cutting_type}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+                >
+                  <option value="oversized">Oversized Fit</option>
+                  <option value="reguler">Reguler Fit</option>
+                  <option value="boxy">Boxy Cut</option>
+                  <option value="long-sleeve">Long Sleeve</option>
+                </select>
+              </div>
+            )}
+
+            {formData.product_group === 'custom' && (
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                  Jenis Sablon (Filter Custom)
                 </label>
                 <select
                   name="sablon_type"
                   value={formData.sablon_type}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+                  className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
                 >
                   <option value="dtf">DTF (Direct to Film)</option>
                   <option value="plastisol">Plastisol</option>
                 </select>
               </div>
-            ) : (
+            )}
+
+            {formData.product_group === 'eksklusif' && (
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                  Label Kategori di Card
+                  Kategori Brand Eksklusif
                 </label>
-                <input
-                  type="text"
-                  name="category_label"
-                  value={formData.category_label}
+                <select
+                  name="exclusive_category"
+                  value={formData.exclusive_category}
                   onChange={handleChange}
-                  placeholder="Contoh: COTTON COMBED 24S / STREETWEAR"
-                  className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
-                />
+                  className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+                >
+                  <option value="dilio">Dilio (Brand Sendiri)</option>
+                  <option value="thinking-out">Thinking Out (Partner Brand)</option>
+                  <option value="dilio-x-one-piece">Dilio x One Piece (Collab)</option>
+                </select>
               </div>
             )}
+
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                Label Kategori di Card
+              </label>
+              <input
+                type="text"
+                name="category_label"
+                value={formData.category_label}
+                onChange={handleChange}
+                placeholder="Contoh: COTTON COMBED 24S / STREETWEAR"
+                className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+              />
+            </div>
           </div>
 
-          {/* 3. TAMPILKAN DI HOMEPAGE (PRD 6.1) & BADGES */}
-          <div className="border-t border-neutral-100 pt-5 space-y-3">
-            <label className="block text-xs font-bold text-neutral-900 uppercase tracking-wider">
-              Promosi &amp; Visibilitas
-            </label>
-
-            <div className="p-4 bg-sky-50/70 border border-sky-200 rounded-2xl space-y-2">
-              <label className="flex items-start gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  name="show_on_homepage"
-                  checked={formData.show_on_homepage}
-                  onChange={handleChange}
-                  className="w-5 h-5 rounded border-sky-400 text-sky-600 focus:ring-sky-500 accent-sky-600 cursor-pointer mt-0.5"
-                />
-                <div>
-                  <span className="font-extrabold text-neutral-900 text-sm flex items-center gap-1.5">
-                    ⭐ Tampilkan di Homepage (Section Promo / Eksklusif)
-                  </span>
-                  <p className="text-xs text-neutral-600 mt-0.5 leading-relaxed">
-                    Centang agar kaos ini langsung tampil di section promo warna navy pada halaman utama homepage.
-                  </p>
-                </div>
+          {/* 3. Material & Description */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                Bahan Kain
               </label>
+              <input
+                type="text"
+                name="material"
+                value={formData.material}
+                onChange={handleChange}
+                placeholder="Cotton Combed 24s"
+                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
+              />
             </div>
 
-            <div className="flex flex-wrap items-center gap-6 pt-1">
-              <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-neutral-700">
-                <input
-                  type="checkbox"
-                  name="is_exclusive"
-                  checked={formData.is_exclusive}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded text-black focus:ring-black accent-black"
-                />
-                <span>Label &quot;Eksklusif&quot; pada Card (PRD 3.3)</span>
-              </label>
-
+            {/* Badges Toggle */}
+            <div className="flex items-center gap-6 pt-5">
               <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-neutral-700">
                 <input
                   type="checkbox"
                   name="is_new"
                   checked={formData.is_new}
                   onChange={handleChange}
-                  className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 accent-purple-600"
+                  className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
                 />
-                <span>Badge &quot;New&quot; (Ungu)</span>
+                <span>Badge "New" (Ungu)</span>
+              </label>
+
+              <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-neutral-700">
+                <input
+                  type="checkbox"
+                  name="is_exclusive"
+                  checked={formData.is_exclusive}
+                  onChange={handleChange}
+                  className="w-4 h-4 rounded text-black focus:ring-black"
+                />
+                <span>Badge "LIMITED EDITION" (Banner Exclusive)</span>
               </label>
             </div>
-          </div>
 
-          {/* 4. WARNA & KODE HEX (PRD 6.2 - Color Picker + Input Kode Hex) */}
-          <div className="border-t border-neutral-100 pt-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-xs font-bold text-neutral-900 uppercase tracking-wider">
-                  Warna Varian Produk &amp; Kode Hex
-                </label>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  1 kartu mewakili 1 varian warna. Kode hex dipakai internal untuk referensi ke supplier kain.
-                </p>
-              </div>
-            </div>
-
-            {/* Color preview bar & inputs */}
-            <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200/80 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                {/* Large visual swatch */}
-                <div className="flex items-center gap-3 shrink-0">
-                  <div
-                    className="w-12 h-12 rounded-2xl border border-neutral-300 shadow-sm flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: selectedHex }}
-                  />
-                  <div>
-                    <span className="text-[11px] font-bold text-neutral-400 uppercase block">
-                      Warna Terpilih
-                    </span>
-                    <span className="text-sm font-extrabold text-neutral-900">
-                      {selectedColorName || 'Custom'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Hex code input & color input */}
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-neutral-600 mb-1">
-                      Input Kode Hex (Contoh: #15803D)
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={selectedHex.startsWith('#') ? selectedHex : `#${selectedHex}`}
-                        onChange={(e) => handleHexInputChange(e.target.value)}
-                        className="w-9 h-9 rounded-xl border border-neutral-300 cursor-pointer p-0.5 shrink-0"
-                        title="Buka Color Picker"
-                      />
-                      <input
-                        type="text"
-                        value={selectedHex}
-                        onChange={(e) => handleHexInputChange(e.target.value)}
-                        placeholder="#000000"
-                        maxLength={7}
-                        className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl font-mono text-xs font-bold focus:ring-2 focus:ring-neutral-900 focus:outline-none uppercase"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-neutral-600 mb-1">
-                      Nama Warna (Tampil ke Pembeli)
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedColorName}
-                      onChange={(e) => setSelectedColorName(e.target.value)}
-                      placeholder="Contoh: Hijau Botol"
-                      className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-neutral-900 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Swatch Presets */}
-              <div>
-                <span className="text-[11px] font-bold text-neutral-500 block mb-2">
-                  Atau Pilih Cepat dari Swatch Kain Populer:
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  {PRESET_FABRIC_COLORS.map((preset) => {
-                    const isSelected = selectedHex.toLowerCase() === preset.hex.toLowerCase();
-                    return (
-                      <button
-                        type="button"
-                        key={preset.hex}
-                        onClick={() => handleSelectColorPreset(preset)}
-                        className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs transition-all ${
-                          isSelected
-                            ? 'border-neutral-900 bg-neutral-900 text-white font-bold shadow-2xs'
-                            : 'border-neutral-200 bg-white hover:border-neutral-400 text-neutral-700'
-                        }`}
-                        title={`${preset.name} (${preset.hex})`}
-                      >
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                          style={{ backgroundColor: preset.hex }}
-                        />
-                        <span className="text-[11px]">{preset.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                Deskripsi Singkat (1-2 Baris)
+              </label>
+              <textarea
+                name="description"
+                rows="2"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear."
+                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
+              />
             </div>
           </div>
 
-          {/* 5. Visual Card Appearance (Mockup Pastel vs Real Photo) */}
+          {/* 4. Visual Card Appearance (Mockup Pastel vs Real Photo) */}
           <div className="border-t border-neutral-100 pt-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
@@ -544,15 +468,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               <div
                 className="w-36 h-44 rounded-2xl flex flex-col items-center justify-center p-3 text-center shadow-xs border border-neutral-200/50 shrink-0 relative overflow-hidden"
                 style={{
-                  backgroundColor:
-                    formData.visual_mode === 'image' && formData.image_url
-                      ? '#F3F4F6'
-                      : formData.placeholder_bg,
+                  backgroundColor: formData.visual_mode === 'image' && formData.image_url ? '#F3F4F6' : formData.placeholder_bg,
                 }}
               >
-                {formData.is_exclusive && (
-                  <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black text-white text-[9px] font-bold rounded-xs shadow-xs">
-                    EXCLUSIVE
+                {(formData.is_exclusive || formData.product_group === 'eksklusif') && (
+                  <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
+                    LIMITED EDITION
                   </span>
                 )}
                 {formData.is_new && (
@@ -694,19 +615,84 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
             </div>
           </div>
 
-          {/* 6. Deskripsi */}
-          <div className="border-t border-neutral-100 pt-5">
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-              Deskripsi Singkat (1-2 Baris)
-            </label>
-            <textarea
-              name="description"
-              rows="2"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear."
-              className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
-            />
+          {/* 5. Color Dots Swatches */}
+          <div className="border-t border-neutral-100 pt-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                Varian Warna (Lingkaran di Bawah Card)
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-500 font-medium">+Angka Tambahan:</span>
+                <input
+                  type="number"
+                  name="extra_colors_count"
+                  value={formData.extra_colors_count}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-16 px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-xs text-center font-bold"
+                  placeholder="12"
+                />
+              </div>
+            </div>
+
+            {/* Selected dots */}
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-neutral-50 rounded-xl border border-neutral-200/70 min-h-[46px]">
+              {formData.colors.map((hex, idx) => (
+                <div
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 bg-white rounded-full border border-neutral-200 shadow-2xs text-xs"
+                >
+                  <span
+                    className="w-4 h-4 rounded-full border border-neutral-300 inline-block shrink-0"
+                    style={{ backgroundColor: hex }}
+                  />
+                  <span className="font-mono text-[10px] text-neutral-600">{hex}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeColorDot(idx)}
+                    className="text-neutral-400 hover:text-red-500 ml-0.5"
+                    title="Hapus warna"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {formData.colors.length === 0 && (
+                <span className="text-xs text-neutral-400 italic">
+                  Belum ada warna dipilih. Klik tombol preset di bawah.
+                </span>
+              )}
+            </div>
+
+            {/* Preset quick add */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-xs text-neutral-400 mr-1">Tambah cepat:</span>
+              {PRESET_DOT_COLORS.map((hex) => (
+                <button
+                  type="button"
+                  key={hex}
+                  onClick={() => addColorDot(hex)}
+                  className="w-6 h-6 rounded-full border border-neutral-300 hover:scale-110 transition-transform shadow-2xs"
+                  style={{ backgroundColor: hex }}
+                  title={`Tambah ${hex}`}
+                />
+              ))}
+              <div className="flex items-center gap-1 ml-2">
+                <input
+                  type="color"
+                  value={customColor}
+                  onChange={(e) => setCustomColor(e.target.value)}
+                  className="w-6 h-6 rounded cursor-pointer border border-neutral-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => addColorDot(customColor)}
+                  className="px-2 py-0.5 bg-neutral-200 hover:bg-neutral-300 text-[11px] font-bold rounded"
+                >
+                  + Custom
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Footer Actions */}

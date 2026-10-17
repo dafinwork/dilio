@@ -18,9 +18,9 @@ export default function ProductCard({ product, onSelect }) {
       >
         {/* Floating Badges */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5">
-          {product.is_exclusive && (
-            <span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold tracking-wider rounded-sm shadow-xs uppercase">
-              Eksklusif
+          {(product.is_exclusive || product.product_group === 'eksklusif') && (
+            <span className="px-2.5 py-1 bg-black text-amber-300 border border-amber-300/30 text-[10px] font-black tracking-wider rounded-sm shadow-xs uppercase">
+              Limited Edition
             </span>
           )}
           {product.is_new && (
@@ -75,15 +75,30 @@ export default function ProductCard({ product, onSelect }) {
           </p>
         </div>
 
-        {/* Price (Titik warna dihapus sesuai PRD Section 4) */}
-        <div className="mt-4 pt-2.5 flex items-center justify-between gap-2 border-t border-neutral-100">
+        {/* Price & Color Swatches */}
+        <div className="mt-4 pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
           <span className="text-base sm:text-lg font-extrabold text-neutral-900 tracking-tight">
             {formatRupiah(product.price)}
           </span>
-          {product.primary_color?.name && (
-            <span className="text-[11px] font-semibold text-neutral-400 capitalize truncate max-w-[120px]">
-              {product.primary_color.name}
-            </span>
+
+          {/* Color Dots */}
+          {colorList.length > 0 && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {colorList.slice(0, 3).map((hex, idx) => (
+                <span
+                  key={idx}
+                  className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
+                  style={{ backgroundColor: hex }}
+                  title={`Warian warna ${idx + 1}`}
+                />
+              ))}
+
+              {Number(product.extra_colors_count) > 0 && (
+                <span className="text-[11px] font-semibold text-neutral-400 pl-0.5">
+                  +{product.extra_colors_count}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
