@@ -361,10 +361,26 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2.5 flex-wrap">
               <button
                 onClick={() => {
+                  setEditingProduct({
+                    product_group: 'eksklusif',
+                    is_exclusive: true,
+                    category_label: 'LIMITED EDITION',
+                  });
+                  setModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-neutral-950 rounded-xl text-xs sm:text-sm font-extrabold shadow-sm transition-all cursor-pointer"
+                title="Tambah katalog baru khusus banner [LIMITED EDITION] di Homepage"
+              >
+                <Crown className="w-4 h-4 text-neutral-950" />
+                <span>+ Tambah Katalog Exclusive</span>
+              </button>
+
+              <button
+                onClick={() => {
                   setEditingProduct(null);
                   setModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tambah Produk</span>

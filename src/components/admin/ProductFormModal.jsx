@@ -26,8 +26,6 @@ const PRESET_DOT_COLORS = [
 ];
 
 export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
-  const isEditing = Boolean(product);
-
   const [formData, setFormData] = useState({
     name: '',
     product_group: 'harian',
@@ -53,7 +51,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    if (product) {
+    if (product && product.id) {
       setFormData({
         name: product.name || '',
         product_group: product.product_group || 'harian',
@@ -71,8 +69,29 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         placeholder_title: product.placeholder_title || product.name || '',
         placeholder_bg: product.placeholder_bg || '#E5E7EB',
         placeholder_text_color: product.placeholder_text_color || '#374151',
-        colors: product.colors || [],
+        colors: safeColors(product.colors),
         extra_colors_count: product.extra_colors_count || 0,
+      });
+    } else if (product && product.product_group === 'eksklusif') {
+      setFormData({
+        name: '',
+        product_group: 'eksklusif',
+        cutting_type: product.cutting_type || 'oversized',
+        sablon_type: 'plastisol',
+        exclusive_category: 'dilio',
+        category_label: 'LIMITED EDITION',
+        material: 'Cotton Combed 24s',
+        price: 185000,
+        description: 'Koleksi eksklusif limited edition dengan desain spesial dan bahan premium.',
+        image_url: '',
+        visual_mode: 'mockup',
+        is_new: true,
+        is_exclusive: true,
+        placeholder_title: 'LIMITED\nEDITION',
+        placeholder_bg: '#1E293B',
+        placeholder_text_color: '#FACC15',
+        colors: ['#000000'],
+        extra_colors_count: 0,
       });
     } else {
       setFormData({
@@ -211,7 +230,10 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     const { visual_mode, ...cleanFormData } = formData;
     const payload = {
       ...cleanFormData,
-      cutting_type: formData.product_group === 'harian' ? formData.cutting_type : null,
+      cutting_type:
+        formData.product_group === 'harian' || formData.product_group === 'eksklusif'
+          ? (formData.cutting_type || 'oversized')
+          : null,
       sablon_type: formData.product_group === 'custom' ? formData.sablon_type : null,
       exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
       placeholder_title: formData.placeholder_title || formData.name,
@@ -220,6 +242,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     onSave(payload);
   };
 
+  const isEditing = Boolean(product && product.id);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
       <div className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-8 animate-in zoom-in-95 duration-200">
@@ -227,7 +251,11 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
           <div>
             <h3 className="text-xl font-black text-neutral-900">
-              {isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}
+              {isEditing
+                ? 'Edit Produk'
+                : formData.product_group === 'eksklusif'
+                ? '👑 Tambah Katalog Exclusive (Limited Edition)'
+                : 'Tambah Produk Baru'}
             </h3>
             <p className="text-xs text-neutral-500 mt-0.5">
               Kelola data katalog produk Kaos Dilio (Otomatis sync ke website).
@@ -304,20 +332,21 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
 
           {/* 2. Category Sub-filter */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
-            {formData.product_group === 'harian' && (
+            {(formData.product_group === 'harian' || formData.product_group === 'eksklusif') && (
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                  Tipe Cutting (Filter Harian)
+                  Tshirt Cut (Tipe Cutting)
                 </label>
                 <select
                   name="cutting_type"
-                  value={formData.cutting_type}
+                  value={formData.cutting_type || 'oversized'}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
                 >
-                  <option value="oversized">Oversized Fit</option>
-                  <option value="reguler">Reguler Fit</option>
-                  <option value="boxy">Boxy Cut</option>
+                  <option value="oversized">Oversized</option>
+                  <option value="regular">Regular</option>
+                  <option value="fitted">Fitted</option>
+                  <option value="boxy">Boxy</option>
                   <option value="long-sleeve">Long Sleeve</option>
                 </select>
               </div>

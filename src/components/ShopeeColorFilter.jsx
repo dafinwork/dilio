@@ -18,10 +18,11 @@ export default function ShopeeColorFilter({
   const [cuttingExpanded, setCuttingExpanded] = useState(true);
 
   const cuttingOptions = [
-    { label: 'Semua Model', value: 'all' },
-    { label: 'Oversized Fit', value: 'oversized' },
-    { label: 'Reguler Fit', value: 'reguler' },
-    { label: 'Boxy Cut', value: 'boxy' },
+    { label: 'Semua Cut', value: 'all' },
+    { label: 'Oversized', value: 'oversized' },
+    { label: 'Regular', value: 'regular' },
+    { label: 'Fitted', value: 'fitted' },
+    { label: 'Boxy', value: 'boxy' },
     { label: 'Long Sleeve', value: 'long-sleeve' },
   ];
 
@@ -52,7 +53,7 @@ export default function ShopeeColorFilter({
         )}
       </div>
 
-      {/* 1. Model / Tipe Cutting Filter */}
+      {/* 1. Tshirt Cut (Cutting Filter) */}
       <div className="pb-5 border-b border-neutral-100">
         <button
           type="button"
@@ -60,7 +61,7 @@ export default function ShopeeColorFilter({
           className="w-full flex items-center justify-between text-left font-bold text-neutral-900 text-xs sm:text-sm mb-3 select-none"
         >
           <span className="uppercase tracking-wider text-[11px] text-neutral-500 font-bold">
-            Kategori Cutting
+            Tshirt Cut
           </span>
           {cuttingExpanded ? (
             <ChevronUp className="w-3.5 h-3.5 text-neutral-400" />

@@ -199,7 +199,7 @@ export function ProductProvider({ children }) {
     is_new: Boolean(p.is_new),
     is_exclusive: Boolean(p.is_exclusive),
     product_group: p.product_group || 'harian',
-    cutting_type: p.product_group === 'harian' ? (p.cutting_type || 'oversized') : null,
+    cutting_type: p.cutting_type || (p.product_group === 'harian' ? 'oversized' : null),
     sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
     exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
     category_label: p.category_label || '',

@@ -10,8 +10,11 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [limitedTab, setLimitedTab] = useState('all');
 
-  // Filter exclusive products for Limited Edition section
-  const exclusiveProducts = allProducts.filter((p) => p.product_group === 'eksklusif');
+  // Filter exclusive products for Limited Edition section (newest first)
+  const exclusiveProducts = allProducts
+    .filter((p) => p.product_group === 'eksklusif' || p.is_exclusive)
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
   const filteredLimited =
     limitedTab === 'all'
       ? exclusiveProducts.slice(0, 4)
@@ -169,7 +172,7 @@ export default function HomePage() {
 
               {/* Lihat Semua Link */}
               <Link
-                to="/desain-eksklusif"
+                to="/koleksi-kaos"
                 className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-neutral-900 hover:text-indigo-600 transition-colors underline decoration-2 underline-offset-4"
               >
                 <span>Lihat Semua</span>

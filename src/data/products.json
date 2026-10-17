@@ -7,7 +7,11 @@
     "price": 65000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#000000", "#FFFFFF", "#15803D"],
+    "colors": [
+      "#000000",
+      "#FFFFFF",
+      "#15803D"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -29,11 +33,15 @@
     "price": 45000,
     "image_url": "",
     "material": "COTTON COMBED 30S",
-    "colors": ["#2563EB", "#DC2626", "#FACC15"],
+    "colors": [
+      "#2563EB",
+      "#DC2626",
+      "#FACC15"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "reguler",
+    "cutting_type": "regular",
     "sablon_type": null,
     "exclusive_category": null,
     "category_label": "COTTON COMBED 30S",
@@ -51,7 +59,10 @@
     "price": 85000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#1E293B", "#94A3B8"],
+    "colors": [
+      "#1E293B",
+      "#94A3B8"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -73,7 +84,10 @@
     "price": 60000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#000000", "#1E40AF"],
+    "colors": [
+      "#000000",
+      "#1E40AF"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -95,7 +109,10 @@
     "price": 65000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#111827", "#10B981"],
+    "colors": [
+      "#111827",
+      "#10B981"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -117,11 +134,15 @@
     "price": 45000,
     "image_url": "",
     "material": "COTTON COMBED 30S",
-    "colors": ["#2563EB", "#DC2626", "#F59E0B"],
+    "colors": [
+      "#2563EB",
+      "#DC2626",
+      "#F59E0B"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "reguler",
+    "cutting_type": "regular",
     "sablon_type": null,
     "exclusive_category": null,
     "category_label": "COTTON COMBED 30S",
@@ -139,7 +160,10 @@
     "price": 85000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#1E293B", "#64748B"],
+    "colors": [
+      "#1E293B",
+      "#64748B"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -161,7 +185,10 @@
     "price": 60000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#020617", "#2563EB"],
+    "colors": [
+      "#020617",
+      "#2563EB"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -183,7 +210,10 @@
     "price": 195000,
     "image_url": "",
     "material": "HEAVYWEIGHT COTTON 16S",
-    "colors": ["#0F172A", "#1E293B"],
+    "colors": [
+      "#0F172A",
+      "#1E293B"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
@@ -205,7 +235,10 @@
     "price": 175000,
     "image_url": "",
     "material": "WASHED COTTON 20S",
-    "colors": ["#3B82F6", "#1D4ED8"],
+    "colors": [
+      "#3B82F6",
+      "#1D4ED8"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
@@ -227,7 +260,10 @@
     "price": 195000,
     "image_url": "",
     "material": "HEAVYWEIGHT COTTON 16S",
-    "colors": ["#0F172A", "#64748B"],
+    "colors": [
+      "#0F172A",
+      "#64748B"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
@@ -249,7 +285,10 @@
     "price": 175000,
     "image_url": "",
     "material": "WASHED COTTON 20S",
-    "colors": ["#3B82F6", "#1E40AF"],
+    "colors": [
+      "#3B82F6",
+      "#1E40AF"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
@@ -271,7 +310,9 @@
     "price": 185000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#000000"],
+    "colors": [
+      "#000000"
+    ],
     "is_new": true,
     "is_exclusive": false,
     "product_group": "custom",
@@ -293,7 +334,9 @@
     "price": 190000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#18181B"],
+    "colors": [
+      "#18181B"
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
@@ -315,11 +358,13 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#0F172A"],
+    "colors": [
+      "#0F172A"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "oversized",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -337,11 +382,13 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#0F172A"],
+    "colors": [
+      "#0F172A"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "oversized",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -359,11 +406,13 @@
     "price": 195000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#1E293B"],
+    "colors": [
+      "#1E293B"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "boxy",
     "sablon_type": "plastisol",
     "exclusive_category": "thinking-out",
     "category_label": "PARTNER BRAND",
@@ -381,11 +430,13 @@
     "price": 190000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#0F172A"],
+    "colors": [
+      "#0F172A"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "fitted",
     "sablon_type": "plastisol",
     "exclusive_category": "thinking-out",
     "category_label": "PARTNER BRAND",
@@ -403,11 +454,14 @@
     "price": 225000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#FFFFFF", "#0F172A"],
+    "colors": [
+      "#FFFFFF",
+      "#0F172A"
+    ],
     "is_new": true,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "oversized",
     "sablon_type": "dtf",
     "exclusive_category": "dilio-x-one-piece",
     "category_label": "LIMITED COLLAB",
@@ -425,11 +479,13 @@
     "price": 210000,
     "image_url": "",
     "material": "WASHED COTTON 20S",
-    "colors": ["#334155"],
+    "colors": [
+      "#334155"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "boxy",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio-x-one-piece",
     "category_label": "LIMITED COLLAB",
@@ -447,11 +503,13 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#0B132B"],
+    "colors": [
+      "#0B132B"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "fitted",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -469,11 +527,13 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#020617"],
+    "colors": [
+      "#020617"
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "long-sleeve",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",

@@ -95,3 +95,101 @@ export function getClosestColorId(hex) {
   return closestId;
 }
 
+export const COLOR_DICTIONARY = {
+  '#000000': 'Hitam',
+  '#FFFFFF': 'Putih',
+  '#15803D': 'Hijau Botol',
+  '#16A34A': 'Hijau Daun',
+  '#10B981': 'Emerald Green',
+  '#2563EB': 'Biru Royal',
+  '#1E40AF': 'Biru Benhur',
+  '#1E293B': 'Navy',
+  '#0F172A': 'Midnight Navy',
+  '#020617': 'Deep Black',
+  '#DC2626': 'Merah Cabe',
+  '#B91C1C': 'Merah Maroon',
+  '#FACC15': 'Kuning Kenari',
+  '#F59E0B': 'Kuning Mustard',
+  '#94A3B8': 'Abu Misty',
+  '#64748B': 'Abu-Abu',
+  '#475569': 'Slate Grey',
+  '#0B132B': 'Navy Dark',
+};
+
+export function getColorName(hex) {
+  if (!hex) return 'Warna';
+  const cleanHex = hex.trim().toUpperCase();
+  for (const [key, name] of Object.entries(COLOR_DICTIONARY)) {
+    if (key.toUpperCase() === cleanHex) return name;
+  }
+  const closestId = getClosestColorId(hex);
+  const found = BASE_COLORS.find((c) => c.id === closestId);
+  return found ? found.name : cleanHex;
+}
+
+/**
+ * Normalizes cutting_type to 5 standard cuts:
+ * oversized, regular, fitted, boxy, long-sleeve
+ */
+export function normalizeCutting(cut) {
+  if (!cut) return 'regular';
+  const s = String(cut).toLowerCase().trim();
+  if (s === 'oversize' || s === 'oversized') return 'oversized';
+  if (s === 'reguler' || s === 'regular') return 'regular';
+  if (s === 'fitted') return 'fitted';
+  if (s === 'boxy' || s === 'boxy cut' || s === 'boxy crop') return 'boxy';
+  if (s === 'long sleeve' || s === 'long-sleeve' || s === 'longsleeve') return 'long-sleeve';
+  return s;
+}
+
+/**
+ * Explodes products into 1 card per color variant so each card represents 1 color
+ * (Membuat setiap gambar/katalog dijadikan 1 warna saja agar katalog terlihat banyak).
+ */
+export function flattenProductsByColor(products) {
+  if (!Array.isArray(products)) return [];
+
+  const result = [];
+  products.forEach((product) => {
+    const rawColors = safeColors(product.colors);
+    const colors = rawColors.length > 0 ? rawColors : ['#000000'];
+
+    // If product only has 1 color, keep 1 card
+    if (colors.length <= 1) {
+      const primaryHex = colors[0];
+      result.push({
+        ...product,
+        id: product.id,
+        parent_id: product.id,
+        is_variant: false,
+        colors: [primaryHex],
+        color_hex: primaryHex,
+        color_name: getColorName(primaryHex),
+        extra_colors_count: 0,
+      });
+      return;
+    }
+
+    // If product has multiple colors, explode into 1 separate card per color variant
+    colors.forEach((hex, idx) => {
+      const colorName = getColorName(hex);
+      const cleanHex = String(hex).replace('#', '').toLowerCase();
+      result.push({
+        ...product,
+        id: `${product.id}-${cleanHex || idx}`,
+        parent_id: product.id,
+        is_variant: true,
+        variant_index: idx,
+        name: `${product.name} - ${colorName}`,
+        colors: [hex],
+        color_hex: hex,
+        color_name: colorName,
+        extra_colors_count: 0,
+      });
+    });
+  });
+
+  return result;
+}
+
+

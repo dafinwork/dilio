@@ -6,14 +6,19 @@ import ProductCard from '../components/ProductCard';
 import ProductModal from '../components/ProductModal';
 import ShopeeColorFilter from '../components/ShopeeColorFilter';
 import { useProducts } from '../context/ProductContext';
-import { BASE_COLORS, safeColors, getClosestColorId } from '../utils/helpers';
+import {
+  BASE_COLORS,
+  getClosestColorId,
+  normalizeCutting,
+  flattenProductsByColor,
+} from '../utils/helpers';
 
 export default function KoleksiKaosPage() {
   const { products: allProducts } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCutting = searchParams.get('cutting') || 'all';
 
-  const [activeTab, setActiveTab] = useState(initialCutting);
+  const [activeTab, setActiveTab] = useState(() => normalizeCutting(initialCutting));
   const [selectedColors, setSelectedColors] = useState([]);
   const [sortOption, setSortOption] = useState('latest');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -23,17 +28,18 @@ export default function KoleksiKaosPage() {
   useEffect(() => {
     const cutting = searchParams.get('cutting');
     if (cutting) {
-      setActiveTab(cutting);
+      setActiveTab(normalizeCutting(cutting));
     }
   }, [searchParams]);
 
   const handleTabChange = (val) => {
-    setActiveTab(val);
-    if (val === 'all') {
+    const normalized = val === 'all' ? 'all' : normalizeCutting(val);
+    setActiveTab(normalized);
+    if (normalized === 'all') {
       searchParams.delete('cutting');
       setSearchParams(searchParams);
     } else {
-      setSearchParams({ cutting: val });
+      setSearchParams({ cutting: normalized });
     }
   };
 
@@ -53,26 +59,36 @@ export default function KoleksiKaosPage() {
   };
 
   const tabs = [
-    { label: 'Semua', value: 'all' },
-    { label: 'Oversized Fit', value: 'oversized' },
-    { label: 'Reguler Fit', value: 'reguler' },
-    { label: 'Boxy Cut', value: 'boxy' },
+    { label: 'Semua Cut', value: 'all' },
+    { label: 'Oversized', value: 'oversized' },
+    { label: 'Regular', value: 'regular' },
+    { label: 'Fitted', value: 'fitted' },
+    { label: 'Boxy', value: 'boxy' },
     { label: 'Long Sleeve', value: 'long-sleeve' },
   ];
 
-  // Base list of daily products (product_group === 'harian')
-  const baseDailyProducts = useMemo(() => {
-    return allProducts.filter((p) => p.product_group === 'harian');
+  // Combined catalog source: Daily products (harian) + [LIMITED EDITION] Exclusive products
+  const catalogSource = useMemo(() => {
+    return allProducts.filter(
+      (p) => p.product_group === 'harian' || p.product_group === 'eksklusif' || p.is_exclusive
+    );
   }, [allProducts]);
+
+  // Flatten catalog so each color variant = 1 individual card (1 gambar / 1 kartu = 1 warna)
+  const flattenedCatalog = useMemo(() => {
+    return flattenProductsByColor(catalogSource);
+  }, [catalogSource]);
 
   // Dynamic count of products per cutting type
   const cuttingCounts = useMemo(() => {
-    const counts = { all: baseDailyProducts.length };
+    const counts = { all: flattenedCatalog.length };
     tabs.slice(1).forEach((t) => {
-      counts[t.value] = baseDailyProducts.filter((p) => p.cutting_type === t.value).length;
+      counts[t.value] = flattenedCatalog.filter(
+        (p) => normalizeCutting(p.cutting_type) === t.value
+      ).length;
     });
     return counts;
-  }, [baseDailyProducts]);
+  }, [flattenedCatalog]);
 
   // Dynamic count of products per color family within current cutting filter
   const colorCounts = useMemo(() => {
@@ -81,37 +97,33 @@ export default function KoleksiKaosPage() {
 
     const scopeProducts =
       activeTab === 'all'
-        ? baseDailyProducts
-        : baseDailyProducts.filter((p) => p.cutting_type === activeTab);
+        ? flattenedCatalog
+        : flattenedCatalog.filter((p) => normalizeCutting(p.cutting_type) === activeTab);
 
     scopeProducts.forEach((p) => {
-      const colors = safeColors(p.colors);
-      const colorIds = new Set(colors.map((c) => getClosestColorId(c)));
-      colorIds.forEach((id) => {
-        if (counts[id] !== undefined) {
-          counts[id] += 1;
-        }
-      });
+      const cId = getClosestColorId(p.color_hex || (p.colors && p.colors[0]));
+      if (counts[cId] !== undefined) {
+        counts[cId] += 1;
+      }
     });
 
     return counts;
-  }, [baseDailyProducts, activeTab]);
+  }, [flattenedCatalog, activeTab]);
 
   // Filtered & sorted products based on cutting tab and selected colors
   const filteredProducts = useMemo(() => {
-    let list = baseDailyProducts;
+    let list = flattenedCatalog;
 
-    // 1. Filter by Cutting Type
+    // 1. Filter by Tshirt Cut
     if (activeTab !== 'all') {
-      list = list.filter((p) => p.cutting_type === activeTab);
+      list = list.filter((p) => normalizeCutting(p.cutting_type) === activeTab);
     }
 
     // 2. Filter by Shopee Colors (multi-select)
     if (selectedColors.length > 0) {
       list = list.filter((p) => {
-        const colors = safeColors(p.colors);
-        if (colors.length === 0) return false;
-        return colors.some((c) => selectedColors.includes(getClosestColorId(c)));
+        const cId = getClosestColorId(p.color_hex || (p.colors && p.colors[0]));
+        return selectedColors.includes(cId);
       });
     }
 
@@ -120,10 +132,23 @@ export default function KoleksiKaosPage() {
       if (sortOption === 'price_asc') return a.price - b.price;
       if (sortOption === 'price_desc') return b.price - a.price;
       if (sortOption === 'name_asc') return a.name.localeCompare(b.name);
-      // default: latest
       return new Date(b.created_at) - new Date(a.created_at);
     });
-  }, [baseDailyProducts, activeTab, selectedColors, sortOption]);
+  }, [flattenedCatalog, activeTab, selectedColors, sortOption]);
+
+  const handleSelectProduct = (product) => {
+    if (product.parent_id) {
+      const parent = allProducts.find((p) => p.id === product.parent_id);
+      if (parent) {
+        setSelectedProduct({
+          ...parent,
+          selected_color: product.color_hex,
+        });
+        return;
+      }
+    }
+    setSelectedProduct(product);
+  };
 
   return (
     <div className="min-h-screen py-10 sm:py-14 bg-white">
@@ -131,10 +156,10 @@ export default function KoleksiKaosPage() {
         {/* Page Title */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-neutral-900 tracking-tight leading-tight">
-            Kaos Polos Premium Untuk Berbagai Gaya dan Aktivitas Harianmu
+            Kaos Polos &amp; Limited Edition Untuk Berbagai Gaya Harianmu
           </h1>
           <p className="mt-3 text-xs sm:text-sm text-neutral-500">
-            Temukan koleksi kaos polos berkualitas dengan cuttingan presisi dan beragam pilihan warna favorit.
+            Temukan koleksi kaos polos harian dan desain eksklusif dengan pilihan cutting presisi serta beragam varian warna.
           </p>
         </div>
 
@@ -158,7 +183,7 @@ export default function KoleksiKaosPage() {
             className="flex items-center gap-2 px-3.5 py-2 bg-neutral-900 text-white rounded-xl text-xs font-bold shadow-2xs cursor-pointer hover:bg-neutral-800 transition-colors"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Filter Warna Shopee</span>
+            <span>Filter Shopee</span>
             {selectedColors.length > 0 && (
               <span className="w-5 h-5 rounded-full bg-amber-400 text-neutral-900 text-[10px] font-black flex items-center justify-center">
                 {selectedColors.length}
@@ -171,7 +196,7 @@ export default function KoleksiKaosPage() {
           </span>
         </div>
 
-        {/* Active Filter Chips Bar (When colors or cutting are selected) */}
+        {/* Active Filter Chips Bar (When colors are selected) */}
         {selectedColors.length > 0 && (
           <div className="mb-6 p-3.5 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl flex flex-wrap items-center gap-2 text-xs">
             <span className="font-bold text-neutral-600 mr-1 flex items-center gap-1.5">
@@ -216,7 +241,7 @@ export default function KoleksiKaosPage() {
 
         {/* Main 2-Column Content Layout: Left Shopee Filter + Right Products Grid */}
         <div className="flex flex-col lg:flex-row items-start gap-8">
-          {/* Left: Shopee Color & Cutting Filter Sidebar */}
+          {/* Left: Shopee Color & Tshirt Cut Filter Sidebar */}
           <ShopeeColorFilter
             selectedColors={selectedColors}
             onToggleColor={handleToggleColor}
@@ -230,7 +255,7 @@ export default function KoleksiKaosPage() {
             onCloseMobile={() => setMobileFilterOpen(false)}
           />
 
-          {/* Right: Products Grid */}
+          {/* Right: Products Grid (1 Varian Warna = 1 Kartu) */}
           <div className="flex-1 w-full min-w-0">
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-7">
@@ -238,7 +263,7 @@ export default function KoleksiKaosPage() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onSelect={setSelectedProduct}
+                    onSelect={handleSelectProduct}
                   />
                 ))}
               </div>
