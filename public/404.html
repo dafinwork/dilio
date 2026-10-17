@@ -4,16 +4,15 @@
     <meta charset="utf-8">
     <title>Kaos Dilio</title>
     <script type="text/javascript">
-      // GitHub Pages SPA redirect
-      var pathSegmentsToKeep = 1;
+      // GitHub Pages SPA redirect for HashRouter
+      // Redirects non-hash URLs (e.g. /admin, /koleksi-kaos) to hash URLs (/#/admin, /#/koleksi-kaos)
       var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
+      var route = l.pathname.replace(/^\/+/, '');
+      if (route) {
+        l.replace(l.protocol + '//' + l.host + '/#/' + route + (l.search || '') + (l.hash || ''));
+      } else {
+        l.replace(l.protocol + '//' + l.host + '/' + (l.search || '') + (l.hash || ''));
+      }
     </script>
   </head>
   <body>

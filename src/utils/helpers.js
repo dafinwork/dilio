@@ -12,16 +12,27 @@ export function formatRupiah(number) {
  * Ensures colors is always a valid array of hex color strings.
  */
 export function safeColors(colors) {
-  if (Array.isArray(colors)) return colors;
-  if (typeof colors === 'string') {
+  let list = [];
+  if (Array.isArray(colors)) {
+    list = colors;
+  } else if (typeof colors === 'string') {
     try {
       const parsed = JSON.parse(colors);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) list = parsed;
+      else if (typeof parsed === 'string') list = [parsed];
     } catch {
-      return [];
+      if (colors.startsWith('#')) list = [colors];
+      else list = [];
     }
   }
-  return [];
+
+  return list
+    .map((c) => {
+      if (typeof c === 'string') return c.trim();
+      if (c && typeof c === 'object' && c.hex) return String(c.hex).trim();
+      return '';
+    })
+    .filter((c) => typeof c === 'string' && c.startsWith('#'));
 }
 
 /**
@@ -70,8 +81,9 @@ export function hexToRgb(hex) {
 }
 
 export function getClosestColorId(hex) {
-  if (!hex || typeof hex !== 'string') return 'hitam';
-  const upper = hex.trim().toUpperCase();
+  const hexStr = typeof hex === 'string' ? hex : (hex?.hex || String(hex || ''));
+  if (!hexStr || typeof hexStr !== 'string' || !hexStr.startsWith('#')) return 'hitam';
+  const upper = hexStr.trim().toUpperCase();
   if (['#000000', '#111827', '#020617', '#0F172A', '#18181B'].includes(upper)) return 'hitam';
   if (['#FFFFFF', '#F8FAFC', '#F9FAFB', '#F1F5F9', '#FAFAFA'].includes(upper)) return 'putih';
   if (['#0B132B', '#1E293B', '#1E40AF', '#1D4ED8'].includes(upper)) return 'navy';
@@ -81,7 +93,7 @@ export function getClosestColorId(hex) {
   if (['#DC2626', '#EF4444', '#B91C1C'].includes(upper)) return 'merah';
   if (['#FACC15', '#F59E0B', '#EAB308', '#FBBF24'].includes(upper)) return 'kuning';
 
-  const [r, g, b] = hexToRgb(hex);
+  const [r, g, b] = hexToRgb(hexStr);
   let minD = Infinity;
   let closestId = 'hitam';
   for (const c of BASE_COLORS) {
@@ -118,11 +130,12 @@ export const COLOR_DICTIONARY = {
 
 export function getColorName(hex) {
   if (!hex) return 'Warna';
-  const cleanHex = hex.trim().toUpperCase();
+  const hexStr = typeof hex === 'string' ? hex : (hex?.hex || String(hex || ''));
+  const cleanHex = hexStr.trim().toUpperCase();
   for (const [key, name] of Object.entries(COLOR_DICTIONARY)) {
     if (key.toUpperCase() === cleanHex) return name;
   }
-  const closestId = getClosestColorId(hex);
+  const closestId = getClosestColorId(hexStr);
   const found = BASE_COLORS.find((c) => c.id === closestId);
   return found ? found.name : cleanHex;
 }
@@ -151,12 +164,13 @@ export function flattenProductsByColor(products) {
 
   const result = [];
   products.forEach((product) => {
+    if (!product) return;
     const rawColors = safeColors(product.colors);
     const colors = rawColors.length > 0 ? rawColors : ['#000000'];
 
     // If product only has 1 color, keep 1 card
     if (colors.length <= 1) {
-      const primaryHex = colors[0];
+      const primaryHex = typeof colors[0] === 'string' ? colors[0] : '#000000';
       result.push({
         ...product,
         id: product.id,
@@ -172,8 +186,9 @@ export function flattenProductsByColor(products) {
 
     // If product has multiple colors, explode into 1 separate card per color variant
     colors.forEach((hex, idx) => {
-      const colorName = getColorName(hex);
-      const cleanHex = String(hex).replace('#', '').toLowerCase();
+      const hexStr = typeof hex === 'string' ? hex : '#000000';
+      const colorName = getColorName(hexStr);
+      const cleanHex = hexStr.replace('#', '').toLowerCase();
       result.push({
         ...product,
         id: `${product.id}-${cleanHex || idx}`,
@@ -181,8 +196,8 @@ export function flattenProductsByColor(products) {
         is_variant: true,
         variant_index: idx,
         name: `${product.name} - ${colorName}`,
-        colors: [hex],
-        color_hex: hex,
+        colors: [hexStr],
+        color_hex: hexStr,
         color_name: colorName,
         extra_colors_count: 0,
       });

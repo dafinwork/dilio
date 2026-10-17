@@ -22,13 +22,23 @@ export default function HomePage() {
           .filter((p) => p.exclusive_category === limitedTab)
           .slice(0, 4);
 
-  // 4 Daily & Custom Showcase products matching mockup screenshot 1:1
-  const showcaseProducts = [
+  // Daily showcase products with resilient fallback
+  const hardcodedShowcase = [
     allProducts.find((p) => p.id === 'harian-oversized-1'),
     allProducts.find((p) => p.id === 'harian-regular-1'),
     allProducts.find((p) => p.id === 'harian-boxy-1'),
     allProducts.find((p) => p.id === 'harian-longsleeve-1'),
   ].filter(Boolean);
+
+  const showcaseProducts =
+    hardcodedShowcase.length > 0
+      ? hardcodedShowcase
+      : allProducts.filter((p) => p.product_group === 'harian').slice(0, 4);
+
+  // Custom showcase products
+  const customProducts = allProducts
+    .filter((p) => p.product_group === 'custom')
+    .slice(0, 4);
 
   const limitedTabs = [
     { label: 'Semua', value: 'all' },
@@ -255,7 +265,7 @@ export default function HomePage() {
 
           {/* 4 Custom Products Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {showcaseProducts.map((product) => (
+            {(customProducts.length > 0 ? customProducts : showcaseProducts).map((product) => (
               <ProductCard
                 key={`custom-${product.id}`}
                 product={product}

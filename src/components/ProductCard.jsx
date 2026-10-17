@@ -1,6 +1,7 @@
 import { formatRupiah } from '../utils/helpers';
 
 export default function ProductCard({ product, onSelect }) {
+  if (!product) return null;
   const isMinimalist = product.category_label === 'MINIMALIST';
 
   return (
