@@ -137,16 +137,6 @@ export default function KoleksiKaosPage() {
   }, [flattenedCatalog, activeTab, selectedColors, sortOption]);
 
   const handleSelectProduct = (product) => {
-    if (product.parent_id) {
-      const parent = allProducts.find((p) => p.id === product.parent_id);
-      if (parent) {
-        setSelectedProduct({
-          ...parent,
-          selected_color: product.color_hex,
-        });
-        return;
-      }
-    }
     setSelectedProduct(product);
   };
 

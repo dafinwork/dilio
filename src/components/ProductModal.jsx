@@ -106,33 +106,25 @@ export default function ProductModal({ product, onClose }) {
                 )}
               </div>
 
-              {/* Available Colors */}
-              {safeColors(product.colors).length > 0 && (
+              {/* Warna Produk (1 Warna per Kartu/Produk) */}
+              {(product.color_hex || safeColors(product.colors).length > 0) && (
                 <div className="pt-2">
-                  <span className="text-xs text-neutral-400 block mb-1.5">Pilihan Warna:</span>
+                  <span className="text-xs text-neutral-400 block mb-1.5">Warna:</span>
                   <div className="flex items-center gap-2">
-                    {safeColors(product.colors).map((hex, idx) => {
-                      const isSelected =
-                        product.selected_color &&
-                        product.selected_color.toLowerCase() === hex.toLowerCase();
+                    {(() => {
+                      const colorHex =
+                        product.color_hex ||
+                        product.selected_color ||
+                        safeColors(product.colors)[0] ||
+                        '#000000';
                       return (
                         <span
-                          key={idx}
-                          className={`w-5 h-5 rounded-full border shadow-2xs inline-block transition-transform ${
-                            isSelected
-                              ? 'ring-2 ring-neutral-900 ring-offset-2 scale-110 border-black'
-                              : 'border-neutral-300'
-                          }`}
-                          style={{ backgroundColor: hex }}
-                          title={hex}
+                          className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs inline-block"
+                          style={{ backgroundColor: colorHex }}
+                          title={colorHex}
                         />
                       );
-                    })}
-                    {Number(product.extra_colors_count) > 0 && (
-                      <span className="text-xs text-neutral-500 font-medium">
-                        +{product.extra_colors_count} varian lainnya
-                      </span>
-                    )}
+                    })()}
                   </div>
                 </div>
               )}
