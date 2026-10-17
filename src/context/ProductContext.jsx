@@ -24,14 +24,25 @@ async function hashPassword(plainText) {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-const sanitizeProduct = (p) => ({
-  ...p,
-  price: Number(p.price) || 0,
-  extra_colors_count: Number(p.extra_colors_count) || 0,
-  colors: safeColors(p.colors),
-  is_new: Boolean(p.is_new),
-  is_exclusive: Boolean(p.is_exclusive),
-});
+const sanitizeProduct = (p) => {
+  const colors = safeColors(p.colors);
+  const showOnHomepage = Boolean(
+    p.show_on_homepage ??
+    p.show_in_homepage ??
+    (Array.isArray(p.colors) && p.colors[0]?.show_on_homepage) ??
+    (p.is_exclusive && (p.product_group === 'eksklusif' || p.category_label === 'PROMO'))
+  );
+
+  return {
+    ...p,
+    price: Number(p.price) || 0,
+    extra_colors_count: Number(p.extra_colors_count) || 0,
+    colors,
+    is_new: Boolean(p.is_new),
+    is_exclusive: Boolean(p.is_exclusive),
+    show_on_homepage: showOnHomepage,
+  };
+};
 
 export function ProductProvider({ children }) {
   // Load products from localStorage, or fallback to default products.json
@@ -187,28 +198,42 @@ export function ProductProvider({ children }) {
   };
 
   // Format and sanitize object strictly for public.products database columns
-  const toDatabasePayload = (p) => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug || `prod-${Date.now()}`,
-    description: p.description || '',
-    price: Number(p.price) || 0,
-    image_url: p.image_url || '',
-    material: p.material || '',
-    colors: safeColors(p.colors),
-    is_new: Boolean(p.is_new),
-    is_exclusive: Boolean(p.is_exclusive),
-    product_group: p.product_group || 'harian',
-    cutting_type: p.product_group === 'harian' ? (p.cutting_type || 'oversized') : null,
-    sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
-    exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
-    category_label: p.category_label || '',
-    placeholder_title: p.placeholder_title || p.name,
-    placeholder_bg: p.placeholder_bg || '#E5E7EB',
-    placeholder_text_color: p.placeholder_text_color || '#374151',
-    extra_colors_count: Number(p.extra_colors_count) || 0,
-    created_at: p.created_at || new Date().toISOString(),
-  });
+  const toDatabasePayload = (p) => {
+    const isPromoHomepage = Boolean(
+      p.show_on_homepage ?? p.show_in_homepage ?? (p.is_exclusive && p.product_group === 'eksklusif')
+    );
+    const cleanedColors = safeColors(p.colors);
+    // Embed show_on_homepage inside colors JSON metadata so it persists safely across cloud fetches
+    const colorsWithMeta = cleanedColors.map((c, idx) => {
+      if (idx === 0) {
+        return { ...c, show_on_homepage: isPromoHomepage };
+      }
+      return c;
+    });
+
+    return {
+      id: p.id,
+      name: p.name,
+      slug: p.slug || `prod-${Date.now()}`,
+      description: p.description || '',
+      price: Number(p.price) || 0,
+      image_url: p.image_url || '',
+      material: p.material || '',
+      colors: colorsWithMeta,
+      is_new: Boolean(p.is_new),
+      is_exclusive: Boolean(p.is_exclusive),
+      product_group: p.product_group || 'harian',
+      cutting_type: p.product_group === 'harian' ? (p.cutting_type || 'oversized') : null,
+      sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
+      exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
+      category_label: p.category_label || '',
+      placeholder_title: p.placeholder_title || p.name,
+      placeholder_bg: p.placeholder_bg || '#E5E7EB',
+      placeholder_text_color: p.placeholder_text_color || '#374151',
+      extra_colors_count: Number(p.extra_colors_count) || 0,
+      created_at: p.created_at || new Date().toISOString(),
+    };
+  };
 
   // Add new product
   const addProduct = async (productData) => {
@@ -218,12 +243,19 @@ export function ProductProvider({ children }) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    const newProduct = toDatabasePayload({
+    const isPromo = Boolean(productData.show_on_homepage ?? productData.show_in_homepage);
+
+    const dbPayload = toDatabasePayload({
       ...productData,
       id: productData.id || `prod-${Date.now()}`,
       slug: slug || `product-${Date.now()}`,
       created_at: new Date().toISOString(),
     });
+
+    const newProduct = {
+      ...dbPayload,
+      show_on_homepage: isPromo,
+    };
 
     // Optimistic local state update
     setProducts((prev) => [newProduct, ...prev]);
@@ -239,7 +271,7 @@ export function ProductProvider({ children }) {
 
     // Direct sync to Supabase Cloud
     try {
-      const { error } = await supabase.from('products').insert([newProduct]);
+      const { error } = await supabase.from('products').insert([dbPayload]);
       if (error) {
         console.error('Supabase insert error:', error.message);
         return { success: false, error: error.message };
@@ -254,13 +286,19 @@ export function ProductProvider({ children }) {
   // Update existing product
   const updateProduct = async (id, updatedFields) => {
     let finalUpdated = null;
+    let dbPayload = null;
+
     setProducts((prev) =>
       prev.map((item) => {
         if (item.id === id) {
-          finalUpdated = toDatabasePayload({
-            ...item,
-            ...updatedFields,
-          });
+          const merged = { ...item, ...updatedFields };
+          dbPayload = toDatabasePayload(merged);
+          finalUpdated = {
+            ...dbPayload,
+            show_on_homepage: Boolean(
+              updatedFields.show_on_homepage ?? item.show_on_homepage
+            ),
+          };
           return finalUpdated;
         }
         return item;
@@ -269,8 +307,8 @@ export function ProductProvider({ children }) {
 
     // Direct sync to Supabase Cloud
     try {
-      if (finalUpdated) {
-        const { error } = await supabase.from('products').update(finalUpdated).eq('id', id);
+      if (dbPayload) {
+        const { error } = await supabase.from('products').update(dbPayload).eq('id', id);
         if (error) {
           console.error('Supabase update warning:', error.message);
           return { success: false, error: error.message };

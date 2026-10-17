@@ -21,7 +21,7 @@ function AppLayout() {
           <Route path="/" element={<HomePage />} />
           <Route path="/koleksi-kaos" element={<KoleksiKaosPage />} />
           <Route path="/bikin-kaos-custom" element={<BikinKaosCustomPage />} />
-          <Route path="/desain-eksklusif" element={<DesainEksklusifPage />} />
+          <Route path="/desain-eksklusif" element={<Navigate to="/koleksi-kaos?exclusive=true" replace />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

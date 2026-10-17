@@ -8,12 +8,6 @@ export default function Navbar() {
 
   const navLinks = [
     {
-      to: '/desain-eksklusif',
-      label: 'Desain Eksklusif',
-      icon: Crown,
-      iconColor: 'text-amber-500',
-    },
-    {
       to: '/koleksi-kaos',
       label: 'Koleksi Kaos',
       icon: Shirt,
@@ -21,9 +15,9 @@ export default function Navbar() {
     },
     {
       to: '/bikin-kaos-custom',
-      label: 'Bikin Kaos Custom',
+      label: 'Bikin Custom',
       icon: Sparkles,
-      iconColor: 'text-amber-500',
+      iconColor: 'text-neutral-700',
     },
   ];
 

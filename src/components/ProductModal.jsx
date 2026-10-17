@@ -118,23 +118,20 @@ export default function ProductModal({ product, onClose }) {
                 )}
               </div>
 
-              {/* Available Colors */}
+              {/* Warna Varian Produk */}
               {safeColors(product.colors).length > 0 && (
                 <div className="pt-2">
-                  <span className="text-xs text-neutral-400 block mb-1.5">Pilihan Warna:</span>
+                  <span className="text-xs text-neutral-400 block mb-1.5">Warna Varian:</span>
                   <div className="flex items-center gap-2">
-                    {safeColors(product.colors).map((hex, idx) => (
-                      <span
-                        key={idx}
-                        className="w-5 h-5 rounded-full border border-neutral-300 shadow-2xs inline-block"
-                        style={{ backgroundColor: hex }}
-                      />
+                    {safeColors(product.colors).map((c, idx) => (
+                      <div key={idx} className="flex items-center gap-2 px-2.5 py-1 bg-neutral-50 rounded-lg border border-neutral-200">
+                        <span
+                          className="w-4 h-4 rounded-full border border-neutral-300 shadow-2xs inline-block shrink-0"
+                          style={{ backgroundColor: c.hex }}
+                        />
+                        <span className="text-xs font-bold text-neutral-800">{c.name}</span>
+                      </div>
                     ))}
-                    {Number(product.extra_colors_count) > 0 && (
-                      <span className="text-xs text-neutral-500 font-medium">
-                        +{product.extra_colors_count} varian lainnya
-                      </span>
-                    )}
                   </div>
                 </div>
               )}

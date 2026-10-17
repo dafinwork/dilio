@@ -24,6 +24,9 @@ create table if not exists public.products (
   created_at timestamptz default now()
 );
 
+-- Migration for show_in_homepage (PRD 6.1)
+alter table public.products add column if not exists show_in_homepage boolean default false;
+
 -- ==========================================
 -- 2. Enable Row Level Security (RLS)
 -- ==========================================

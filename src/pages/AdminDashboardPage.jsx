@@ -455,8 +455,13 @@ export default function AdminDashboardPage() {
                             </div>
                           )}
                           <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span className="font-extrabold text-neutral-900">{item.name}</span>
+                              {item.show_on_homepage && (
+                                <span className="px-1.5 py-0.5 bg-sky-100 text-sky-800 border border-sky-200 text-[9px] font-extrabold rounded-xs flex items-center gap-0.5">
+                                  ⭐ Homepage
+                                </span>
+                              )}
                               {item.is_new && (
                                 <span className="px-1.5 py-0.2 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs">
                                   NEW
@@ -500,23 +505,22 @@ export default function AdminDashboardPage() {
                         {formatRupiah(item.price)}
                       </td>
 
-                      {/* Color Dots */}
+                      {/* Color & Hex (PRD 6.2) */}
                       <td className="py-3.5 px-4">
                         {safeColors(item.colors).length > 0 ? (
-                          <div className="flex items-center gap-1">
-                            {safeColors(item.colors).slice(0, 3).map((hex, idx) => (
-                              <span
-                                key={idx}
-                                className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
-                                style={{ backgroundColor: hex }}
-                                title={hex}
-                              />
-                            ))}
-                            {Number(item.extra_colors_count) > 0 && (
-                              <span className="text-[10px] font-semibold text-neutral-400 pl-0.5">
-                                +{item.extra_colors_count}
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-4 h-4 rounded-full border border-neutral-300 shadow-2xs inline-block shrink-0"
+                              style={{ backgroundColor: safeColors(item.colors)[0].hex }}
+                            />
+                            <div>
+                              <span className="font-semibold text-neutral-800 text-xs block leading-tight">
+                                {safeColors(item.colors)[0].name}
                               </span>
-                            )}
+                              <span className="font-mono text-[10px] text-neutral-400 uppercase">
+                                {safeColors(item.colors)[0].hex}
+                              </span>
+                            </div>
                           </div>
                         ) : (
                           <span className="text-neutral-400 text-xs">-</span>

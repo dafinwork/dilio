@@ -7,11 +7,28 @@
     "price": 65000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#000000", "#FFFFFF", "#15803D"],
+    "colors": [
+      {
+        "hex": "#000000",
+        "name": "Hitam"
+      },
+      {
+        "hex": "#FFFFFF",
+        "name": "Putih"
+      },
+      {
+        "hex": "#15803D",
+        "name": "Hijau Botol"
+      },
+      {
+        "hex": "#FACC15",
+        "name": "Kuning Kenari"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "oversized",
+    "cutting_type": "oversize",
     "sablon_type": null,
     "exclusive_category": null,
     "category_label": "COTTON COMBED 24S",
@@ -19,7 +36,15 @@
     "placeholder_title": "Oversized\nFit",
     "placeholder_bg": "#E5E7EB",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 12
+    "extra_colors_count": 12,
+    "show_on_homepage": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "harian-regular-1",
@@ -29,11 +54,24 @@
     "price": 45000,
     "image_url": "",
     "material": "COTTON COMBED 30S",
-    "colors": ["#2563EB", "#DC2626", "#FACC15"],
+    "colors": [
+      {
+        "hex": "#2563EB",
+        "name": "Biru Royal"
+      },
+      {
+        "hex": "#DC2626",
+        "name": "Merah Cabe"
+      },
+      {
+        "hex": "#FACC15",
+        "name": "Kuning Kenari"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "reguler",
+    "cutting_type": "regular",
     "sablon_type": null,
     "exclusive_category": null,
     "category_label": "COTTON COMBED 30S",
@@ -41,7 +79,15 @@
     "placeholder_title": "Regular\nFit",
     "placeholder_bg": "#F3F4F6",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 24
+    "extra_colors_count": 24,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "harian-boxy-1",
@@ -51,7 +97,20 @@
     "price": 85000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#1E293B", "#94A3B8"],
+    "colors": [
+      {
+        "hex": "#1E293B",
+        "name": "Navy / Dark Slate"
+      },
+      {
+        "hex": "#94A3B8",
+        "name": "Abu Muda"
+      },
+      {
+        "hex": "#FACC15",
+        "name": "Kuning Kenari"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -63,7 +122,15 @@
     "placeholder_title": "Boxy\nCrop",
     "placeholder_bg": "#D5DFEA",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 5
+    "extra_colors_count": 5,
+    "show_on_homepage": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "harian-longsleeve-1",
@@ -73,7 +140,16 @@
     "price": 60000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#000000", "#1E40AF"],
+    "colors": [
+      {
+        "hex": "#000000",
+        "name": "Hitam"
+      },
+      {
+        "hex": "#1E40AF",
+        "name": "Biru Donker"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -85,7 +161,15 @@
     "placeholder_title": "Long\nSleeve",
     "placeholder_bg": "#CDD9E5",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 8
+    "extra_colors_count": 8,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "harian-oversized-2",
@@ -95,11 +179,20 @@
     "price": 65000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#111827", "#10B981"],
+    "colors": [
+      {
+        "hex": "#111827",
+        "name": "Jet Black"
+      },
+      {
+        "hex": "#10B981",
+        "name": "Hijau Emerald"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "oversized",
+    "cutting_type": "oversize",
     "sablon_type": null,
     "exclusive_category": null,
     "category_label": "COTTON COMBED 24S",
@@ -107,21 +200,42 @@
     "placeholder_title": "Oversized\nFit",
     "placeholder_bg": "#E5E7EB",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 12
+    "extra_colors_count": 12,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
-    "id": "harian-regular-1",
+    "id": "harian-regular-2",
     "name": "Regular Fit",
     "slug": "regular-fit-combed-30s",
     "description": "Potongan standar yang sangat nyaman untuk dipakai harian atau event.",
     "price": 45000,
     "image_url": "",
     "material": "COTTON COMBED 30S",
-    "colors": ["#2563EB", "#DC2626", "#F59E0B"],
+    "colors": [
+      {
+        "hex": "#2563EB",
+        "name": "Biru Royal"
+      },
+      {
+        "hex": "#DC2626",
+        "name": "Merah Cabe"
+      },
+      {
+        "hex": "#F59E0B",
+        "name": "Kuning Mustard"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "reguler",
+    "cutting_type": "regular",
     "sablon_type": null,
     "exclusive_category": null,
     "category_label": "COTTON COMBED 30S",
@@ -129,7 +243,15 @@
     "placeholder_title": "Regular\nFit",
     "placeholder_bg": "#F3F4F6",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 24
+    "extra_colors_count": 24,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "harian-boxy-2",
@@ -139,7 +261,16 @@
     "price": 85000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#1E293B", "#64748B"],
+    "colors": [
+      {
+        "hex": "#1E293B",
+        "name": "Navy / Dark Slate"
+      },
+      {
+        "hex": "#64748B",
+        "name": "Abu Semen"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -151,7 +282,15 @@
     "placeholder_title": "Boxy\nCrop",
     "placeholder_bg": "#D5DFEA",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 5
+    "extra_colors_count": 5,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "harian-longsleeve-2",
@@ -161,7 +300,16 @@
     "price": 60000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#020617", "#2563EB"],
+    "colors": [
+      {
+        "hex": "#020617",
+        "name": "Pitch Black"
+      },
+      {
+        "hex": "#2563EB",
+        "name": "Biru Royal"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
@@ -173,7 +321,15 @@
     "placeholder_title": "Long\nSleeve",
     "placeholder_bg": "#CDD9E5",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 8
+    "extra_colors_count": 8,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "custom-chaos-theory-1",
@@ -183,11 +339,20 @@
     "price": 195000,
     "image_url": "",
     "material": "HEAVYWEIGHT COTTON 16S",
-    "colors": ["#0F172A", "#1E293B"],
+    "colors": [
+      {
+        "hex": "#0F172A",
+        "name": "Midnight Navy"
+      },
+      {
+        "hex": "#1E293B",
+        "name": "Navy / Dark Slate"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
-    "cutting_type": null,
+    "cutting_type": "oversize",
     "sablon_type": "dtf",
     "exclusive_category": null,
     "category_label": "GRAPHIC TEES",
@@ -195,7 +360,15 @@
     "placeholder_title": "DILIO\nAbstract\nArt",
     "placeholder_bg": "#0B132B",
     "placeholder_text_color": "#F8FAFC",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "custom-washed-boxy-1",
@@ -205,11 +378,20 @@
     "price": 175000,
     "image_url": "",
     "material": "WASHED COTTON 20S",
-    "colors": ["#3B82F6", "#1D4ED8"],
+    "colors": [
+      {
+        "hex": "#3B82F6",
+        "name": "Biru Cerah"
+      },
+      {
+        "hex": "#1D4ED8",
+        "name": "Biru Benhur"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
-    "cutting_type": null,
+    "cutting_type": "boxy",
     "sablon_type": "plastisol",
     "exclusive_category": null,
     "category_label": "STREETWEAR",
@@ -217,7 +399,15 @@
     "placeholder_title": "DILIO\nVintage\nWash",
     "placeholder_bg": "#7F95A8",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "custom-chaos-theory-2",
@@ -227,11 +417,20 @@
     "price": 195000,
     "image_url": "",
     "material": "HEAVYWEIGHT COTTON 16S",
-    "colors": ["#0F172A", "#64748B"],
+    "colors": [
+      {
+        "hex": "#0F172A",
+        "name": "Midnight Navy"
+      },
+      {
+        "hex": "#64748B",
+        "name": "Abu Semen"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
-    "cutting_type": null,
+    "cutting_type": "regular",
     "sablon_type": "dtf",
     "exclusive_category": null,
     "category_label": "GRAPHIC TEES",
@@ -239,7 +438,15 @@
     "placeholder_title": "DILIO\nAbstract\nArt",
     "placeholder_bg": "#0B132B",
     "placeholder_text_color": "#F8FAFC",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "custom-washed-boxy-2",
@@ -249,11 +456,20 @@
     "price": 175000,
     "image_url": "",
     "material": "WASHED COTTON 20S",
-    "colors": ["#3B82F6", "#1E40AF"],
+    "colors": [
+      {
+        "hex": "#3B82F6",
+        "name": "Biru Cerah"
+      },
+      {
+        "hex": "#1E40AF",
+        "name": "Biru Donker"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
-    "cutting_type": null,
+    "cutting_type": "boxy",
     "sablon_type": "plastisol",
     "exclusive_category": null,
     "category_label": "STREETWEAR",
@@ -261,7 +477,15 @@
     "placeholder_title": "DILIO\nVintage\nWash",
     "placeholder_bg": "#7F95A8",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "custom-cyber-dtf-1",
@@ -271,11 +495,16 @@
     "price": 185000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#000000"],
+    "colors": [
+      {
+        "hex": "#000000",
+        "name": "Hitam"
+      }
+    ],
     "is_new": true,
     "is_exclusive": false,
     "product_group": "custom",
-    "cutting_type": null,
+    "cutting_type": "fitted",
     "sablon_type": "dtf",
     "exclusive_category": null,
     "category_label": "GRAPHIC TEES",
@@ -283,7 +512,15 @@
     "placeholder_title": "DILIO\nCyber\nGlitch",
     "placeholder_bg": "#0E1A2F",
     "placeholder_text_color": "#38BDF8",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "custom-plastisol-heavy-1",
@@ -293,11 +530,16 @@
     "price": 190000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#18181B"],
+    "colors": [
+      {
+        "hex": "#18181B",
+        "name": "Charcoal"
+      }
+    ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "custom",
-    "cutting_type": null,
+    "cutting_type": "regular",
     "sablon_type": "plastisol",
     "exclusive_category": null,
     "category_label": "STREETWEAR",
@@ -305,7 +547,15 @@
     "placeholder_title": "DILIO\nHeavy\nPlastisol",
     "placeholder_bg": "#6B7C8E",
     "placeholder_text_color": "#FFFFFF",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-dilio-cyber-1",
@@ -315,11 +565,16 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#0F172A"],
+    "colors": [
+      {
+        "hex": "#0F172A",
+        "name": "Midnight Navy"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "oversize",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -327,7 +582,15 @@
     "placeholder_title": "DILIO\nCyberpunk\nGraphic",
     "placeholder_bg": "#DCE4EC",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-dilio-cyber-2",
@@ -337,11 +600,16 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#0F172A"],
+    "colors": [
+      {
+        "hex": "#0F172A",
+        "name": "Midnight Navy"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "oversize",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -349,7 +617,15 @@
     "placeholder_title": "DILIO\nCyberpunk\nGraphic",
     "placeholder_bg": "#DCE4EC",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-thinkingout-mindset",
@@ -359,11 +635,16 @@
     "price": 195000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#1E293B"],
+    "colors": [
+      {
+        "hex": "#1E293B",
+        "name": "Navy / Dark Slate"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "boxy",
     "sablon_type": "plastisol",
     "exclusive_category": "thinking-out",
     "category_label": "PARTNER BRAND",
@@ -371,7 +652,15 @@
     "placeholder_title": "THINKING\nOUT\nMindset",
     "placeholder_bg": "#D8E2EC",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-thinkingout-overthinking",
@@ -381,11 +670,16 @@
     "price": 190000,
     "image_url": "",
     "material": "COTTON COMBED 24S",
-    "colors": ["#0F172A"],
+    "colors": [
+      {
+        "hex": "#0F172A",
+        "name": "Midnight Navy"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "regular",
     "sablon_type": "plastisol",
     "exclusive_category": "thinking-out",
     "category_label": "PARTNER BRAND",
@@ -393,7 +687,15 @@
     "placeholder_title": "THINKING\nOUT\nGraphic",
     "placeholder_bg": "#D5E0EB",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-collab-onepiece-gear5",
@@ -403,11 +705,20 @@
     "price": 225000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#FFFFFF", "#0F172A"],
+    "colors": [
+      {
+        "hex": "#FFFFFF",
+        "name": "Putih"
+      },
+      {
+        "hex": "#0F172A",
+        "name": "Midnight Navy"
+      }
+    ],
     "is_new": true,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "oversize",
     "sablon_type": "dtf",
     "exclusive_category": "dilio-x-one-piece",
     "category_label": "LIMITED COLLAB",
@@ -415,7 +726,15 @@
     "placeholder_title": "DILIO x OP\nGear 5\nEdition",
     "placeholder_bg": "#E2E8F0",
     "placeholder_text_color": "#0F172A",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": true,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-collab-onepiece-strawhat",
@@ -425,11 +744,16 @@
     "price": 210000,
     "image_url": "",
     "material": "WASHED COTTON 20S",
-    "colors": ["#334155"],
+    "colors": [
+      {
+        "hex": "#334155",
+        "name": "Warna Pilihan"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "boxy",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio-x-one-piece",
     "category_label": "LIMITED COLLAB",
@@ -437,7 +761,15 @@
     "placeholder_title": "DILIO x OP\nStraw Hat\nVintage",
     "placeholder_bg": "#D6DFEA",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-dilio-cyber-3",
@@ -447,11 +779,16 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#0B132B"],
+    "colors": [
+      {
+        "hex": "#0B132B",
+        "name": "Deep Midnight"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "fitted",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -459,7 +796,15 @@
     "placeholder_title": "DILIO\nCyberpunk\nGraphic",
     "placeholder_bg": "#DCE4EC",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   },
   {
     "id": "exclusive-dilio-cyber-4",
@@ -469,11 +814,16 @@
     "price": 185000,
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
-    "colors": ["#020617"],
+    "colors": [
+      {
+        "hex": "#020617",
+        "name": "Pitch Black"
+      }
+    ],
     "is_new": false,
     "is_exclusive": true,
     "product_group": "eksklusif",
-    "cutting_type": null,
+    "cutting_type": "long-sleeve",
     "sablon_type": "plastisol",
     "exclusive_category": "dilio",
     "category_label": "STREETWEAR",
@@ -481,6 +831,14 @@
     "placeholder_title": "DILIO\nCyberpunk\nGraphic",
     "placeholder_bg": "#DCE4EC",
     "placeholder_text_color": "#1E293B",
-    "extra_colors_count": 0
+    "extra_colors_count": 0,
+    "show_on_homepage": false,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ]
   }
 ]
