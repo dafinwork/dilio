@@ -1,8 +1,7 @@
-import { formatRupiah, safeColors } from '../utils/helpers';
+import { formatRupiah } from '../utils/helpers';
 
 export default function ProductCard({ product, onSelect }) {
   const isMinimalist = product.category_label === 'MINIMALIST';
-  const colorList = safeColors(product.colors);
 
   return (
     <div
@@ -75,45 +74,11 @@ export default function ProductCard({ product, onSelect }) {
           </p>
         </div>
 
-        {/* Price & Color Swatches */}
-        <div className="mt-4 pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
+        {/* Price */}
+        <div className="mt-4 pt-2 flex items-center justify-between border-t border-neutral-100">
           <span className="text-base sm:text-lg font-extrabold text-neutral-900 tracking-tight">
             {formatRupiah(product.price)}
           </span>
-
-          {/* Color Swatch: 1 warna per card */}
-          {colorList.length > 0 && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span
-                className="w-4 h-4 rounded-full border border-black/15 shadow-2xs inline-block"
-                style={{ backgroundColor: colorList[0] }}
-                title={`Warna: ${product.color_name || colorList[0]}`}
-              />
-              {product.color_name ? (
-                <span className="text-[11px] font-semibold text-neutral-500 capitalize">
-                  {product.color_name}
-                </span>
-              ) : (
-                !product.is_variant &&
-                colorList.length > 1 && (
-                  <>
-                    {colorList.slice(1, 3).map((hex, idx) => (
-                      <span
-                        key={idx}
-                        className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
-                        style={{ backgroundColor: hex }}
-                      />
-                    ))}
-                    {Number(product.extra_colors_count) > 0 && (
-                      <span className="text-[11px] font-semibold text-neutral-400 pl-0.5">
-                        +{product.extra_colors_count}
-                      </span>
-                    )}
-                  </>
-                )
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
