@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Check, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { safeColors } from '../../utils/helpers';
+import ColorWheelModal from './ColorWheelModal';
 
 const PRESET_BG_COLORS = [
   { name: 'Soft Lilac Grey', hex: '#E5E7EB', text: '#374151' },
@@ -49,6 +50,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   });
 
   const [customColor, setCustomColor] = useState('#000000');
+  const [colorWheelOpen, setColorWheelOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -711,21 +713,15 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   title={`Tambah ${hex}`}
                 />
               ))}
-              <div className="flex items-center gap-1 ml-2">
-                <input
-                  type="color"
-                  value={customColor}
-                  onChange={(e) => setCustomColor(e.target.value)}
-                  className="w-6 h-6 rounded cursor-pointer border border-neutral-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => addColorDot(customColor)}
-                  className="px-2 py-0.5 bg-neutral-200 hover:bg-neutral-300 text-[11px] font-bold rounded"
-                >
-                  + Custom
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setColorWheelOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-lg shadow-2xs hover:shadow transition-all cursor-pointer ml-1.5"
+                title="Buka Roda Warna (Color Wheel) Custom"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-rose-500 via-amber-400 to-indigo-500 inline-block" />
+                <span>+ Custom</span>
+              </button>
             </div>
           </div>
 
@@ -749,6 +745,17 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
           </div>
         </form>
       </div>
+
+      {/* Color Wheel Custom Picker Modal */}
+      <ColorWheelModal
+        isOpen={colorWheelOpen}
+        initialColor={customColor || '#5FADA6'}
+        onClose={() => setColorWheelOpen(false)}
+        onSelectColor={(hex) => {
+          setCustomColor(hex);
+          addColorDot(hex);
+        }}
+      />
     </div>
   );
 }
