@@ -20,7 +20,7 @@ export default function ProductCard({ product, onSelect }) {
         <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5">
           {(product.is_exclusive || product.product_group === 'eksklusif') && (
             <span className="px-2.5 py-1 bg-black text-amber-300 border border-amber-300/30 text-[10px] font-black tracking-wider rounded-sm shadow-xs uppercase">
-              Limited Edition
+              Exclusive
             </span>
           )}
           {product.is_new && (

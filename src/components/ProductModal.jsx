@@ -39,7 +39,7 @@ export default function ProductModal({ product, onClose }) {
             <div className="absolute top-4 left-4 flex flex-col gap-1.5">
               {(product.is_exclusive || product.product_group === 'eksklusif') && (
                 <span className="px-2.5 py-1 bg-black text-amber-300 border border-amber-300/30 text-[10px] font-black tracking-wider rounded-sm uppercase">
-                  Limited Edition
+                  Exclusive
                 </span>
               )}
               {product.is_new && (

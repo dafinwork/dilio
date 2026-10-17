@@ -480,7 +480,7 @@ export default function AdminDashboardPage() {
                               )}
                               {(item.is_exclusive || item.product_group === 'eksklusif') && (
                                 <span className="px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
-                                  LIMITED EDITION
+                                  EXCLUSIVE
                                 </span>
                               )}
                             </div>

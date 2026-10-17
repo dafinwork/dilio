@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Check, Loader2 } from 'lucide-react';
+import { X, Check, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { safeColors } from '../../utils/helpers';
 
 const PRESET_BG_COLORS = [
   { name: 'Soft Lilac Grey', hex: '#E5E7EB', text: '#374151' },
@@ -227,9 +228,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       return;
     }
 
-    const { visual_mode, ...cleanFormData } = formData;
+    const { visual_mode: _vm, ...cleanFormData } = formData;
     const payload = {
       ...cleanFormData,
+      price: Number(cleanFormData.price) || 0,
+      extra_colors_count: Number(cleanFormData.extra_colors_count) || 0,
+      is_exclusive: formData.product_group === 'eksklusif' || Boolean(formData.is_exclusive),
       cutting_type:
         formData.product_group === 'harian' || formData.product_group === 'eksklusif'
           ? (formData.cutting_type || 'oversized')
@@ -237,6 +241,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       sablon_type: formData.product_group === 'custom' ? formData.sablon_type : null,
       exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
       placeholder_title: formData.placeholder_title || formData.name,
+      colors: safeColors(cleanFormData.colors),
     };
 
     onSave(payload);
@@ -439,7 +444,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   onChange={handleChange}
                   className="w-4 h-4 rounded text-black focus:ring-black"
                 />
-                <span>Badge "LIMITED EDITION" (Banner Exclusive)</span>
+                <span>Badge "EXCLUSIVE" (Banner Exclusive)</span>
               </label>
             </div>
 
@@ -502,7 +507,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               >
                 {(formData.is_exclusive || formData.product_group === 'eksklusif') && (
                   <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
-                    LIMITED EDITION
+                    EXCLUSIVE
                   </span>
                 )}
                 {formData.is_new && (

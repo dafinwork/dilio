@@ -7,6 +7,7 @@ import KoleksiKaosPage from './pages/KoleksiKaosPage';
 import BikinKaosCustomPage from './pages/BikinKaosCustomPage';
 import DesainEksklusifPage from './pages/DesainEksklusifPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { ProductProvider } from './context/ProductContext';
 
 function AppLayout() {
@@ -33,11 +34,13 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <ProductProvider>
-      <Router>
-        <ScrollToTop />
-        <AppLayout />
-      </Router>
-    </ProductProvider>
+    <ErrorBoundary>
+      <ProductProvider>
+        <Router>
+          <ScrollToTop />
+          <AppLayout />
+        </Router>
+      </ProductProvider>
+    </ErrorBoundary>
   );
 }
