@@ -17,6 +17,7 @@ import {
   CheckCircle,
   KeyRound,
   ShieldCheck,
+  Camera,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import { formatRupiah, safeColors } from '../utils/helpers';
@@ -270,6 +271,16 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex items-center gap-2.5">
+              <Link
+                to="/studio"
+                target="_blank"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-90 transition-opacity"
+                title="Buka Studio Mockup Foto Produk (AI Photorealistic)"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Studio Mockup</span>
+              </Link>
+
               <button
                 onClick={() => {
                   setPasswordModalOpen(true);

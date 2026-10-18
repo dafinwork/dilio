@@ -7,16 +7,19 @@ import KoleksiKaosPage from './pages/KoleksiKaosPage';
 import BikinKaosCustomPage from './pages/BikinKaosCustomPage';
 import DesainEksklusifPage from './pages/DesainEksklusifPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import StudioMockupPage from './pages/StudioMockupPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProductProvider } from './context/ProductContext';
 
 function AppLayout() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const isStudio = location.pathname.startsWith('/studio') || location.pathname.startsWith('/mockup');
+  const isCleanLayout = isAdmin || isStudio;
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {!isAdmin && <Navbar />}
+      {!isCleanLayout && <Navbar />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -24,10 +27,13 @@ function AppLayout() {
           <Route path="/bikin-kaos-custom" element={<BikinKaosCustomPage />} />
           <Route path="/desain-eksklusif" element={<DesainEksklusifPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/studio" element={<StudioMockupPage />} />
+          <Route path="/mockup" element={<StudioMockupPage />} />
+          <Route path="/mockup-studio" element={<StudioMockupPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {!isAdmin && <Footer />}
+      {!isCleanLayout && <Footer />}
     </div>
   );
 }

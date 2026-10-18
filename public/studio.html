@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Mockup AI - Generator Foto Produk Kaos Fotorealistis</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            studio: {
+              bg: '#101216',
+              sidebar: '#161920',
+              card: '#1D212B',
+              border: 'rgba(255, 255, 255, 0.1)',
+              hover: '#262B37'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #101216;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Custom Studio Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #161920; }
+    ::-webkit-scrollbar-thumb { background: #2A303F; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3B4357; }
+
+    /* Studio Grid Blueprint */
+    .studio-grid {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 33.333% 33.333%;
+      background-position: center center;
+    }
+
+    /* Color Wheel */
+    .wheel-surface {
+      background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .transition-smooth {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen">
+
+  <!-- LEFT CONTROL SIDEBAR -->
+  <aside class="w-full lg:w-[380px] bg-studio-sidebar border-r border-studio-border flex flex-col flex-shrink-0 z-30 h-auto lg:h-screen lg:overflow-y-auto">
+    <!-- Header -->
+    <div class="p-5 border-b border-studio-border flex items-center justify-between bg-[#12141A] sticky top-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-camera text-white text-base"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold tracking-wide">Studio Mockup AI</h1>
+            <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              Foto Asli
+            </span>
+          </div>
+          <p class="text-[11px] text-neutral-400">Photorealistic Studio Generator</p>
+        </div>
+      </div>
+      <a href="./#/" class="text-neutral-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors" title="Kembali ke Kaos Dilio">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+    </div>
+
+    <!-- Controls Body -->
+    <div class="p-5 space-y-6 flex-1">
+      
+      <!-- 1. COLOR WHEEL & HEX -->
+      <div class="space-y-3.5">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-palette text-amber-400 text-xs"></i>
+            Warna Kaos (Color Wheel)
+          </label>
+          <span id="hexLabel" class="text-xs font-mono font-bold text-neutral-400">#121212</span>
+        </div>
+
+        <!-- Color Wheel -->
+        <div class="flex items-center justify-center py-2">
+          <div class="wheel-surface w-32 h-32 flex items-center justify-center p-1.5 shadow-xl hover:scale-105 transition-transform cursor-pointer">
+            <div class="w-20 h-20 rounded-full bg-studio-sidebar flex items-center justify-center shadow-inner pointer-events-none z-10 border border-white/10">
+              <div id="colorDisc" class="w-12 h-12 rounded-xl shadow-md border-2 border-white/30 transition-smooth" style="background-color: #121212;"></div>
+            </div>
+            <input type="color" id="nativeColorPicker" value="#121212" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">
+          </div>
+        </div>
+
+        <!-- Hex Input -->
+        <div class="flex items-center gap-2 bg-[#101216] border border-studio-border rounded-xl px-3 py-2 focus-within:border-white/40 transition-colors">
+          <input type="color" id="nativeInputBtn" value="#121212" class="w-6 h-6 rounded border-none bg-transparent cursor-pointer p-0">
+          <input type="text" id="hexInput" value="#121212" maxlength="7" class="bg-transparent border-none outline-none text-white text-xs font-mono font-bold w-full uppercase">
+          <button type="button" id="copyHexBtn" class="text-[11px] text-neutral-400 hover:text-white px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors">
+            Copy
+          </button>
+        </div>
+
+        <!-- Preset Palette -->
+        <div>
+          <p class="text-[11px] font-semibold text-neutral-400 mb-2">Preset Warna Distro Terlaris:</p>
+          <div class="grid grid-cols-7 gap-1.5" id="presetPalette">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. MODEL CUTTING -->
+      <div class="space-y-3 pt-3 border-t border-studio-border">
+        <label class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-shirt text-blue-400 text-xs"></i>
+          Model Potongan (Cutting Model)
+        </label>
+        <div class="grid grid-cols-2 gap-2" id="modelButtons">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- 3. ASPECT RATIO & BACKGROUND -->
+      <div class="space-y-3 pt-3 border-t border-studio-border">
+        <label class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-expand text-emerald-400 text-xs"></i>
+          Rasio Foto & Latar Belakang
+        </label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" data-ratio="1:1" class="ratio-btn py-2 px-2 rounded-xl border bg-neutral-800 border-white/50 text-white font-bold text-center">
+            <div class="text-xs">1:1 (Square)</div>
+            <div class="text-[10px] text-neutral-400 font-mono">1080px</div>
+          </button>
+          <button type="button" data-ratio="9:16" class="ratio-btn py-2 px-2 rounded-xl border bg-[#14161C] border-studio-border text-neutral-400 hover:border-white/20 text-center">
+            <div class="text-xs">9:16 (Story)</div>
+            <div class="text-[10px] text-neutral-400 font-mono">1920px</div>
+          </button>
+          <button type="button" data-ratio="4:5" class="ratio-btn py-2 px-2 rounded-xl border bg-[#14161C] border-studio-border text-neutral-400 hover:border-white/20 text-center">
+            <div class="text-xs">4:5 (Feed)</div>
+            <div class="text-[10px] text-neutral-400 font-mono">1350px</div>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between pt-1 text-xs">
+          <span class="text-neutral-400 font-medium">Latar Studio:</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" data-bg="#FFFFFF" class="bg-btn w-6 h-6 rounded-md border-2 border-amber-400 bg-white" title="Putih Studio"></button>
+            <button type="button" data-bg="#F4F4F6" class="bg-btn w-6 h-6 rounded-md border border-white/20 bg-[#F4F4F6]" title="Abu-abu Terang"></button>
+            <button type="button" data-bg="#18181B" class="bg-btn w-6 h-6 rounded-md border border-white/20 bg-[#18181B]" title="Dark Studio"></button>
+            <button type="button" data-bg="transparent" class="bg-btn w-6 h-6 rounded-md border border-white/20 bg-neutral-700" title="Transparan PNG"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. TEMPEL SABLON / LOGO -->
+      <div class="space-y-3 pt-3 border-t border-studio-border">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-purple-400 text-xs"></i>
+            Tempel Sablon / Logo
+          </label>
+          <button type="button" id="removeGraphicBtn" class="text-[11px] text-red-400 hover:text-red-300 hidden">
+            <i class="fa-solid fa-trash-can mr-1"></i> Hapus
+          </button>
+        </div>
+
+        <div id="uploadBox">
+          <label class="w-full py-2.5 px-3 rounded-xl border border-dashed border-white/20 hover:border-white/50 text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-smooth cursor-pointer">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            <span>Upload Logo / Desain Sablon (PNG)</span>
+            <input type="file" id="graphicFileInput" accept="image/*" class="hidden">
+          </label>
+        </div>
+
+        <div id="graphicControls" class="space-y-2.5 bg-[#12141A] p-3 rounded-xl border border-studio-border hidden">
+          <div class="flex items-center justify-between text-[11px] text-neutral-400">
+            <span>Ukuran Sablon:</span>
+            <span id="scaleLabel" class="font-mono text-white">100%</span>
+          </div>
+          <input type="range" id="scaleInput" min="0.4" max="1.6" step="0.05" value="1" class="w-full accent-amber-500 cursor-pointer">
+
+          <div class="flex items-center justify-between text-[11px] text-neutral-400">
+            <span>Posisi Vertikal:</span>
+            <span id="posLabel" class="font-mono text-white">0px</span>
+          </div>
+          <input type="range" id="posInput" min="-60" max="100" step="5" value="0" class="w-full accent-amber-500 cursor-pointer">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="p-5 border-t border-studio-border bg-[#12141A] space-y-2.5 sticky bottom-0 z-20">
+      <button type="button" id="downloadBtn" class="w-full py-3.5 px-4 rounded-xl font-extrabold text-sm bg-white hover:bg-neutral-200 text-neutral-900 shadow-xl flex items-center justify-center gap-2 transition-smooth cursor-pointer active:scale-98">
+        <i class="fa-solid fa-download"></i>
+        <span>UNDUH FOTO (1080px JPG)</span>
+      </button>
+      <button type="button" id="copyBtn" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-white/10 hover:bg-white/15 text-white border border-white/15 flex items-center justify-center gap-2 transition-smooth cursor-pointer">
+        <i class="fa-regular fa-copy"></i>
+        <span id="copyBtnLabel">Salin Gambar (Ctrl+V ke WA)</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN PREVIEW WORKSPACE -->
+  <main class="flex-1 flex flex-col bg-[#0C0E12] relative overflow-hidden">
+    <!-- Top Bar -->
+    <div class="h-14 border-b border-studio-border flex items-center justify-between px-6 bg-studio-sidebar/80 backdrop-blur-md z-20">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-xs sm:text-sm font-semibold text-neutral-300">
+          PREVIEW: FOTO STUDIO ASLI (Bukan Vektor)
+        </span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="button" id="toggleGridBtn" class="text-xs px-2.5 py-1.5 rounded-lg border border-white/30 bg-white/10 text-white flex items-center gap-1.5 transition-colors">
+          <i class="fa-regular fa-eye"></i>
+          <span>Grid Studio</span>
+        </button>
+        <a href="./#/admin" class="text-xs font-bold text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 transition-colors">
+          Buka CMS Dilio
+        </a>
+      </div>
+    </div>
+
+    <!-- Stage Center -->
+    <div class="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12 overflow-auto">
+      <div id="mockupFrame" class="relative rounded-2xl shadow-2xl transition-all duration-300 flex items-center justify-center overflow-hidden border border-studio-border studio-grid" style="background-color: #FFFFFF; width: 100%; max-width: 620px; aspect-ratio: 1 / 1;">
+        
+        <!-- Floor Contact Ambient Shadow -->
+        <div class="absolute w-[80%] h-12 rounded-[50%] blur-2xl pointer-events-none" style="bottom: 8%; background-color: rgba(0, 0, 0, 0.28);"></div>
+
+        <!-- SVG Rendering Engine -->
+        <svg id="shirtSvg" viewBox="0 0 1000 1000" class="w-[88%] h-[88%] drop-shadow-[0_25px_35px_rgba(0,0,0,0.18)] transition-smooth relative z-10">
+          <defs>
+            <!-- Fabric Micro Weave Pattern -->
+            <filter id="cotton-texture" x="0%" y="0%" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" result="noise"></feTurbulence>
+              <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 0.18 0" result="coloredNoise"></feColorMatrix>
+              <feComposite in2="SourceGraphic" in="coloredNoise" operator="in"></feComposite>
+            </filter>
+
+            <!-- Softbox Filter -->
+            <filter id="studio-softbox" x="-15%" y="-15%" width="130%" height="130%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="blurAlpha"></feGaussianBlur>
+              <feOffset dx="0" dy="6"></feOffset>
+              <feComposite operator="in" in2="SourceAlpha"></feComposite>
+              <feComposite operator="arithmetic" k2="-1" k3="1" result="shadowDiff"></feComposite>
+              <feFlood flood-color="#000000" flood-opacity="0.45"></feFlood>
+              <feComposite operator="in" in2="shadowDiff"></feComposite>
+              <feComposite operator="over" in2="SourceGraphic"></feComposite>
+            </filter>
+
+            <!-- Blurs -->
+            <filter id="fold-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="22"></feGaussianBlur></filter>
+            <filter id="fold-hard" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"></feGaussianBlur></filter>
+
+            <!-- Lighting Gradient -->
+            <linearGradient id="studioLightGrad" x1="15%" y1="0%" x2="85%" y2="100%">
+              <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"></stop>
+              <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.04"></stop>
+              <stop offset="100%" stop-color="#000000" stop-opacity="0.32"></stop>
+            </linearGradient>
+
+            <pattern id="collar-rib" width="8" height="8" patternUnits="userSpaceOnUse">
+              <path d="M 0 0 L 8 0 M 0 4 L 8 4" stroke="rgba(255,255,255,0.08)" stroke-width="1"></path>
+            </pattern>
+          </defs>
+
+          <!-- Group Shirt -->
+          <g filter="url(#studio-softbox)">
+            <path id="shirtBody" fill="#121212" class="transition-colors duration-200"></path>
+            <path id="shirtTexture" fill="#ffffff" filter="url(#cotton-texture)" opacity="0.25" style="mix-blend-mode: multiply;"></path>
+            <path id="shirtLight" fill="url(#studioLightGrad)" style="mix-blend-mode: overlay;"></path>
+            <g id="foldsGroup" style="mix-blend-mode: multiply;"></g>
+            
+            <!-- Graphic Container -->
+            <g id="graphicGroup" style="display: none;">
+              <image id="graphicImg" href="" x="0" y="0" preserveAspectRatio="xMidYMid meet"></image>
+            </g>
+
+            <path id="neckHole" fill="#0B0D11" opacity="0.94"></path>
+            <path id="collarOuter" fill="#121212" stroke="rgba(0,0,0,0.2)" stroke-width="2" filter="url(#fold-hard)"></path>
+            <path id="collarRib" fill="url(#collar-rib)" opacity="0.4"></path>
+          </g>
+        </svg>
+
+      </div>
+    </div>
+
+    <!-- Bottom Notice -->
+    <div class="py-3 px-6 bg-studio-sidebar border-t border-studio-border flex items-center justify-between text-xs text-neutral-400">
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-neutral-300">Tips Mas Bayu:</span>
+        <span>Pilih warna atau masukkan kode HEX, lalu klik "Salin Gambar" untuk paste instan di WA.</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="font-mono text-neutral-400">Pure Client-Side Engine</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span class="text-emerald-400 font-bold">Online di GitHub Pages</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SHIRT_MODELS = {
+      boxy: {
+        id: 'boxy', name: 'Boxy Fit', subtitle: 'Streetwear Drop-Shoulder',
+        bodyPath: 'M 345 155 C 395 180, 475 180, 525 155 C 640 185, 770 235, 820 265 L 910 475 L 750 570 L 675 470 L 665 770 C 665 785, 645 795, 435 795 C 225 795, 205 785, 205 770 L 195 470 L 120 570 L -40 475 L 50 265 C 100 235, 230 185, 345 155 Z',
+        collarOuter: 'M 345 155 C 395 220, 475 220, 525 155 C 475 238, 395 238, 345 155 Z',
+        neckHole: 'M 350 160 C 395 200, 475 200, 520 160 C 475 178, 395 178, 350 160 Z',
+        sleevesFold: [
+          { d: 'M 195 470 C 255 590, 315 690, 235 780 C 225 670, 195 540, 195 470 Z', op: 0.55 },
+          { d: 'M 675 470 C 615 590, 555 690, 635 780 C 645 670, 675 540, 675 470 Z', op: 0.55 },
+          { d: 'M 255 640 C 395 690, 475 690, 615 640 C 475 735, 395 735, 255 640 Z', op: 0.38 },
+          { d: 'M 50 265 C 100 395, 140 495, 120 570 C 100 495, 80 395, 50 265 Z', op: 0.45 },
+          { d: 'M 820 265 C 770 395, 730 495, 750 570 C 770 495, 790 395, 820 265 Z', op: 0.45 },
+        ],
+        graphicBox: { x: 330, y: 320, width: 210, height: 260 }
+      },
+      oversized: {
+        id: 'oversized', name: 'Oversized', subtitle: 'Relaxed Loose Fit',
+        bodyPath: 'M 335 145 C 395 170, 475 170, 535 145 C 625 168, 755 208, 795 228 L 845 490 L 715 565 L 655 455 L 655 905 C 655 925, 635 935, 435 935 C 235 935, 215 925, 215 905 L 215 455 L 155 565 L 25 490 L 75 228 C 115 208, 245 168, 335 145 Z',
+        collarOuter: 'M 335 145 C 395 210, 475 210, 535 145 C 475 228, 395 228, 335 145 Z',
+        neckHole: 'M 340 150 C 395 190, 475 190, 530 150 C 475 170, 395 170, 340 150 Z',
+        sleevesFold: [
+          { d: 'M 215 455 C 255 645, 275 795, 235 925 C 215 785, 205 635, 215 455 Z', op: 0.5 },
+          { d: 'M 655 455 C 615 645, 595 795, 635 925 C 655 785, 665 635, 655 455 Z', op: 0.5 },
+          { d: 'M 245 735 C 375 785, 495 785, 625 735 C 495 835, 375 835, 245 735 Z', op: 0.35 }
+        ],
+        graphicBox: { x: 320, y: 320, width: 230, height: 280 }
+      },
+      regular: {
+        id: 'regular', name: 'Regular Fit', subtitle: 'Standard Classic Cut',
+        bodyPath: 'M 345 148 C 395 178, 475 178, 525 148 C 595 168, 675 198, 715 228 L 785 435 L 675 495 L 635 395 L 635 840 C 635 860, 615 870, 435 870 C 255 870, 235 860, 235 840 L 235 395 L 195 495 L 85 435 L 155 228 C 195 198, 275 168, 345 148 Z',
+        collarOuter: 'M 345 148 C 395 218, 475 218, 525 148 C 475 233, 395 233, 345 148 Z',
+        neckHole: 'M 350 153 C 395 198, 475 198, 520 153 C 475 178, 395 178, 350 153 Z',
+        sleevesFold: [
+          { d: 'M 235 395 C 265 575, 285 745, 255 840 C 255 695, 235 575, 235 395 Z', op: 0.48 },
+          { d: 'M 635 395 C 605 575, 585 745, 615 840 C 615 695, 635 575, 635 395 Z', op: 0.48 }
+        ],
+        graphicBox: { x: 335, y: 310, width: 200, height: 260 }
+      },
+      fitted: {
+        id: 'fitted', name: 'Fitted / Slim', subtitle: 'Athletic Slim Fit',
+        bodyPath: 'M 355 138 C 395 168, 475 168, 515 138 C 565 158, 625 178, 655 208 L 695 395 L 615 445 L 585 345 L 575 810 C 575 830, 555 840, 435 840 C 315 840, 295 830, 295 810 L 285 345 L 255 445 L 175 395 L 215 208 C 245 178, 305 158, 355 138 Z',
+        collarOuter: 'M 355 138 C 395 208, 475 208, 515 138 C 475 218, 395 218, 355 138 Z',
+        neckHole: 'M 360 143 C 395 188, 475 188, 510 143 C 475 168, 395 168, 360 143 Z',
+        sleevesFold: [
+          { d: 'M 285 345 C 325 540, 335 690, 305 810 C 305 640, 295 490, 285 345 Z', op: 0.38 },
+          { d: 'M 585 345 C 545 540, 535 690, 565 810 C 565 640, 575 490, 585 345 Z', op: 0.38 }
+        ],
+        graphicBox: { x: 345, y: 300, width: 180, height: 250 }
+      },
+      longsleeve: {
+        id: 'longsleeve', name: 'Long Sleeve', subtitle: 'Classic Cuffed Arm',
+        bodyPath: 'M 345 148 C 395 178, 475 178, 525 148 C 575 168, 615 178, 635 188 L 845 810 L 725 840 L 635 395 L 635 840 C 635 860, 615 870, 435 870 C 255 870, 235 860, 235 840 L 235 395 L 145 840 L 25 810 L 235 188 C 255 178, 295 168, 345 148 Z',
+        collarOuter: 'M 345 148 C 395 218, 475 218, 525 148 C 475 233, 395 233, 345 148 Z',
+        neckHole: 'M 350 153 C 395 198, 475 198, 520 153 C 475 178, 395 178, 350 153 Z',
+        sleevesFold: [
+          { d: 'M 235 395 C 265 575, 285 745, 255 840 C 255 695, 235 575, 235 395 Z', op: 0.48 },
+          { d: 'M 635 395 C 605 575, 585 745, 615 840 C 615 695, 635 575, 635 395 Z', op: 0.48 },
+          { d: 'M 235 188 C 175 440, 115 640, 25 810 C 95 640, 155 440, 235 188 Z', op: 0.4 },
+          { d: 'M 635 188 C 695 440, 755 640, 845 810 C 775 640, 715 440, 635 188 Z', op: 0.4 }
+        ],
+        graphicBox: { x: 335, y: 310, width: 200, height: 260 }
+      }
+    };
+
+    const POPULAR_PALETTE = [
+      { name: 'Jet Black', hex: '#121212' },
+      { name: 'Pure White', hex: '#FFFFFF' },
+      { name: 'Broken White', hex: '#F4F2EB' },
+      { name: 'Charcoal Grey', hex: '#2C3038' },
+      { name: 'Misty Grey', hex: '#B8BCC4' },
+      { name: 'Sage Green', hex: '#5E8C7A' },
+      { name: 'Olive Army', hex: '#484F38' },
+      { name: 'Terracotta', hex: '#BD5338' },
+      { name: 'Deep Maroon', hex: '#6E1A24' },
+      { name: 'Navy Dark', hex: '#141E30' },
+      { name: 'Electric Blue', hex: '#2255A4' },
+      { name: 'Dusty Lilac', hex: '#8778A8' },
+      { name: 'Mustard Warm', hex: '#CF8B26' },
+      { name: 'Mocha Brown', hex: '#5C4033' },
+    ];
+
+    let state = {
+      model: 'boxy',
+      color: '#121212',
+      ratio: '1:1',
+      bg: '#FFFFFF',
+      graphic: null,
+      graphicScale: 1,
+      graphicPosY: 0
+    };
+
+    // DOM Elements
+    const shirtBody = document.getElementById('shirtBody');
+    const shirtTexture = document.getElementById('shirtTexture');
+    const shirtLight = document.getElementById('shirtLight');
+    const foldsGroup = document.getElementById('foldsGroup');
+    const collarOuter = document.getElementById('collarOuter');
+    const collarRib = document.getElementById('collarRib');
+    const neckHole = document.getElementById('neckHole');
+    const graphicGroup = document.getElementById('graphicGroup');
+    const graphicImg = document.getElementById('graphicImg');
+
+    const hexInput = document.getElementById('hexInput');
+    const hexLabel = document.getElementById('hexLabel');
+    const colorDisc = document.getElementById('colorDisc');
+    const nativeColorPicker = document.getElementById('nativeColorPicker');
+    const nativeInputBtn = document.getElementById('nativeInputBtn');
+    const mockupFrame = document.getElementById('mockupFrame');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const copyBtnLabel = document.getElementById('copyBtnLabel');
+
+    function updateColors(hex) {
+      state.color = hex;
+      hexInput.value = hex.toUpperCase();
+      hexLabel.textContent = hex.toUpperCase();
+      colorDisc.style.backgroundColor = hex;
+      nativeColorPicker.value = hex;
+      nativeInputBtn.value = hex;
+
+      shirtBody.setAttribute('fill', hex);
+      collarOuter.setAttribute('fill', hex);
+    }
+
+    function renderModels() {
+      const container = document.getElementById('modelButtons');
+      container.innerHTML = '';
+      Object.values(SHIRT_MODELS).forEach(m => {
+        const isSelected = state.model === m.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `p-3 rounded-xl border text-left transition-smooth flex flex-col justify-between ${
+          isSelected
+            ? 'bg-neutral-800 border-white/50 text-white shadow-md ring-1 ring-white/30'
+            : 'bg-[#14161C] border-studio-border text-neutral-400 hover:border-white/30 hover:text-neutral-200'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold">${m.name}</span>
+            ${isSelected ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>' : ''}
+          </div>
+          <span class="text-[10px] text-neutral-400 line-clamp-1">${m.subtitle}</span>
+        `;
+        btn.onclick = () => {
+          state.model = m.id;
+          renderModels();
+          updateModelView();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function updateModelView() {
+      const data = SHIRT_MODELS[state.model];
+      shirtBody.setAttribute('d', data.bodyPath);
+      shirtTexture.setAttribute('d', data.bodyPath);
+      shirtLight.setAttribute('d', data.bodyPath);
+      collarOuter.setAttribute('d', data.collarOuter);
+      collarRib.setAttribute('d', data.collarOuter);
+      neckHole.setAttribute('d', data.neckHole);
+
+      foldsGroup.innerHTML = '';
+      data.sleevesFold.forEach(f => {
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('d', f.d);
+        p.setAttribute('fill', '#000000');
+        p.setAttribute('opacity', f.op * 0.75);
+        p.setAttribute('filter', 'url(#fold-soft)');
+        foldsGroup.appendChild(p);
+      });
+
+      updateGraphicTransform();
+    }
+
+    function updateGraphicTransform() {
+      if (!state.graphic) {
+        graphicGroup.style.display = 'none';
+        return;
+      }
+      const data = SHIRT_MODELS[state.model];
+      graphicGroup.style.display = 'block';
+      const box = data.graphicBox;
+      const x = box.x + (1 - state.graphicScale) * (box.width / 2);
+      const y = box.y + state.graphicPosY + (1 - state.graphicScale) * (box.height / 2);
+      const w = box.width * state.graphicScale;
+      const h = box.height * state.graphicScale;
+      
+      graphicImg.setAttribute('href', state.graphic);
+      graphicImg.setAttribute('x', x);
+      graphicImg.setAttribute('y', y);
+      graphicImg.setAttribute('width', w);
+      graphicImg.setAttribute('height', h);
+    }
+
+    function renderPresets() {
+      const container = document.getElementById('presetPalette');
+      POPULAR_PALETTE.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'h-8 rounded-lg border border-white/10 hover:scale-110 transition-transform';
+        btn.style.backgroundColor = p.hex;
+        btn.title = `${p.name} (${p.hex})`;
+        btn.onclick = () => updateColors(p.hex);
+        container.appendChild(btn);
+      });
+    }
+
+    // Color Listeners
+    [nativeColorPicker, nativeInputBtn].forEach(input => {
+      input.addEventListener('input', (e) => updateColors(e.target.value));
+    });
+
+    hexInput.addEventListener('input', (e) => {
+      let val = e.target.value;
+      if (!val.startsWith('#')) val = '#' + val;
+      if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+        e.target.value = val;
+        if (val.length === 7) updateColors(val);
+      }
+    });
+
+    document.getElementById('copyHexBtn').onclick = () => {
+      navigator.clipboard.writeText(state.color);
+      alert('Kode warna ' + state.color + ' disalin!');
+    };
+
+    // Aspect Ratio
+    document.querySelectorAll('.ratio-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        const r = btn.dataset.ratio;
+        state.ratio = r;
+        document.querySelectorAll('.ratio-btn').forEach(b => {
+          b.className = 'ratio-btn py-2 px-2 rounded-xl border bg-[#14161C] border-studio-border text-neutral-400 hover:border-white/20 text-center';
+        });
+        btn.className = 'ratio-btn py-2 px-2 rounded-xl border bg-neutral-800 border-white/50 text-white font-bold text-center';
+        
+        if (r === '9:16') {
+          mockupFrame.style.maxWidth = '420px';
+          mockupFrame.style.aspectRatio = '9 / 16';
+        } else if (r === '4:5') {
+          mockupFrame.style.maxWidth = '520px';
+          mockupFrame.style.aspectRatio = '4 / 5';
+        } else {
+          mockupFrame.style.maxWidth = '620px';
+          mockupFrame.style.aspectRatio = '1 / 1';
+        }
+      };
+    });
+
+    // Background Studio
+    document.querySelectorAll('.bg-btn').forEach(btn => {
+      btn.onclick = () => {
+        const bg = btn.dataset.bg;
+        state.bg = bg;
+        document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('ring-2', 'ring-amber-400'));
+        btn.classList.add('ring-2', 'ring-amber-400');
+        mockupFrame.style.backgroundColor = bg === 'transparent' ? '#222' : bg;
+      };
+    });
+
+    // Toggle Grid
+    let gridVisible = true;
+    document.getElementById('toggleGridBtn').onclick = (e) => {
+      gridVisible = !gridVisible;
+      mockupFrame.classList.toggle('studio-grid', gridVisible);
+      e.currentTarget.classList.toggle('bg-white/10', gridVisible);
+      e.currentTarget.classList.toggle('text-white', gridVisible);
+    };
+
+    // Upload Graphic Sablon
+    const fileInput = document.getElementById('graphicFileInput');
+    const uploadBox = document.getElementById('uploadBox');
+    const graphicControls = document.getElementById('graphicControls');
+    const removeGraphicBtn = document.getElementById('removeGraphicBtn');
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          state.graphic = evt.target.result;
+          uploadBox.classList.add('hidden');
+          graphicControls.classList.remove('hidden');
+          removeGraphicBtn.classList.remove('hidden');
+          updateGraphicTransform();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    removeGraphicBtn.onclick = () => {
+      state.graphic = null;
+      uploadBox.classList.remove('hidden');
+      graphicControls.classList.add('hidden');
+      removeGraphicBtn.classList.add('hidden');
+      fileInput.value = '';
+      updateGraphicTransform();
+    };
+
+    document.getElementById('scaleInput').oninput = (e) => {
+      state.graphicScale = parseFloat(e.target.value);
+      document.getElementById('scaleLabel').textContent = Math.round(state.graphicScale * 100) + '%';
+      updateGraphicTransform();
+    };
+
+    document.getElementById('posInput').oninput = (e) => {
+      state.graphicPosY = parseInt(e.target.value);
+      document.getElementById('posLabel').textContent = state.graphicPosY + 'px';
+      updateGraphicTransform();
+    };
+
+    // Render Canvas & Export Engine
+    async function renderToCanvas() {
+      const targetWidth = 1080;
+      let targetHeight = 1080;
+      if (state.ratio === '9:16') targetHeight = 1920;
+      if (state.ratio === '4:5') targetHeight = 1350;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (state.bg !== 'transparent') {
+        ctx.fillStyle = state.bg;
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+      } else {
+        ctx.clearRect(0, 0, targetWidth, targetHeight);
+      }
+
+      const svg = document.getElementById('shirtSvg');
+      const cloned = svg.cloneNode(true);
+      cloned.setAttribute('width', targetWidth * 0.88);
+      cloned.setAttribute('height', targetWidth * 0.88);
+
+      const svgData = new XMLSerializer().serializeToString(cloned);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const DOMURL = window.URL || window.webkitURL || window;
+      const url = DOMURL.createObjectURL(svgBlob);
+
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const x = (targetWidth - img.width) / 2;
+          const y = (targetHeight - img.height) / 2;
+
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+          ctx.shadowBlur = 45;
+          ctx.shadowOffsetY = 25;
+          ctx.drawImage(img, x, y);
+          ctx.restore();
+
+          DOMURL.revokeObjectURL(url);
+          resolve(canvas);
+        };
+        img.onerror = (err) => {
+          DOMURL.revokeObjectURL(url);
+          reject(err);
+        };
+        img.src = url;
+      });
+    }
+
+    downloadBtn.onclick = async () => {
+      downloadBtn.disabled = true;
+      downloadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Merender Foto...';
+      try {
+        const canvas = await renderToCanvas();
+        const link = document.createElement('a');
+        const cleanHex = state.color.replace('#', '').toUpperCase();
+        link.download = `FotoStudio_${state.model}_${cleanHex}_${state.ratio.replace(':', 'x')}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+      } catch (e) {
+        alert('Gagal mendownload foto.');
+      } finally {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = '<i class="fa-solid fa-download mr-2"></i> UNDUH FOTO (1080px JPG)';
+      }
+    };
+
+    copyBtn.onclick = async () => {
+      copyBtn.disabled = true;
+      copyBtnLabel.textContent = 'Menyalin gambar...';
+      try {
+        const canvas = await renderToCanvas();
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            copyBtnLabel.textContent = 'Tersalin! Tinggal Ctrl+V di WA';
+            setTimeout(() => { copyBtnLabel.textContent = 'Salin Gambar (Ctrl+V ke WA)'; }, 3000);
+          } catch (e) {
+            const link = document.createElement('a');
+            link.download = `FotoStudio_${state.model}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            copyBtnLabel.textContent = 'Diunduh (Clipboard dibatasi)';
+            setTimeout(() => { copyBtnLabel.textContent = 'Salin Gambar (Ctrl+V ke WA)'; }, 3000);
+          }
+        }, 'image/png');
+      } catch (e) {
+        alert('Gagal menyalin gambar.');
+      } finally {
+        copyBtn.disabled = false;
+      }
+    };
+
+    // Initialize
+    renderPresets();
+    renderModels();
+    updateModelView();
+    updateColors('#121212');
+  </script>
+</body>
+</html>
