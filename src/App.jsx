@@ -7,15 +7,18 @@ import KoleksiKaosPage from './pages/KoleksiKaosPage';
 import BikinKaosCustomPage from './pages/BikinKaosCustomPage';
 import DesainEksklusifPage from './pages/DesainEksklusifPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
-import StudioMockupPage from './pages/StudioMockupPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProductProvider } from './context/ProductContext';
 
 function AppLayout() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
-  const isStudio = location.pathname.startsWith('/studio') || location.pathname.startsWith('/mockup');
-  const isCleanLayout = isAdmin || isStudio;
+  const isCustomStudio =
+    location.pathname.startsWith('/bikin-kaos-custom') ||
+    location.pathname.startsWith('/design') ||
+    location.pathname.startsWith('/studio') ||
+    location.pathname.startsWith('/mockup');
+  const isCleanLayout = isAdmin || isCustomStudio;
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -25,11 +28,13 @@ function AppLayout() {
           <Route path="/" element={<HomePage />} />
           <Route path="/koleksi-kaos" element={<KoleksiKaosPage />} />
           <Route path="/bikin-kaos-custom" element={<BikinKaosCustomPage />} />
+          <Route path="/design" element={<BikinKaosCustomPage />} />
+          <Route path="/design-custom" element={<BikinKaosCustomPage />} />
+          <Route path="/studio" element={<BikinKaosCustomPage />} />
+          <Route path="/mockup" element={<BikinKaosCustomPage />} />
+          <Route path="/mockup-studio" element={<BikinKaosCustomPage />} />
           <Route path="/desain-eksklusif" element={<DesainEksklusifPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/studio" element={<StudioMockupPage />} />
-          <Route path="/mockup" element={<StudioMockupPage />} />
-          <Route path="/mockup-studio" element={<StudioMockupPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

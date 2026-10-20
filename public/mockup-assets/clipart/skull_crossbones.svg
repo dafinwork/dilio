@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="90" fill="#09090B"/>
+  <path d="M40 50 L160 150 M160 50 L40 150" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M70 60 C70 40, 130 40, 130 60 C145 75, 135 110, 120 115 L120 130 L80 130 L80 115 C65 110, 55 75, 70 60 Z" fill="#F4F4F5"/>
+  <circle cx="85" cy="85" r="10" fill="#09090B"/>
+  <circle cx="115" cy="85" r="10" fill="#09090B"/>
+  <polygon points="100,95 95,108 105,108" fill="#09090B"/>
+  <path d="M88 125 L88 130 M96 125 L96 130 M104 125 L104 130 M112 125 L112 130" stroke="#09090B" stroke-width="3"/>
+  <text x="100" y="180" text-anchor="middle" font-family="Impact, sans-serif" font-size="16" fill="#F4F4F5" letter-spacing="3">RAW DIVISION</text>
+</svg>

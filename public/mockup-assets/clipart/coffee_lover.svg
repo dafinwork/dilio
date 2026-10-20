@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="92" fill="#78350F" stroke="#FDE68A" stroke-width="5"/>
+  <path d="M60 80 L140 80 L130 140 C130 155, 70 155, 70 140 Z" fill="#FFFBEB"/>
+  <path d="M140 90 C155 90, 160 115, 140 120" stroke="#FFFBEB" stroke-width="6" fill="none"/>
+  <path d="M80 65 Q85 50 80 40 M100 65 Q105 50 100 40 M120 65 Q125 50 120 40" stroke="#FDE68A" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <text x="100" y="180" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="14" fill="#FDE68A" letter-spacing="2">NEED CAFFEINE</text>
+</svg>

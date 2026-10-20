@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="95" fill="#181818" stroke="#F59E0B" stroke-width="6"/>
+  <path d="M50 70 L30 30 L80 50 Z" fill="#F59E0B"/>
+  <path d="M150 70 L170 30 L120 50 Z" fill="#F59E0B"/>
+  <polygon points="100,50 60,110 80,110 70,140 100,120 130,140 120,110 140,110" fill="#EF4444"/>
+  <circle cx="75" cy="95" r="12" fill="#FFFFFF"/>
+  <circle cx="125" cy="95" r="12" fill="#FFFFFF"/>
+  <circle cx="75" cy="95" r="6" fill="#000000"/>
+  <circle cx="125" cy="95" r="6" fill="#000000"/>
+  <path d="M60 145 Q100 175 140 145" stroke="#F59E0B" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <text x="100" y="185" text-anchor="middle" font-family="Impact, sans-serif" font-size="18" fill="#F59E0B" letter-spacing="2">DILIO WILD</text>
+</svg>

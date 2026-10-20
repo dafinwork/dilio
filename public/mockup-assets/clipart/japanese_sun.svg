@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="70" fill="#DC2626"/>
+  <path d="M100 20 L100 180 M20 100 L180 100 M43 43 L157 157 M43 157 L157 43" stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.3"/>
+  <path d="M40 130 Q100 90 160 130 Q120 160 80 140 Z" fill="#111827"/>
+  <path d="M60 150 Q100 120 140 150 Q110 170 80 160 Z" fill="#1F2937"/>
+  <text x="100" y="75" text-anchor="middle" font-family="'Noto Sans JP', sans-serif" font-weight="900" font-size="28" fill="#FFFFFF">東京</text>
+  <text x="100" y="188" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="12" fill="#DC2626" letter-spacing="3">TOKYO STREET</text>
+</svg>

@@ -15,7 +15,7 @@ export default function Navbar() {
     },
     {
       to: '/bikin-kaos-custom',
-      label: 'Bikin Kaos Custom',
+      label: 'Design Custom',
       icon: Sparkles,
       iconColor: 'text-amber-500',
     },
