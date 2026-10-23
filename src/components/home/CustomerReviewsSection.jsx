@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 
 const REVIEWS = [
@@ -42,13 +42,39 @@ const REVIEWS = [
     photo: `${import.meta.env.BASE_URL}pricing/pricing-satuan.jpg`,
     alt: 'Review Kaos Merchandise Brand',
   },
+  {
+    id: 6,
+    username: 'faisal_teeshop',
+    rating: 5,
+    text: 'Bahan cotton combed 30s-nya beneran adem dan nyaman dipakai seharian. Sablon DTF-nya lentur ga kaku waktu dicuci berulang kali. Mantap dilio!',
+    photo: `${import.meta.env.BASE_URL}reviews/review-1.jpg`,
+    alt: 'Review Sablon DTF Dilio',
+  },
+  {
+    id: 7,
+    username: 'amanda.c',
+    rating: 5,
+    text: 'Pesen 30 pcs buat seragam panitia acara kampus, proses produksinya cepet banget cuma 3 hari udah nyampe. Jahitan rapi dan warna sablon tajam sesuai file mockup.',
+    photo: `${import.meta.env.BASE_URL}reviews/review-2.jpg`,
+    alt: 'Review Seragam Panitia',
+  },
+  {
+    id: 8,
+    username: 'hypebeast_jkt',
+    rating: 5,
+    text: 'Potongan Boxy Fit nya beneran authentic streetwear, drop shoulder pas, kerah rib tebal anti letoy. Udah repeat order 3x buat brand clothing sendiri.',
+    photo: `${import.meta.env.BASE_URL}reviews/review-3.jpg`,
+    alt: 'Review Boxy Streetwear',
+  },
 ];
 
 export default function CustomerReviewsSection() {
   const scrollContainerRef = useRef(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const handleScroll = () => {
+  // Sync scroll progress bar
+  const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const maxScroll = el.scrollWidth - el.clientWidth;
@@ -58,20 +84,51 @@ export default function CustomerReviewsSection() {
     }
     const current = el.scrollLeft;
     setScrollProgress(Math.min(100, Math.max(0, (current / maxScroll) * 100)));
-  };
+  }, []);
 
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [handleScroll]);
 
-  const scrollBy = (offset) => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  // Manual scroll with wrap-around
+  const scrollByAmount = (offset) => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+
+    if (offset > 0 && el.scrollLeft + offset >= maxScroll - 15) {
+      el.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (offset < 0 && el.scrollLeft + offset <= 15) {
+      el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+    } else {
+      el.scrollBy({ left: offset, behavior: 'smooth' });
     }
   };
+
+  // Jalan Otomatis (Auto-Play Carousel setiap 3.2 detik)
+  useEffect(() => {
+    if (isPaused) return;
+
+    const interval = setInterval(() => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+
+      const cardWidth = 296; // 280px card + 16px gap
+      const maxScroll = el.scrollWidth - el.clientWidth;
+
+      if (el.scrollLeft + cardWidth >= maxScroll - 15) {
+        // Balik ke awal secara mulus saat mencapai ujung kartu terakhir
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        el.scrollBy({ left: cardWidth, behavior: 'smooth' });
+      }
+    }, 3200);
+
+    return () => clearInterval(interval);
+  }, [isPaused]);
 
   return (
     <section className="py-16 sm:py-24 bg-white border-t border-neutral-100">
@@ -81,7 +138,7 @@ export default function CustomerReviewsSection() {
           Baca review tentang kami
         </h2>
 
-        {/* 2-Column Layout matching Image 1 */}
+        {/* 2-Column Layout matching Image */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           
           {/* Left Column: Quote Icon & Highlight Heading */}
@@ -100,9 +157,15 @@ export default function CustomerReviewsSection() {
             </p>
           </div>
 
-          {/* Right Column: Reviews Carousel & Controls */}
-          <div className="lg:col-span-8 space-y-5">
-            {/* Horizontal scroll container */}
+          {/* Right Column: Auto-Playing Reviews Carousel & Controls */}
+          <div
+            className="lg:col-span-8 space-y-5"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={() => setIsPaused(true)}
+            onTouchEnd={() => setIsPaused(false)}
+          >
+            {/* Horizontal scroll container (jalan otomatis) */}
             <div
               ref={scrollContainerRef}
               className="flex items-stretch gap-4 overflow-x-auto pb-4 pt-1 scroll-smooth scrollbar-none snap-x"
@@ -159,13 +222,13 @@ export default function CustomerReviewsSection() {
 
             {/* Bottom Controls: Arrows & Progress Scroll Indicator */}
             <div className="flex items-center justify-between pt-2">
-              {/* Scroll Track Bar */}
+              {/* Scroll Track Bar with animated indicator */}
               <div className="w-48 sm:w-64 h-1.5 bg-neutral-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-neutral-900 rounded-full transition-all duration-150"
+                  className="h-full bg-neutral-900 rounded-full transition-all duration-300"
                   style={{
-                    width: '35%',
-                    transform: `translateX(${scrollProgress * 1.8}%)`,
+                    width: '30%',
+                    transform: `translateX(${scrollProgress * 2.33}%)`,
                   }}
                 />
               </div>
@@ -174,7 +237,7 @@ export default function CustomerReviewsSection() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => scrollBy(-280)}
+                  onClick={() => scrollByAmount(-296)}
                   className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
                   title="Review Sebelumnya"
                 >
@@ -182,7 +245,7 @@ export default function CustomerReviewsSection() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => scrollBy(280)}
+                  onClick={() => scrollByAmount(296)}
                   className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
                   title="Review Selanjutnya"
                 >
