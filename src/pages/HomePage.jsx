@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import ProductModal from '../components/ProductModal';
+import PricingTierSection from '../components/home/PricingTierSection';
+import CustomerReviewsSection from '../components/home/CustomerReviewsSection';
 import { useProducts } from '../context/ProductContext';
 
 export default function HomePage() {
@@ -10,10 +12,28 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [limitedTab, setLimitedTab] = useState('all');
 
-  // Filter exclusive products for Limited Edition section (newest first)
+  // Priority order matching user's Image 1 mockup:
+  // 1. Thinking Out Boxy - Chaos (prod-1790257639822)
+  // 2. Thinking Out Boxy - Thermal Detector (exclusive-collab-onepiece-gear5)
+  // 3. Dilio Men - White (exclusive-dilio-cyber-1)
+  // 4. Dilio Men - Black (exclusive-dilio-cyber-2)
+  const priorityIds = [
+    'prod-1790257639822',
+    'exclusive-collab-onepiece-gear5',
+    'exclusive-dilio-cyber-1',
+    'exclusive-dilio-cyber-2',
+  ];
+
   const exclusiveProducts = allProducts
     .filter((p) => p.product_group === 'eksklusif' || p.is_exclusive)
-    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    .sort((a, b) => {
+      const idxA = priorityIds.indexOf(a.id);
+      const idxB = priorityIds.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
 
   const filteredLimited =
     limitedTab === 'all'
@@ -21,24 +41,6 @@ export default function HomePage() {
       : exclusiveProducts
           .filter((p) => p.exclusive_category === limitedTab)
           .slice(0, 4);
-
-  // Daily showcase products with resilient fallback
-  const hardcodedShowcase = [
-    allProducts.find((p) => p.id === 'harian-oversized-1'),
-    allProducts.find((p) => p.id === 'harian-regular-1'),
-    allProducts.find((p) => p.id === 'harian-boxy-1'),
-    allProducts.find((p) => p.id === 'harian-longsleeve-1'),
-  ].filter(Boolean);
-
-  const showcaseProducts =
-    hardcodedShowcase.length > 0
-      ? hardcodedShowcase
-      : allProducts.filter((p) => p.product_group === 'harian').slice(0, 4);
-
-  // Custom showcase products
-  const customProducts = allProducts
-    .filter((p) => p.product_group === 'custom')
-    .slice(0, 4);
 
   const limitedTabs = [
     { label: 'Semua', value: 'all' },
@@ -49,9 +51,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* SECTION 1: HERO BANNER (Real HTML/CSS over clean text-free background) */}
+      {/* SECTION 1: HERO BANNER */}
       <section className="relative w-full overflow-hidden bg-neutral-900 py-24 sm:py-32 lg:py-36 flex items-center justify-center text-center">
-        {/* Background Image: Clean colorful hanging t-shirts (zero burned-in text) */}
+        {/* Background Image: Clean colorful hanging t-shirts */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -59,7 +61,7 @@ export default function HomePage() {
           }}
         />
 
-        {/* Hero Content in real semantic HTML/CSS */}
+        {/* Hero Content */}
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-black text-white tracking-tight leading-[1.15] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
             Kaos Polos Masa Kini
@@ -168,7 +170,7 @@ export default function HomePage() {
                     <button
                       key={tab.value}
                       onClick={() => setLimitedTab(tab.value)}
-                      className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+                      className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                         isActive
                           ? 'bg-neutral-900 text-white shadow-xs'
                           : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900'
@@ -183,7 +185,7 @@ export default function HomePage() {
               {/* Lihat Semua Link */}
               <Link
                 to="/koleksi-kaos"
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-neutral-900 hover:text-indigo-600 transition-colors underline decoration-2 underline-offset-4"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-neutral-900 hover:text-neutral-600 transition-colors underline decoration-2 underline-offset-4"
               >
                 <span>Lihat Semua</span>
                 <ArrowRight className="w-4 h-4" />
@@ -204,77 +206,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 4: CARI KAOS HARIAN */}
-      <section className="py-16 sm:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-10">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
-                Cari Kaos Harian
-              </h2>
-              <p className="mt-1 text-xs sm:text-sm text-neutral-500">
-                Pilih cuttingan yang paling cocok dengan gaya dan kebutuhan outfit harianmu.
-              </p>
-            </div>
+      {/* SECTION 4: ESTIMASI HARGA BELI BANYAK LEBIH HEMAT */}
+      <PricingTierSection />
 
-            <Link
-              to="/koleksi-kaos"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-neutral-900 hover:text-indigo-600 transition-colors underline decoration-2 underline-offset-4 shrink-0"
-            >
-              <span>Lihat Semua</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* 4 Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {showcaseProducts.map((product) => (
-              <ProductCard
-                key={`harian-${product.id}`}
-                product={product}
-                onSelect={setSelectedProduct}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 5: BIKIN KAOS CUSTOM */}
-      <section className="py-16 sm:py-24 bg-neutral-50/70 border-t border-neutral-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-10">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
-                Bikin Kaos Custom
-              </h2>
-              <p className="mt-1 text-xs sm:text-sm text-neutral-500">
-                Pilih jenis sablon yang cocok untuk kebutuhan clothing brand, event hingga merchandise.
-              </p>
-            </div>
-
-            <Link
-              to="/bikin-kaos-custom"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-neutral-900 hover:text-indigo-600 transition-colors underline decoration-2 underline-offset-4 shrink-0"
-            >
-              <span>Lihat Semua</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* 4 Custom Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(customProducts.length > 0 ? customProducts : showcaseProducts).map((product) => (
-              <ProductCard
-                key={`custom-${product.id}`}
-                product={product}
-                onSelect={setSelectedProduct}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* SECTION 5: BACA REVIEW TENTANG KAMI */}
+      <CustomerReviewsSection />
 
       {/* Quick Modal Detail */}
       <ProductModal

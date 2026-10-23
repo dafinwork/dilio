@@ -17,13 +17,7 @@ export default function Navbar() {
       to: '/bikin-kaos-custom',
       label: 'Design Custom',
       icon: Sparkles,
-      iconColor: 'text-amber-500',
-    },
-    {
-      to: '/studio',
-      label: 'Studio Mockup',
-      icon: Camera,
-      iconColor: 'text-rose-500',
+      iconColor: 'text-neutral-800',
     },
   ];
 

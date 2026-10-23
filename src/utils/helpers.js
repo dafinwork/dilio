@@ -38,11 +38,16 @@ export function safeColors(colors) {
 /**
  * Generates WhatsApp click-to-chat URL with predefined consultation message.
  */
-export function getWhatsAppUrl(productName = '') {
+export function getWhatsAppUrl(customTextOrProductName = '') {
   const phone = '628990809822';
-  const message = productName
-    ? `Halo Admin Kaos Dilio, saya tertarik dan ingin konsultasi/pesan produk: ${productName}. Apakah masih tersedia?`
-    : `Halo Admin Kaos Dilio, saya ingin konsultasi pemesanan kaos polos / custom sablon.`;
+  let message = `Halo Admin Kaos Dilio, saya ingin konsultasi pemesanan kaos polos / custom sablon.`;
+  if (customTextOrProductName) {
+    if (customTextOrProductName.startsWith('Halo')) {
+      message = customTextOrProductName;
+    } else {
+      message = `Halo Admin Kaos Dilio, saya tertarik dan ingin konsultasi/pesan produk: ${customTextOrProductName}. Apakah masih tersedia?`;
+    }
+  }
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
