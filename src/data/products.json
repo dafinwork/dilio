@@ -1,16 +1,107 @@
 [
   {
+    "id": "harian-kasual-1",
+    "name": "Kaos Kasual Basic Combed 24s",
+    "slug": "kasual-basic-tee",
+    "description": "Kaos kasual harian bahan halus dan adem, potongan pas untuk aktivitas harian santai.",
+    "price": 65000,
+    "original_price": 85000,
+    "image_url": "/cuttings/Regular.jpg",
+    "material": "Cotton Combed 24s",
+    "colors": [
+      "#000000"
+    ],
+    "is_new": true,
+    "is_exclusive": false,
+    "is_preorder": true,
+    "product_group": "harian",
+    "cutting_type": "regular",
+    "category_label": "KASUAL",
+    "created_at": "2026-03-25T10:00:00Z",
+    "placeholder_title": "Kasual\nBasic",
+    "placeholder_bg": "#F3F4F6",
+    "placeholder_text_color": "#1E293B",
+    "extra_colors_count": 8,
+    "images": [
+      "/cuttings/Regular.jpg",
+      "/cuttings/Boxy.jpg",
+      "/cuttings/Oversize.jpg"
+    ],
+    "preorder_duration": "1-2 Hari"
+  },
+  {
+    "id": "harian-polo-1",
+    "name": "Classic Pique Polo Shirt",
+    "slug": "classic-pique-polo-shirt",
+    "description": "Kaos polo berkerah rapi dengan rajutan pique premium, cocok untuk kerja santai maupun acara kasual.",
+    "price": 89000,
+    "original_price": 115000,
+    "image_url": "/mockup-assets/front/navy.jpg",
+    "material": "Pique Cotton (Polo)",
+    "colors": [
+      "#0F172A"
+    ],
+    "is_new": true,
+    "is_exclusive": false,
+    "is_preorder": true,
+    "product_group": "harian",
+    "cutting_type": "regular",
+    "category_label": "POLO",
+    "created_at": "2026-03-24T12:00:00Z",
+    "placeholder_title": "Classic\nPolo",
+    "placeholder_bg": "#CDD9E5",
+    "placeholder_text_color": "#0F172A",
+    "extra_colors_count": 6,
+    "images": [
+      "/mockup-assets/front/navy.jpg",
+      "/mockup-assets/back/navy.jpg"
+    ],
+    "preorder_duration": "2-3 Hari"
+  },
+  {
+    "id": "harian-olahraga-1",
+    "name": "Dry-Fit Pro Sport Tee",
+    "slug": "dry-fit-pro-sport-tee",
+    "description": "Kaos olahraga bahan dry-fit berpori mikro, cepat menyerap keringat dan sangat ringan.",
+    "price": 60000,
+    "original_price": 79000,
+    "image_url": "/mockup-assets/front/forest_green.jpg",
+    "material": "Dry-Fit / Polyester (Olahraga)",
+    "colors": [
+      "#15803D"
+    ],
+    "is_new": true,
+    "is_exclusive": false,
+    "is_preorder": true,
+    "preorder_duration": "1-2 Hari",
+    "product_group": "harian",
+    "cutting_type": "fitted",
+    "category_label": "OLAHRAGA",
+    "created_at": "2026-03-23T09:00:00Z",
+    "placeholder_title": "Pro\nSport",
+    "placeholder_bg": "#D5DFEA",
+    "placeholder_text_color": "#1E293B",
+    "extra_colors_count": 10,
+    "images": [
+      "/mockup-assets/front/forest_green.jpg",
+      "/mockup-assets/back/forest_green.jpg"
+    ]
+  },
+  {
     "id": "harian-oversized-1",
-    "name": "Oversized Fit",
+    "name": "Kaos Oversize Streetwear 24s",
     "slug": "oversized-fit-combed-24s",
     "description": "Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear.",
     "price": 65000,
-    "image_url": "",
-    "material": "COTTON COMBED 24S",
+    "image_url": "/cuttings/Oversize.jpg",
+    "images": [
+      "/cuttings/Oversize.jpg",
+      "/cuttings/Boxy.jpg",
+      "/cuttings/Regular.jpg"
+    ],
+    "material": "Cotton Combed 24s",
     "colors": [
-      "#000000",
-      "#FFFFFF",
-      "#15803D"
+      "#000000"
     ],
     "is_new": false,
     "is_exclusive": false,
@@ -18,25 +109,30 @@
     "cutting_type": "oversized",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "COTTON COMBED 24S",
+    "category_label": "KASUAL",
     "created_at": "2026-03-01T10:00:00Z",
     "placeholder_title": "Oversized\nFit",
     "placeholder_bg": "#E5E7EB",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 12
+    "extra_colors_count": 12,
+    "is_preorder": true,
+    "preorder_duration": "1-2 Hari",
+    "original_price": 85000
   },
   {
     "id": "harian-regular-1",
-    "name": "Regular Fit",
+    "name": "Kaos Regular Fit Combed 20s",
     "slug": "regular-fit-combed-30s",
     "description": "Potongan standar yang sangat nyaman untuk dipakai harian atau event.",
-    "price": 45000,
-    "image_url": "",
-    "material": "COTTON COMBED 30S",
+    "price": 55000,
+    "image_url": "/cuttings/Regular.jpg",
+    "images": [
+      "/cuttings/Regular.jpg",
+      "/cuttings/Fitted.jpg"
+    ],
+    "material": "Cotton Combed 20s",
     "colors": [
-      "#2563EB",
-      "#DC2626",
-      "#FACC15"
+      "#000000"
     ],
     "is_new": false,
     "is_exclusive": false,
@@ -44,24 +140,30 @@
     "cutting_type": "regular",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "COTTON COMBED 30S",
+    "category_label": "KASUAL",
     "created_at": "2026-03-05T08:00:00Z",
     "placeholder_title": "Regular\nFit",
     "placeholder_bg": "#F3F4F6",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 24
+    "extra_colors_count": 24,
+    "is_preorder": false,
+    "original_price": 70000
   },
   {
     "id": "harian-boxy-1",
-    "name": "Boxy Cut",
+    "name": "Kaos Boxy Cut Heavyweight 16s",
     "slug": "boxy-cut-heavyweight-16s",
     "description": "Potongan mengotak agak tinggi (crop) dengan bahan tebal premium.",
-    "price": 85000,
-    "image_url": "",
-    "material": "HEAVYWEIGHT 16S",
+    "price": 75000,
+    "image_url": "/cuttings/Boxy.jpg",
+    "images": [
+      "/cuttings/Boxy.jpg",
+      "/cuttings/Oversize.jpg",
+      "/cuttings/Regular.jpg"
+    ],
+    "material": "Heavyweight 16s",
     "colors": [
-      "#1E293B",
-      "#94A3B8"
+      "#000000"
     ],
     "is_new": false,
     "is_exclusive": false,
@@ -69,100 +171,117 @@
     "cutting_type": "boxy",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "HEAVYWEIGHT 16S",
+    "category_label": "KASUAL",
     "created_at": "2026-02-15T09:00:00Z",
     "placeholder_title": "Boxy\nCrop",
     "placeholder_bg": "#D5DFEA",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 5
+    "extra_colors_count": 5,
+    "is_preorder": true,
+    "preorder_duration": "2-3 Hari",
+    "original_price": 95000
   },
   {
     "id": "harian-longsleeve-1",
-    "name": "Long Sleeve",
+    "name": "Kaos Long Sleeve Ribbed Cuff",
     "slug": "long-sleeve-combed-24s",
     "description": "Kaos lengan panjang dengan rib di ujung lengan, pas untuk cuaca dingin.",
-    "price": 60000,
-    "image_url": "",
-    "material": "COTTON COMBED 24S",
+    "price": 79000,
+    "image_url": "/cuttings/Long Sleeve.jpg",
+    "images": [
+      "/cuttings/Long Sleeve.jpg",
+      "/cuttings/Regular.jpg"
+    ],
+    "material": "Cotton Combed 24s",
     "colors": [
-      "#000000",
-      "#1E40AF"
+      "#000000"
     ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "long-sleeve",
+    "cutting_type": "long_sleeve",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "COTTON COMBED 24S",
+    "category_label": "KASUAL",
     "created_at": "2026-02-10T14:30:00Z",
     "placeholder_title": "Long\nSleeve",
     "placeholder_bg": "#CDD9E5",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 8
+    "extra_colors_count": 8,
+    "is_preorder": true,
+    "preorder_duration": "1-2 Hari",
+    "original_price": 99000
+  },
+  {
+    "id": "harian-fitted-1",
+    "name": "Kaos Fitted Slim Athletic",
+    "slug": "fitted-tee-combed-30s",
+    "description": "Potongan pas badan (slim fit) yang membingkai siluet tubuh dengan rapi dan atletis.",
+    "price": 58000,
+    "image_url": "/cuttings/Fitted.jpg",
+    "images": [
+      "/cuttings/Fitted.jpg",
+      "/cuttings/Regular.jpg"
+    ],
+    "material": "Cotton Combed 30s",
+    "colors": [
+      "#000000"
+    ],
+    "is_new": true,
+    "is_exclusive": false,
+    "product_group": "harian",
+    "cutting_type": "fitted",
+    "category_label": "KASUAL",
+    "created_at": "2026-03-20T10:00:00Z",
+    "placeholder_title": "Fitted\nTee",
+    "placeholder_bg": "#E5E7EB",
+    "placeholder_text_color": "#1E293B",
+    "extra_colors_count": 6,
+    "is_preorder": false,
+    "original_price": 75000
   },
   {
     "id": "harian-oversized-2",
-    "name": "Oversized Fit Basic",
+    "name": "Dilio Men - White",
     "slug": "oversized-fit-basic-streetwear",
-    "description": "Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear santai.",
-    "price": 65000,
-    "image_url": "",
-    "material": "COTTON COMBED 24S",
-    "colors": [
-      "#111827",
-      "#10B981"
+    "description": "Koleksi eksklusif dengan bahan premium dari dilio.",
+    "price": 99000,
+    "image_url": "/mockup-assets/front/white.jpg",
+    "images": [
+      "/mockup-assets/front/white.jpg",
+      "/mockup-assets/back/white.jpg"
     ],
-    "is_new": false,
+    "material": "Cotton Combed 24s",
+    "colors": [
+      "#FFFFFF"
+    ],
+    "is_new": true,
     "is_exclusive": false,
     "product_group": "harian",
     "cutting_type": "oversized",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "COTTON COMBED 24S",
+    "category_label": "KASUAL",
     "created_at": "2026-01-25T11:00:00Z",
     "placeholder_title": "Oversized\nFit",
-    "placeholder_bg": "#E5E7EB",
-    "placeholder_text_color": "#374151",
-    "extra_colors_count": 12
-  },
-  {
-    "id": "harian-regular-1",
-    "name": "Regular Fit",
-    "slug": "regular-fit-combed-30s",
-    "description": "Potongan standar yang sangat nyaman untuk dipakai harian atau event.",
-    "price": 45000,
-    "image_url": "",
-    "material": "COTTON COMBED 30S",
-    "colors": [
-      "#2563EB",
-      "#DC2626",
-      "#F59E0B"
-    ],
-    "is_new": false,
-    "is_exclusive": false,
-    "product_group": "harian",
-    "cutting_type": "regular",
-    "sablon_type": null,
-    "exclusive_category": null,
-    "category_label": "COTTON COMBED 30S",
-    "created_at": "2026-02-01T08:00:00Z",
-    "placeholder_title": "Regular\nFit",
     "placeholder_bg": "#F3F4F6",
     "placeholder_text_color": "#374151",
-    "extra_colors_count": 24
+    "extra_colors_count": 0
   },
   {
     "id": "harian-boxy-2",
-    "name": "Boxy Cut Vintage",
+    "name": "Kaos Boxy Cut - Sage Green",
     "slug": "boxy-cut-vintage",
     "description": "Potongan mengotak agak tinggi (crop) dengan bahan tebal premium silhouette boxy.",
     "price": 85000,
-    "image_url": "",
-    "material": "HEAVYWEIGHT 16S",
+    "image_url": "/mockup-assets/front/military_green.jpg",
+    "images": [
+      "/mockup-assets/front/military_green.jpg",
+      "/mockup-assets/back/military_green.jpg"
+    ],
+    "material": "Heavyweight 16s",
     "colors": [
-      "#1E293B",
-      "#64748B"
+      "#9CAF88"
     ],
     "is_new": false,
     "is_exclusive": false,
@@ -170,37 +289,40 @@
     "cutting_type": "boxy",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "HEAVYWEIGHT 16S",
+    "category_label": "KASUAL",
     "created_at": "2026-01-18T16:00:00Z",
     "placeholder_title": "Boxy\nCrop",
     "placeholder_bg": "#D5DFEA",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 5
+    "extra_colors_count": 0
   },
   {
     "id": "harian-longsleeve-2",
-    "name": "Long Sleeve Ribbed",
+    "name": "Kaos Regular Basic - Sand Ivory",
     "slug": "long-sleeve-ribbed",
-    "description": "Kaos lengan panjang dengan rib di ujung lengan, pas untuk cuaca dingin harian.",
-    "price": 60000,
-    "image_url": "",
-    "material": "COTTON COMBED 24S",
+    "description": "Kaos kasual bahan Cotton Combed 24s warna Sand Ivory yang lembut dan hangat.",
+    "price": 65000,
+    "image_url": "/mockup-assets/front/sand.jpg",
+    "images": [
+      "/mockup-assets/front/sand.jpg",
+      "/mockup-assets/back/sand.jpg"
+    ],
+    "material": "Cotton Combed 24s",
     "colors": [
-      "#020617",
-      "#2563EB"
+      "#D5C3A5"
     ],
     "is_new": false,
     "is_exclusive": false,
     "product_group": "harian",
-    "cutting_type": "long-sleeve",
+    "cutting_type": "regular",
     "sablon_type": null,
     "exclusive_category": null,
-    "category_label": "COTTON COMBED 24S",
+    "category_label": "KASUAL",
     "created_at": "2026-01-12T10:00:00Z",
-    "placeholder_title": "Long\nSleeve",
+    "placeholder_title": "Sand\nIvory",
     "placeholder_bg": "#CDD9E5",
     "placeholder_text_color": "#334155",
-    "extra_colors_count": 8
+    "extra_colors_count": 0
   },
   {
     "id": "custom-chaos-theory-1",
@@ -452,6 +574,9 @@
     "slug": "dilio-x-one-piece-gear-5-tee",
     "description": "Limited collaboration drop resmi dengan sablon discharge & glow in the dark.",
     "price": 225000,
+    "original_price": 275000,
+    "is_preorder": true,
+    "preorder_duration": "7 Hari Kerja",
     "image_url": "",
     "material": "HEAVYWEIGHT 16S",
     "colors": [

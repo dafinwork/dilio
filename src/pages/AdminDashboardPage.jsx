@@ -18,6 +18,9 @@ import {
   KeyRound,
   ShieldCheck,
   Camera,
+  Copy,
+  Clock,
+  Tag,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import { formatRupiah, safeColors } from '../utils/helpers';
@@ -136,23 +139,39 @@ export default function AdminDashboardPage() {
 
   // Handle Add / Edit save
   const handleSaveProduct = async (productData) => {
-    if (editingProduct) {
+    if (editingProduct && editingProduct.id) {
       const res = await updateProduct(editingProduct.id, productData);
       if (res && res.success === false) {
         showToast(`Peringatan: ${res.error}`);
       } else {
-        showToast(`Produk "${productData.name}" berhasil diperbarui!`);
+        showToast(`Produk "${productData.name}" berhasil disimpan!`);
       }
     } else {
       const res = await addProduct(productData);
       if (res && res.success === false) {
         showToast(`Peringatan: Gagal simpan ke Cloud: ${res.error}`);
       } else {
-        showToast(`Produk baru "${productData.name}" berhasil disimpan ke Cloud!`);
+        showToast(`Produk baru "${productData.name}" berhasil ditambahkan!`);
       }
     }
     setModalOpen(false);
     setEditingProduct(null);
+  };
+
+  // Handle Duplicate Product (Copy) - Immediately creates the duplicate & opens form to tweak
+  const handleDuplicateProduct = async (item) => {
+    const { id: _oldId, is_copy: _ic, ...rest } = item;
+    const duplicateData = {
+      ...rest,
+      id: `prod-${Date.now()}`,
+      name: `${item.name} (Copy)`,
+      created_at: new Date().toISOString(),
+    };
+    const res = await addProduct(duplicateData);
+    const createdProduct = (res && res.data) || duplicateData;
+    setEditingProduct({ ...createdProduct, is_copy: true });
+    setModalOpen(true);
+    showToast(`Produk "${createdProduct.name}" berhasil diduplikat! Sesuaikan lalu klik Simpan.`);
   };
 
   // Handle Delete
@@ -464,25 +483,36 @@ export default function AdminDashboardPage() {
                       {/* Product Preview & Name */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.name}
-                              className="w-12 h-14 rounded-lg object-cover shrink-0 border border-neutral-200/80 shadow-2xs"
-                            />
-                          ) : (
-                            <div
-                              className="w-12 h-14 rounded-lg flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[9px] leading-tight overflow-hidden"
-                              style={{
-                                backgroundColor: item.placeholder_bg || '#E5E7EB',
-                                color: item.placeholder_text_color || '#1E293B',
-                              }}
-                            >
-                              {item.placeholder_title ? item.placeholder_title.slice(0, 14) : item.name.slice(0, 10)}
-                            </div>
-                          )}
+                          {(() => {
+                            const mainImg = (Array.isArray(item.images) && item.images[0]) || item.image_url;
+                            const totalImgs = Array.isArray(item.images) ? item.images.length : (item.image_url ? 1 : 0);
+                            return mainImg ? (
+                              <div className="relative shrink-0">
+                                <img
+                                  src={mainImg}
+                                  alt={item.name}
+                                  className="w-12 h-14 rounded-lg object-cover border border-neutral-200/80 shadow-2xs"
+                                />
+                                {totalImgs > 1 && (
+                                  <span className="absolute bottom-0 right-0 bg-neutral-900/80 text-white text-[8px] font-bold px-1 rounded-xs">
+                                    {totalImgs}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div
+                                className="w-12 h-14 rounded-lg flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[9px] leading-tight overflow-hidden"
+                                style={{
+                                  backgroundColor: item.placeholder_bg || '#E5E7EB',
+                                  color: item.placeholder_text_color || '#1E293B',
+                                }}
+                              >
+                                {item.placeholder_title ? item.placeholder_title.slice(0, 14) : item.name.slice(0, 10)}
+                              </div>
+                            );
+                          })()}
                           <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-extrabold text-neutral-900">{item.name}</span>
                               {item.is_new && (
                                 <span className="px-1.5 py-0.2 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs">
@@ -492,6 +522,12 @@ export default function AdminDashboardPage() {
                               {(item.is_exclusive || item.product_group === 'eksklusif') && (
                                 <span className="px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
                                   EXCLUSIVE
+                                </span>
+                              )}
+                              {item.is_preorder && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500 text-neutral-950 text-[8px] font-black rounded-xs shadow-xs">
+                                  <Clock className="w-2.5 h-2.5" />
+                                  <span>PO{item.preorder_duration ? `: ${item.preorder_duration}` : ''}</span>
                                 </span>
                               )}
                             </div>
@@ -523,8 +559,26 @@ export default function AdminDashboardPage() {
                       </td>
 
                       {/* Price */}
-                      <td className="py-3.5 px-4 font-extrabold text-neutral-900">
-                        {formatRupiah(item.price)}
+                      <td className="py-3.5 px-4">
+                        {item.original_price && Number(item.original_price) > Number(item.price) ? (
+                          <div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-neutral-400 line-through">
+                                {formatRupiah(item.original_price)}
+                              </span>
+                              <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
+                                -{Math.round(((Number(item.original_price) - Number(item.price)) / Number(item.original_price)) * 100)}%
+                              </span>
+                            </div>
+                            <span className="font-extrabold text-neutral-900 block">
+                              {formatRupiah(item.price)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-extrabold text-neutral-900">
+                            {formatRupiah(item.price)}
+                          </span>
+                        )}
                       </td>
 
                       {/* Color Dots */}
@@ -554,11 +608,19 @@ export default function AdminDashboardPage() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <button
+                            onClick={() => handleDuplicateProduct(item)}
+                            className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="Duplikat / Salin Produk Ini"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+
+                          <button
                             onClick={() => {
                               setEditingProduct(item);
                               setModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+                            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
                             title="Edit Produk"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -566,7 +628,7 @@ export default function AdminDashboardPage() {
 
                           <button
                             onClick={() => setDeleteConfirmId(item.id)}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                             title="Hapus Produk"
                           >
                             <Trash2 className="w-4 h-4" />

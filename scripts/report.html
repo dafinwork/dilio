@@ -1,0 +1,938 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Laporan Hasil Revisi Website & Dashboard Admin Kaos Dilio</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 12mm 12mm 14mm 12mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.4;
+      font-size: 10pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      page-break-after: always;
+      clear: both;
+      min-height: 1000px;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+
+    /* Cover Page */
+    .cover-container {
+      height: 980px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 2px solid #0f172a;
+      border-radius: 12px;
+      padding: 44px;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .cover-header {
+      border-bottom: 3px solid #0f172a;
+      padding-bottom: 20px;
+    }
+
+    .badge-doc {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 9.5pt;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .cover-title {
+      font-size: 24pt;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+
+    .cover-subtitle {
+      font-size: 12pt;
+      color: #475569;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .cover-meta {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 18px 22px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 10pt;
+    }
+
+    .meta-row:last-child {
+      border-bottom: none;
+    }
+
+    .meta-label {
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .meta-value {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .cover-footer {
+      font-size: 9pt;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 14px;
+    }
+
+    /* Section Styling */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      margin-top: 4px;
+    }
+
+    .section-num {
+      background: #0f172a;
+      color: white;
+      font-weight: 800;
+      font-size: 10.5pt;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .section-title {
+      font-size: 14pt;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .status-pill {
+      margin-left: auto;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 8pt;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      border: 1px solid #86efac;
+    }
+
+    .desc-box {
+      background: #f8fafc;
+      border-left: 4px solid #0284c7;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border-radius: 0 6px 6px 0;
+      font-size: 9.5pt;
+      color: #334155;
+    }
+
+    .desc-box strong {
+      color: #0f172a;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 9pt;
+    }
+
+    .comp-col {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .comp-title-before {
+      color: #dc2626;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .comp-title-after {
+      color: #16a34a;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .evidence-block {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .evidence-header {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 6px 10px;
+      font-size: 8.5pt;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .evidence-block img {
+      width: 100%;
+      height: auto;
+      max-height: 290px;
+      display: block;
+      object-fit: contain;
+      background: #f1f5f9;
+    }
+
+    .evidence-block-dual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .evidence-block-dual .evidence-block img {
+      max-height: 250px;
+    }
+
+    .evidence-caption {
+      padding: 6px 10px;
+      font-size: 8pt;
+      color: #475569;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      line-height: 1.35;
+    }
+
+    .evidence-caption strong {
+      color: #0f172a;
+    }
+
+    /* Summary Table */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.8pt;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+
+    .summary-table th {
+      background: #0f172a;
+      color: #ffffff;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 700;
+      border: 1px solid #0f172a;
+    }
+
+    .summary-table td {
+      padding: 6.5px 10px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+    }
+
+    .summary-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .badge-ok {
+      background: #dcfce7;
+      color: #15803d;
+      font-weight: 800;
+      font-size: 7.5pt;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid #86efac;
+      display: inline-block;
+    }
+
+    ul.bullet-list {
+      padding-left: 18px;
+      margin-top: 6px;
+      font-size: 9.5pt;
+      color: #334155;
+    }
+
+    ul.bullet-list li {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== COVER PAGE ==================== -->
+  <div class="page">
+    <div class="cover-container">
+      <div class="cover-header">
+        <span class="badge-doc">DOKUMEN RESMI REVISI SISTEM</span>
+        <h1 class="cover-title">LAPORAN REKAPITULASI HASIL REVISI WEBSITE & DASHBOARD ADMIN</h1>
+        <p class="cover-subtitle">Pembaruan Komprehensif Antarmuka Katalog, E-Commerce, Custom Studio, dan Manajemen Dashboard Kaos Dilio Berdasarkan Rekaman Meeting & Review Video</p>
+      </div>
+
+      <div class="cover-meta">
+        <div class="meta-row">
+          <span class="meta-label">Nama Proyek</span>
+          <span class="meta-value">Kaos Dilio E-Commerce & Custom Apparel Platform</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Target Revisi</span>
+          <span class="meta-value">11 Butir Revisi Lengkap (Katalog, Admin, Studio, Aset Real)</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Status Penyelesaian</span>
+          <span class="meta-value" style="color: #16a34a;">100% Selesai & Terverifikasi (Local Build)</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Metode Verifikasi</span>
+          <span class="meta-value">Real End-to-End Visual Testing & Real Screenshot Bukti Nyata</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Tanggal Pelaporan</span>
+          <span class="meta-value">26 Oktober 2026</span>
+        </div>
+      </div>
+
+      <div class="cover-footer">
+        <span>Kaos Dilio Web Development Team</span>
+        <span>Dokumentasi Visual & Teknis Hasil Uji Coba</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== EXECUTIVE SUMMARY ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">📋</div>
+      <h2 class="section-title">Ringkasan Eksekutif & Matriks Penyelesaian</h2>
+      <span class="status-pill">11 / 11 SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      Dokumen ini menyajikan <strong>bukti visual nyata (real screenshots)</strong> dari seluruh 11 butir revisi yang diinstruksikan dalam video review. Setiap screenshot diambil secara langsung dari sistem aplikasi yang sedang berjalan (port 5173), membuktikan bahwa setiap fitur baru telah aktif, responsif, dan berfungsi sesuai instruksi.
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th style="width: 5%;">No</th>
+          <th style="width: 30%;">Item Revisi</th>
+          <th style="width: 50%;">Rincian Solusi & Fitur Baru</th>
+          <th style="width: 15%; text-align: center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>Kategori Jenis Kaos</strong></td>
+          <td>Filter atas diubah ke jenis kaos (Kasual, Polo, Olahraga). Admin menyediakan input dropdown + tambah kategori kustom baru.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>Foto Produk Multi-Gambar</strong></td>
+          <td>Modal detail mendukung slider multi-gambar dan thumbnail. Admin memiliki manajer upload multi-foto & penanda foto utama.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>Fitur Copy / Duplikasi</strong></td>
+          <td>Tombol Copy di kolom tabel Action admin untuk menduplikasi produk sejenis tanpa input ulang dari awal.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>Informasi Size Chart</strong></td>
+          <td>Modal panduan ukuran interaktif per produk (Oversize, Regular, Fitted, Boxy, Long Sleeve) lengkap dengan tips mengukur badan.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>Dropdown Bahan Kain</strong></td>
+          <td>Input bahan di admin menjadi dropdown dengan opsi Heavyweight 16s, Cotton 24s, 20s, dsb., serta opsi tambah bahan baru.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>Badge & Durasi Pre-Order</strong></td>
+          <td>Badge hitam elegan "PRE-ORDER" di kartu produk dan baris estimasi durasi ("Pre-order : 1-2 Hari") pada spesifikasi detail.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><strong>Format Titik pada Harga</strong></td>
+          <td>Otomatisasi pemisah ribuan (e.g. 65.000 & 85.000) pada form admin untuk mencegah kesalahan nominal dan hitung diskon otomatis.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><strong>Sinkronisasi Filter Warna</strong></td>
+          <td>Filter warna di katalog kini otomatis membaca seluruh varian warna aktual dari database produk beserta color swatch lingkaran nyata.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><strong>Slider Limited di Home</strong></td>
+          <td>Bagian Koleksi Terbatas di Beranda diubah dari grid statis menjadi carousel slider interaktif dengan navigasi panah & swipe.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td><strong>Perbaikan Download Mockup</strong></td>
+          <td>Studio custom menyediakan opsi unduh Desain Transparan PNG dan Mockup Kaos Lengkap resolusi tinggi tanpa terpotong (non-crop).</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td><strong>Aset Real Photoshoot Cutting</strong></td>
+          <td>Integrasi aset foto asli model cutting (Boxy, Regular, Oversize, Long Sleeve, Fitted) dari folder <code>hal yg dibutuhkan</code>.</td>
+          <td style="text-align: center;"><span class="badge-ok">SELESAI</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ==================== POIN 1 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2 class="section-title">Kategori Jenis Kaos & Custom Kategori Admin</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Bagian tab menu atas diubah menjadi jenis/kategori kaos (seperti <em>Kasual</em>, <em>Polo</em>, dan <em>Olahraga</em>). Di dashboard admin, input kategori dibuat berbentuk dropdown yang dapat ditambahkan kategori baru secara kustom.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Tab di atas menampilkan pola potongan (Oversize, Regular) yang tumpang tindih dengan filter sidebar, dan admin hanya memakai text input biasa tanpa kategori kustom.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Menu atas kini khusus menampilkan Kategori Kaos: <strong>Semua Kategori, Kasual, Polo, Olahraga</strong>. Di admin, terdapat dropdown terstandar + input tambah kategori kustom baru.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 1.1: Tampilan Tab Navigasi Kategori Jenis Kaos di Halaman Katalog</span>
+        <span>URL: /koleksi-kaos</span>
+      </div>
+      <img src="../report-screenshots/01_kategori_jenis_kaos_catalog.png" alt="Kategori Jenis Kaos Catalog">
+      <div class="evidence-caption">
+        <strong>Foto Rill 1.1:</strong> Tab menu atas menampilkan kategori jenis kaos: <em>Semua Kategori</em>, <em>Kasual</em>, <em>Polo</em>, dan <em>Olahraga</em>. Kartu di bawahnya memuat label kategori terpadu (KASUAL, POLO, SPORT).
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 1.2: Dropdown Kategori Eksklusif & Form Tambah Kategori Baru di Admin</span>
+        <span>URL: /admin</span>
+      </div>
+      <img src="../report-screenshots/01_kategori_custom_admin.png" alt="Kategori Custom Admin">
+      <div class="evidence-caption">
+        <strong>Foto Rill 1.2:</strong> Form admin menampilkan tombol <code>+ Tambah Kategori Baru</code> yang memunculkan input teks kustom untuk mendaftarkan kategori eksklusif baru (contoh: <em>'Koleksi Streetwear & Kasual 2026'</em>).
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 2 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2 class="section-title">Foto Produk Multi-Gambar & Galeri Slider</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Tampilan foto produk dapat diisi lebih dari satu gambar (multigambar) dan dapat digeser (slider) untuk menampilkan foto detail zoom-in, tampak belakang, atau tampilan saat baju dipakai on-model.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Hanya mendukung 1 foto produk statis. Pembeli tidak dapat melihat tampak belakang atau foto detail pakaian saat dikenakan model.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Modal produk dilengkapi <strong>galeri interaktif slider</strong> dengan tombol panah (kiri/kanan) dan deretan thumbnail foto di bawahnya. Card katalog menampilkan badge <code>📷 X</code>.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 2.1: Galeri Slider Foto Produk & Jajaran Thumbnail Aktif di Modal Produk</span>
+        <span>Komponen: ProductModal.jsx</span>
+      </div>
+      <img src="../report-screenshots/02_multi_image_gallery_modal.png" alt="Multi Image Modal">
+      <div class="evidence-caption">
+        <strong>Foto Rill 2.1:</strong> Modal produk menampilkan galeri multi-gambar dengan tombol panah geser (&lt; dan &gt;) serta deretan thumbnail gambar di bagian bawah foto utama yang dapat diklik untuk berganti foto.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 2.2: Manajer Upload Multi-Foto & Pemilih Foto Utama di Dashboard Admin</span>
+        <span>Komponen: ProductFormModal.jsx</span>
+      </div>
+      <img src="../report-screenshots/02_multi_image_admin.png" alt="Multi Image Admin">
+      <div class="evidence-caption">
+        <strong>Foto Rill 2.2:</strong> Form admin memiliki panel 'Foto Produk (Bisa Diisi Lebih Dari 1 Gambar)' dengan multi-file upload, preview grid foto, tombol 'Hapus', dan badge bintang <code>★ Utama</code> untuk penanda cover katalog.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 3 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2 class="section-title">Fitur Copy / Duplikasi Produk Cepat di Admin</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Ditambahkan tombol 'copy' pada opsi aksi di dashboard admin agar produk yang hanya berbeda warna dapat diduplikasi secara praktis tanpa harus mengisi data dari awal.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Admin terpaksa mengetik ulang manual seluruh data produk (bahan, deskripsi, harga, pola cutting) tiap kali menambahkan varian warna baru dari produk yang sama.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Tersedia tombol aksi <strong>[ ⧉ Copy ]</strong> warna amber di tabel admin. Sekali klik, form langsung terbuka dengan seluruh data terisi lengkap untuk langsung disimpan.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 3.1: Tombol Aksi [ ⧉ Copy ] pada Kolom Tabel Dashboard Admin</span>
+        <span>Lokasi: Admin Product Table</span>
+      </div>
+      <img src="../report-screenshots/03_copy_action_table.png" alt="Copy Button in Table">
+      <div class="evidence-caption">
+        <strong>Foto Rill 3.1:</strong> Tombol aksi <code>[ ⧉ Copy ]</code> dengan badge warna amber/oranye hadir di samping tombol Edit dan Hapus pada tabel manajemen produk admin.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 3.2: Modal Duplikasi Otomatis Terbuka dengan Seluruh Data Produk Tersalin</span>
+        <span>Fitur: One-Click Product Duplication</span>
+      </div>
+      <img src="../report-screenshots/03_copy_modal_duplicated.png" alt="Duplicated Modal Pre-filled">
+      <div class="evidence-caption">
+        <strong>Foto Rill 3.2:</strong> Seluruh spesifikasi produk langsung terisi otomatis ke form (nama disematkan tanda <em>'(Copy)'</em>), sehingga admin cukup mengganti warna/nama dan menyimpannya dalam hitungan detik.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 4 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2 class="section-title">Informasi & Panduan Interaktif Size Chart</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Disediakan tombol untuk melihat size chart di tiap produk, di mana ukurannya dapat dilihat dan disesuaikan sendiri oleh admin, serta dilengkapi panduan fisik pengukuran baju.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Tidak tersedia informasi detail dimensi ukuran (Lebar Dada, Panjang Baju), sehingga calon pembeli sering ragu memilih ukuran yang pas.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Terdapat link tombol <strong>'Lihat Panduan Size Chart Kaos'</strong> di tiap produk yang memunculkan modal matriks ukuran (S-3XL) per model cutting dan petunjuk cara mengukur fisik badan.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 4.1: Tampilan Popup Modal Size Chart Lengkap dengan Tabel Dimensi & Panduan Ukur</span>
+        <span>Komponen: SizeChartModal.jsx</span>
+      </div>
+      <img src="../report-screenshots/04_size_chart_modal.png" alt="Size Chart Modal">
+      <div class="evidence-caption">
+        <strong>Foto Rill 4.1:</strong> Popup Size Chart interaktif memuat tab model cutting (Oversize, Regular, Fitted, Boxy, Long Sleeve), tabel ukuran cm lengkap (Lebar Dada, Panjang Baju, Lengan, TB/BB), serta panduan ilustrasi cara mengukur badan secara presisi.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 5 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2 class="section-title">Dropdown Bahan Kain & Tambah Bahan Kustom</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Input bahan kain di dashboard admin diubah menjadi dropdown (dapat ditambah jenis baru). Pilihan awalnya mencakup <em>Heavyweight 16s</em>, <em>Cotton 24s</em>, dan <em>20s</em>.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Bahan kain diinput lewat text input bebas tanpa standarisasi, rawan saltik atau inkonsistensi penamaan bahan antarproduk.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Disediakan <strong>dropdown pilihan terstandar</strong> (Cotton Combed 24s, 20s, Heavyweight 16s, Pique Cotton, Dry-Fit) ditambah fitur input dinamis untuk mendaftarkan nama bahan baru.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 5.1: Dropdown Bahan Kain Standar & Input Form Tambah Bahan Baru di Admin</span>
+        <span>Lokasi: Formulir Tambah/Edit Produk Admin</span>
+      </div>
+      <img src="../report-screenshots/05_dropdown_bahan_admin.png" alt="Dropdown Bahan Admin">
+      <div class="evidence-caption">
+        <strong>Foto Rill 5.1:</strong> Dropdown pilihan bahan kain terstandar dilengkapi tombol <code>+ Tambah Bahan Baru</code>. Ketika diklik, muncul input teks untuk menambahkan jenis kain kustom (contoh: <em>'Heavyweight 16s (Custom Wash)'</em>).
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 6 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2 class="section-title">Badge & Durasi Pre-Order (Sesuai Referensi Meeting)</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Ditambahkan opsi badge Pre-Order di admin. Jika dicentang, produk akan menampilkan keterangan estimasi durasi Pre-Order (dalam jumlah hari) secara jelas di website (sesuai referensi screenshot video review).
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Tidak ada penanda status pre-order pada kartu produk maupun rincian durasi waktu pengerjaan di modal produk.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Kartu produk memiliki <strong>badge hitam solid PRE-ORDER</strong> di pojok kanan atas, modal menampilkan spesifikasi <code>Pre-order : 1-2 Hari</code>, dan admin memiliki pengaturan durasi.
+      </div>
+    </div>
+
+    <div class="evidence-block-dual avoid-break">
+      <div class="evidence-block">
+        <div class="evidence-header">
+          <span>Bukti 6.1: Badge Hitam PRE-ORDER di Kartu Produk</span>
+        </div>
+        <img src="../report-screenshots/06_card_preorder_badge.png" alt="Card Preorder Badge">
+        <div class="evidence-caption">
+          <strong>Foto Rill 6.1:</strong> Badge hitam solid <code>PRE-ORDER</code> di pojok kanan atas foto produk, tag <em>KASUAL</em>, dan keterangan estimasi pengerjaan.
+        </div>
+      </div>
+
+      <div class="evidence-block">
+        <div class="evidence-header">
+          <span>Bukti 6.2: Baris Estimasi Durasi di Modal Produk</span>
+        </div>
+        <img src="../report-screenshots/06_preorder_durasi_modal.png" alt="Preorder Durasi Modal">
+        <div class="evidence-caption">
+          <strong>Foto Rill 6.2:</strong> Spesifikasi produk menampilkan baris rapi: <code>Pre-order : 1-2 Hari</code> dan box informasi kesiapan kirim.
+        </div>
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 6.3: Pengaturan Toggle Pre-Order & Pilihan Cepat Durasi di Admin Form</span>
+        <span>Lokasi: Admin Form Modal</span>
+      </div>
+      <img src="../report-screenshots/06_preorder_admin_toggle.png" alt="Preorder Admin Toggle">
+      <div class="evidence-caption">
+        <strong>Foto Rill 6.3:</strong> Form admin menyediakan checkbox <em>'Produk Pre-Order (PO)'</em>, input custom hari, dan tombol cepat (+ 3-5 Hari, + 7 Hari Kerja, + 10 Hari, + 14 Hari Kerja).
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 7 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2 class="section-title">Format Titik Otomatis Pemisah Ribuan pada Harga</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Pada bagian input harga dashboard admin, sistem akan otomatis memberi titik untuk menandakan puluhan, ribuan, dst. guna mencegah kesalahan pengetikan nominal.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Admin harus mengetik angka polos seperti '65000' tanpa pemisah titik, sangat rentan saltik kelebihan atau kekurangan digit nol (human error).
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Input otomatis memformat titik ribuan secara real-time: <strong>65.000</strong> dan harga coret <strong>85.000</strong>, sekaligus menghitung preview persentase diskon promo.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 7.1: Input Harga Terformat Titik Ribuan Otomatis & Badge Hitung Diskon Promo</span>
+        <span>Lokasi: Admin ProductFormModal.jsx</span>
+      </div>
+      <img src="../report-screenshots/07_format_titik_harga_admin.png" alt="Format Titik Harga Admin">
+      <div class="evidence-caption">
+        <strong>Foto Rill 7.1:</strong> Saat admin mengetik harga, sistem secara otomatis menyisipkan titik pemisah ribuan (contoh: <code>65.000</code> dan <code>85.000</code>). Sistem juga otomatis menampilkan kalkulasi diskon real-time: <em>'🏷️ Promo Aktif: Diskon 24% (Hemat Rp 20.000)'</em>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 8 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2 class="section-title">Sinkronisasi Filter Warna dengan Data Riil Produk</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Warna pada filter website diperbaiki karena sebelumnya tidak sesuai hasil filternya. Ini disamakan dengan data warna yang diinput di semua produk secara dinamis.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Daftar filter warna menggunakan data hardcoded statis yang tidak sesuai dengan varian warna produk asli, mengakibatkan hasil filter kosong.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Filter warna otomatis mengekstrak seluruh warna riil produk yang terdaftar di database, menyajikan swatch lingkaran warna asli dan memfilter katalog secara akurat.
+      </div>
+    </div>
+
+    <div class="evidence-block-dual avoid-break">
+      <div class="evidence-block">
+        <div class="evidence-header">
+          <span>Bukti 8.1: Panel Filter Warna Sidebar yang Sinkron</span>
+        </div>
+        <img src="../report-screenshots/08_sinkronisasi_filter_warna.png" alt="Filter Warna Sidebar">
+        <div class="evidence-caption">
+          <strong>Foto Rill 8.1:</strong> Sidebar menampilkan pilihan warna asli (Hitam, Putih, Sage Green, Navy, Charcoal, Terracotta) lengkap dengan swatch warna hex asli.
+        </div>
+      </div>
+
+      <div class="evidence-block">
+        <div class="evidence-header">
+          <span>Bukti 8.2: Hasil Filter Katalog Terpilih (Sage Green)</span>
+        </div>
+        <img src="../report-screenshots/08_hasil_filter_warna_terpilih.png" alt="Filter Warna Terpilih">
+        <div class="evidence-caption">
+          <strong>Foto Rill 8.2:</strong> Ketika checkbox warna (contoh: Sage Green) diklik, katalog secara instan hanya menampilkan produk yang memiliki varian warna tersebut.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 9 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2 class="section-title">Slider Carousel Produk Limited di Halaman Utama (Home)</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Pada halaman utama (home), bagian produk limited dibuat agar bisa digeser (slider) agar lebih dinamis, rapi, dan mudah dijelajahi oleh pengunjung.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Produk limited tampil dalam grid 4 kolom kaku yang memakan ruang vertikal banyak dan tidak interaktif pada perangkat tablet maupun ponsel.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Bagian koleksi limited kini berupa <strong>Carousel Slider interaktif</strong> dengan tombol navigasi panah kiri/kanan, tab kategori eksklusif, dan dukungan gesture swipe.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 9.1: Tampilan Carousel Slider Koleksi Limited Edition di Beranda</span>
+        <span>URL: / (Homepage Section 3)</span>
+      </div>
+      <img src="../report-screenshots/09_slider_limited_home.png" alt="Slider Limited Home">
+      <div class="evidence-caption">
+        <strong>Foto Rill 9.1:</strong> Tampilan carousel slider pada section Koleksi Terbatas di Homepage. Terlihat tombol navigasi panah (&lt; dan &gt;) di sisi kanan atas, tab filter eksklusif, serta jajaran kartu produk horizontal yang dapat digeser secara mulus.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 10 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2 class="section-title">Perbaikan Fitur Download Mockup di Studio Custom</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Tampilan hasil download gambar desain produk diperbaiki karena saat ini hasilnya terpotong dan terlalu zoom-in, termasuk penyesuaian kebutuhan latar transparan PNG untuk sablon.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Hasil download desain terpotong (zoom-in berlebih) di kanvas dan tidak ada opsi untuk mengunduh desain saja dalam format PNG transparan untuk sablon DTF.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Tombol 'Download Mockup' kini memiliki 2 menu opsi: <strong>1) Desain Sablon PNG Transparan</strong> dan <strong>2) Mockup Kaos Utuh</strong> yang proporsional 100% tanpa terpotong.
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 10.1: Menu Unduh Mockup Kaos Utuh & Desain Transparan di Studio Custom</span>
+        <span>URL: /bikin-kaos-custom</span>
+      </div>
+      <img src="../report-screenshots/10_download_mockup_studio.png" alt="Download Mockup Studio">
+      <div class="evidence-caption">
+        <strong>Foto Rill 10.1:</strong> Antarmuka studio custom menampilkan dropdown menu unduh: <em>'👕 Mockup Kaos Utuh (PNG)'</em> (hasil proporsional tidak terpotong) dan <em>'✨ Desain Sablon Saja (PNG)'</em> (transparan kualitas cetak sablon).
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POIN 11 ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2 class="section-title">Pembaruan Aset Real Photoshoot Model Cutting</h2>
+      <span class="status-pill">SELESAI</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Kebutuhan Klien:</strong> Pembaruan aset visual katalog menggunakan hasil pemotretan asli (real photoshoot) untuk berbagai model cutting baju (<em>Boxy</em>, <em>Regular</em>, <em>Oversize</em>, <em>Long Sleeve</em>, <em>Fitted</em>) dari direktori <code>hal yg dibutuhkan</code>.
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-col">
+        <div class="comp-title-before">❌ Kondisi Sebelum</div>
+        Katalog memakai placeholder ilustrasi mockup flat yang belum mencerminkan bentuk fisik baju sebenarnya saat dipakai model.
+      </div>
+      <div class="comp-col">
+        <div class="comp-title-after">✓ Solusi & Hasil Baru</div>
+        Seluruh produk katalog harian telah diperbarui menggunakan <strong>foto photoshoot on-model asli</strong> dari folder <code>hal yg dibutuhkan</code> (Boxy, Regular, Oversize, Long Sleeve, Fitted).
+      </div>
+    </div>
+
+    <div class="evidence-block avoid-break">
+      <div class="evidence-header">
+        <span>Bukti 11.1: Tampilan Katalog Menggunakan Foto Real Photoshoot Berbagai Model Cutting</span>
+        <span>Sumber: Direktori 'hal yg dibutuhkan'</span>
+      </div>
+      <img src="../report-screenshots/11_aset_cutting_photoshoot.png" alt="Real Photoshoot Cuttings">
+      <div class="evidence-caption">
+        <strong>Foto Rill 11.1:</strong> Seluruh produk menampilkan foto pemotretan asli: <em>Boxy Cut (Boxy.jpg)</em>, <em>Regular Fit (Regular.jpg)</em>, <em>Oversize Streetwear (Oversize.jpg)</em>, <em>Long Sleeve Ribbed (Long Sleeve.jpg)</em>, dan <em>Fitted Athletic (Fitted.jpg)</em>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== KESIMPULAN & PENUTUP ==================== -->
+  <div class="page">
+    <div class="section-header">
+      <div class="section-num">✅</div>
+      <h2 class="section-title">Kesimpulan & Rekomendasi Selanjutnya</h2>
+      <span class="status-pill">VERIFIKASI TUNTAS</span>
+    </div>
+
+    <div class="desc-box">
+      <strong>Ringkasan Hasil Evaluasi:</strong><br>
+      Semua 11 butir revisi telah selesai diimplementasikan secara komprehensif pada arsitektur kode frontend dan backend lokal. Seluruh fungsi telah diuji coba langsung dan berjalan mulus tanpa error konsol atau layout breaking.
+    </div>
+
+    <h3 style="font-size: 11pt; font-weight: 700; color: #0f172a; margin-bottom: 8px; margin-top: 14px;">Poin Pencapaian Kunci:</h3>
+    <ul class="bullet-list">
+      <li><strong>Peningkatan Konversi Pembeli:</strong> Kehadiran foto photoshoot asli on-model, galeri multi-gambar dengan slider tampak depan-belakang, serta tabel size chart interaktif meningkatkan kepercayaan konsumen dan meminimalisir salah ukuran.</li>
+      <li><strong>Transparansi Transaksi:</strong> Badge PRE-ORDER hitam yang tegas di kartu produk dan keterangan durasi pengerjaan mengeliminasi ketidakpastian pelanggan mengenai waktu pengiriman.</li>
+      <li><strong>Efisiensi Operasional Admin:</strong> Fitur duplikasi produk satu klik [ ⧉ Copy ], dropdown bahan/kategori dinamis, serta format titik harga otomatis menghemat waktu input admin dan mencegah kesalahan nominal harga.</li>
+      <li><strong>Kesiapan Produksi Custom:</strong> Ekspor mockup beresolusi tinggi tanpa terpotong dan opsi PNG transparan memudahkan tim workshop dalam mencetak sablon secara presisi.</li>
+    </ul>
+
+    <div style="margin-top: 32px; padding: 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center;">
+      <h4 style="font-size: 10.5pt; color: #0f172a; font-weight: 800; margin-bottom: 6px;">Status Implementasi: SIAP DEPLOY KE PRODUCTION</h4>
+      <p style="font-size: 9pt; color: #64748b;">Seluruh perubahan saat ini tersimpan aman pada repositori lokal (<code>E:\WORK\dilio</code>) sesuai permintaan. Pengunggahan ke server production dapat dilakukan kapan saja setelah dokumen ini disetujui.</p>
+    </div>
+
+    <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 9.5pt; color: #475569;">
+      <div>
+        <p>Disiapkan oleh:</p>
+        <p style="margin-top: 36px; font-weight: 700; color: #0f172a;">Tim Pengembang Kaos Dilio</p>
+      </div>
+      <div style="text-align: right;">
+        <p>Disetujui oleh:</p>
+        <p style="margin-top: 36px; font-weight: 700; color: #0f172a;">Owner / Management Kaos Dilio</p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -15,6 +15,7 @@ function AppLayout() {
   const isAdmin = location.pathname.startsWith('/admin');
   const isCustomStudio =
     location.pathname.startsWith('/bikin-kaos-custom') ||
+    location.pathname.startsWith('/desain-custom') ||
     location.pathname.startsWith('/design') ||
     location.pathname.startsWith('/studio') ||
     location.pathname.startsWith('/mockup');
@@ -28,6 +29,7 @@ function AppLayout() {
           <Route path="/" element={<HomePage />} />
           <Route path="/koleksi-kaos" element={<KoleksiKaosPage />} />
           <Route path="/bikin-kaos-custom" element={<BikinKaosCustomPage />} />
+          <Route path="/desain-custom" element={<BikinKaosCustomPage />} />
           <Route path="/design" element={<BikinKaosCustomPage />} />
           <Route path="/design-custom" element={<BikinKaosCustomPage />} />
           <Route path="/studio" element={<BikinKaosCustomPage />} />

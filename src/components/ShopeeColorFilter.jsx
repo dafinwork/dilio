@@ -2,11 +2,22 @@ import { useState } from 'react';
 import { Filter, Check, X, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { BASE_COLORS } from '../utils/helpers';
 
+const DEFAULT_CUTTING_OPTIONS = [
+  { label: 'Semua Cut', value: 'all' },
+  { label: 'Oversized', value: 'oversized' },
+  { label: 'Regular', value: 'regular' },
+  { label: 'Fitted', value: 'fitted' },
+  { label: 'Boxy', value: 'boxy' },
+  { label: 'Long Sleeve', value: 'long-sleeve' },
+];
+
 export default function ShopeeColorFilter({
   selectedColors = [],
   onToggleColor,
   onResetColors,
   colorCounts = {},
+  availableColors = BASE_COLORS,
+  cuttingOptions = DEFAULT_CUTTING_OPTIONS,
   activeCutting = 'all',
   onCuttingChange,
   cuttingCounts = {},
@@ -17,16 +28,9 @@ export default function ShopeeColorFilter({
   const [colorExpanded, setColorExpanded] = useState(true);
   const [cuttingExpanded, setCuttingExpanded] = useState(true);
 
-  const cuttingOptions = [
-    { label: 'Semua Cut', value: 'all' },
-    { label: 'Oversized', value: 'oversized' },
-    { label: 'Regular', value: 'regular' },
-    { label: 'Fitted', value: 'fitted' },
-    { label: 'Boxy', value: 'boxy' },
-    { label: 'Long Sleeve', value: 'long-sleeve' },
-  ];
-
   const hasActiveFilters = selectedColors.length > 0 || activeCutting !== 'all';
+
+  const filterColors = availableColors.length > 0 ? availableColors : BASE_COLORS;
 
   const filterContent = (
     <div className="space-y-6">
@@ -53,12 +57,12 @@ export default function ShopeeColorFilter({
         )}
       </div>
 
-      {/* 1. Tshirt Cut (Cutting Filter) */}
+      {/* 1. Tshirt Cut */}
       <div className="pb-5 border-b border-neutral-100">
         <button
           type="button"
           onClick={() => setCuttingExpanded(!cuttingExpanded)}
-          className="w-full flex items-center justify-between text-left font-bold text-neutral-900 text-xs sm:text-sm mb-3 select-none"
+          className="w-full flex items-center justify-between text-left font-bold text-neutral-900 text-xs sm:text-sm mb-3 select-none cursor-pointer"
         >
           <span className="uppercase tracking-wider text-[11px] text-neutral-500 font-bold">
             Tshirt Cut
@@ -71,10 +75,10 @@ export default function ShopeeColorFilter({
         </button>
 
         {cuttingExpanded && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {cuttingOptions.map((opt) => {
               const isSelected = activeCutting === opt.value;
-              const count = cuttingCounts[opt.value];
+              const count = cuttingCounts[opt.value] ?? 0;
               return (
                 <button
                   key={opt.value}
@@ -103,16 +107,16 @@ export default function ShopeeColorFilter({
         )}
       </div>
 
-      {/* 2. Shopee-Style Color Filter Section */}
+      {/* 2. Shopee-Style Color Filter Section (Matches Actual Product Input Data) */}
       <div className="pb-5 border-b border-neutral-100">
         <div className="flex items-center justify-between mb-3">
           <button
             type="button"
             onClick={() => setColorExpanded(!colorExpanded)}
-            className="flex-1 flex items-center justify-between text-left select-none"
+            className="flex-1 flex items-center justify-between text-left select-none cursor-pointer"
           >
             <span className="uppercase tracking-wider text-[11px] text-neutral-500 font-bold">
-              Pilihan Warna
+              Pilihan Warna ({filterColors.length})
             </span>
             {colorExpanded ? (
               <ChevronUp className="w-3.5 h-3.5 text-neutral-400" />
@@ -124,7 +128,7 @@ export default function ShopeeColorFilter({
             <button
               type="button"
               onClick={onResetColors}
-              className="text-[10px] font-bold text-neutral-500 hover:text-red-600 underline ml-2 shrink-0"
+              className="text-[10px] font-bold text-neutral-500 hover:text-red-600 underline ml-2 shrink-0 cursor-pointer"
             >
               Reset ({selectedColors.length})
             </button>
@@ -132,16 +136,20 @@ export default function ShopeeColorFilter({
         </div>
 
         {colorExpanded && (
-          <div className="space-y-1.5">
-            {BASE_COLORS.map((color) => {
-              const isSelected = selectedColors.includes(color.id);
-              const count = colorCounts[color.id] || 0;
+          <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
+            {filterColors.map((color) => {
+              const colorKey = color.hex || color.id;
+              const isSelected =
+                selectedColors.includes(colorKey) ||
+                selectedColors.includes(color.hex) ||
+                selectedColors.includes(color.id);
+              const count = colorCounts[color.hex] ?? colorCounts[color.id] ?? 0;
 
               return (
                 <button
-                  key={color.id}
+                  key={colorKey}
                   type="button"
-                  onClick={() => onToggleColor(color.id)}
+                  onClick={() => onToggleColor(color.hex || color.id)}
                   className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left transition-all cursor-pointer border ${
                     isSelected
                       ? 'bg-neutral-900 border-neutral-900 text-white shadow-2xs'
@@ -154,7 +162,7 @@ export default function ShopeeColorFilter({
                       className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors ${
                         isSelected
                           ? 'bg-white border-white text-neutral-900'
-                          : 'border-neutral-300 bg-white group-hover:border-neutral-400'
+                          : 'border-neutral-300 bg-white'
                       }`}
                     >
                       {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -198,12 +206,14 @@ export default function ShopeeColorFilter({
             Warna Terpilih
           </span>
           <div className="flex flex-wrap gap-1.5">
-            {selectedColors.map((colorId) => {
-              const colorObj = BASE_COLORS.find((c) => c.id === colorId);
-              if (!colorObj) return null;
+            {selectedColors.map((colorKey) => {
+              const colorObj = filterColors.find(
+                (c) => c.hex === colorKey || c.id === colorKey
+              ) || { hex: colorKey, name: colorKey };
+
               return (
                 <span
-                  key={colorId}
+                  key={colorKey}
                   className="inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-lg text-xs font-semibold transition-colors"
                 >
                   <span
@@ -213,7 +223,7 @@ export default function ShopeeColorFilter({
                   <span>{colorObj.name}</span>
                   <button
                     type="button"
-                    onClick={() => onToggleColor(colorId)}
+                    onClick={() => onToggleColor(colorKey)}
                     className="p-0.5 text-neutral-400 hover:text-neutral-900 rounded cursor-pointer"
                     title={`Hapus filter ${colorObj.name}`}
                   >
@@ -288,14 +298,14 @@ export default function ShopeeColorFilter({
                   onResetColors();
                   if (onCuttingChange) onCuttingChange('all');
                 }}
-                className="flex-1 py-2.5 border border-neutral-300 bg-white text-neutral-700 text-xs font-bold rounded-xl hover:bg-neutral-100 transition-colors"
+                className="flex-1 py-2.5 border border-neutral-300 bg-white text-neutral-700 text-xs font-bold rounded-xl hover:bg-neutral-100 transition-colors cursor-pointer"
               >
                 Reset
               </button>
               <button
                 type="button"
                 onClick={onCloseMobile}
-                className="flex-1 py-2.5 bg-neutral-900 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-neutral-800 transition-colors"
+                className="flex-1 py-2.5 bg-neutral-900 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-neutral-800 transition-colors cursor-pointer"
               >
                 Tampilkan ({totalCount})
               </button>

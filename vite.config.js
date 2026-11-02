@@ -9,5 +9,11 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  server: {
+    port: 5180,
+    strictPort: false,
+    watch: {
+      ignored: ['**/hal yg dibutuhkan/**', '**/.git/**'],
+    },
+  },
 })
-

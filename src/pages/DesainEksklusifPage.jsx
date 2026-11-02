@@ -4,18 +4,53 @@ import ProductCard from '../components/ProductCard';
 import ProductModal from '../components/ProductModal';
 import { useProducts } from '../context/ProductContext';
 
+const DEFAULT_EXCLUSIVE_TABS = [
+  { label: 'Semua', value: 'all' },
+  { label: 'Dilio', value: 'dilio' },
+  { label: 'Thinking Out', value: 'thinking-out' },
+  { label: 'Dilio x One Piece', value: 'dilio-x-one-piece' },
+];
+
 export default function DesainEksklusifPage() {
   const { products: allProducts } = useProducts();
   const [activeTab, setActiveTab] = useState('all');
   const [sortOption, setSortOption] = useState('latest');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const tabs = [
-    { label: 'Semua', value: 'all' },
-    { label: 'Dilio', value: 'dilio' },
-    { label: 'Thinking Out', value: 'thinking-out' },
-    { label: 'Dilio x One Piece', value: 'dilio-x-one-piece' },
-  ];
+  // Dynamically derive exclusive category tabs
+  const tabs = useMemo(() => {
+    const list = [...DEFAULT_EXCLUSIVE_TABS];
+    const knownValues = new Set(list.map((t) => t.value));
+
+    try {
+      const saved = localStorage.getItem('kaos_dilio_custom_exclusive_cats');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((cat) => {
+            if (cat && cat.value && !knownValues.has(cat.value)) {
+              knownValues.add(cat.value);
+              list.push({ label: cat.label || cat.value, value: cat.value });
+            }
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    allProducts.forEach((p) => {
+      if (p.product_group === 'eksklusif' && p.exclusive_category && !knownValues.has(p.exclusive_category)) {
+        knownValues.add(p.exclusive_category);
+        const autoLabel = p.exclusive_category
+          .replace(/-/g, ' ')
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        list.push({ label: autoLabel, value: p.exclusive_category });
+      }
+    });
+
+    return list;
+  }, [allProducts]);
 
   // Exclusive products
   const exclusiveProducts = useMemo(() => {
@@ -31,7 +66,7 @@ export default function DesainEksklusifPage() {
       if (sortOption === 'name_asc') return a.name.localeCompare(b.name);
       return new Date(b.created_at) - new Date(a.created_at);
     });
-  }, [activeTab, sortOption]);
+  }, [allProducts, activeTab, sortOption]);
 
   return (
     <div className="min-h-screen py-12 sm:py-16 bg-white">
@@ -53,7 +88,7 @@ export default function DesainEksklusifPage() {
           showSort={true}
         />
 
-        {/* 4-column Grid (8 products) */}
+        {/* 4-column Grid */}
         {exclusiveProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
             {exclusiveProducts.map((product) => (
@@ -69,7 +104,7 @@ export default function DesainEksklusifPage() {
             <p className="text-base font-semibold">Tidak ada produk untuk kategori eksklusif ini.</p>
             <button
               onClick={() => setActiveTab('all')}
-              className="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-bold"
+              className="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-bold cursor-pointer"
             >
               Lihat Semua Desain Eksklusif
             </button>

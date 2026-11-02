@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2 } from 'lucide-react';
+import { X, Check, Loader2, Plus, Trash2, Star, Clock, Sparkles, Ruler } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { safeColors } from '../../utils/helpers';
+import { safeColors, formatNumberDots, parseNumberDots } from '../../utils/helpers';
+import { getStoredSizeCharts, SIZE_CHARTS_STORAGE_KEY } from '../SizeChartModal';
 import ColorWheelModal from './ColorWheelModal';
 
 const PRESET_BG_COLORS = [
@@ -27,6 +28,46 @@ const PRESET_DOT_COLORS = [
   '#64748B',
 ];
 
+const DEFAULT_MATERIALS = [
+  'Heavyweight 16s',
+  'Cotton Combed 24s',
+  'Cotton Combed 20s',
+  'Cotton Combed 30s',
+  'Washed Cotton 20s',
+  'Pique Cotton (Polo)',
+  'Dry-Fit / Polyester (Olahraga)',
+  'Cotton Fleece (Jaket/Hoodie)',
+];
+
+const DEFAULT_KAOS_CATEGORIES = [
+  'KASUAL',
+  'POLO',
+  'OLAHRAGA',
+  'BASIC',
+  'STREETWEAR',
+  'HOODIE',
+  'LIMITED EDITION',
+];
+
+const DEFAULT_CUTTINGS = [
+  { value: 'oversized', label: 'Oversized Fit' },
+  { value: 'regular', label: 'Regular Fit' },
+  { value: 'fitted', label: 'Fitted' },
+  { value: 'boxy', label: 'Boxy Cut' },
+  { value: 'long-sleeve', label: 'Long Sleeve (Lengan Panjang)' },
+];
+
+const DEFAULT_EXCLUSIVE_CATEGORIES = [
+  { value: 'dilio', label: 'Dilio (Brand Sendiri)' },
+  { value: 'thinking-out', label: 'Thinking Out (Partner Brand)' },
+  { value: 'dilio-x-one-piece', label: 'Dilio x One Piece (Collab)' },
+];
+
+const CUSTOM_MATERIALS_KEY = 'kaos_dilio_custom_materials';
+const CUSTOM_KAOS_CAT_KEY = 'kaos_dilio_custom_kaos_categories';
+const CUSTOM_CUTTINGS_KEY = 'kaos_dilio_custom_cuttings';
+const CUSTOM_EXCLUSIVE_CAT_KEY = 'kaos_dilio_custom_exclusive_cats';
+
 export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -34,67 +75,196 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     cutting_type: 'oversized',
     sablon_type: 'dtf',
     exclusive_category: 'dilio',
-    category_label: 'COTTON COMBED 24S',
+    category_label: 'KASUAL',
+    kaos_category: 'KASUAL',
     material: 'Cotton Combed 24s',
-    price: 65000,
+    priceText: '65.000',
+    originalPriceText: '',
     description: '',
     image_url: '',
-    visual_mode: 'mockup',
+    images: [],
+    visual_mode: 'image',
     is_new: false,
     is_exclusive: false,
+    is_preorder: false,
+    preorder_duration: '',
     placeholder_title: '',
     placeholder_bg: '#E5E7EB',
     placeholder_text_color: '#374151',
-    colors: ['#000000', '#FFFFFF', '#15803D'],
-    extra_colors_count: 12,
+    colors: ['#000000'],
+    extra_colors_count: 0,
+    size_chart: [],
   });
+
+  // Pola Cutting list with persistence
+  const [cuttingsList, setCuttingsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_CUTTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingVals = new Set(DEFAULT_CUTTINGS.map((c) => c.value));
+          const customOnes = parsed.filter((c) => c && c.value && !existingVals.has(c.value));
+          return [...DEFAULT_CUTTINGS, ...customOnes];
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_CUTTINGS;
+  });
+
+  const [newCuttingInput, setNewCuttingInput] = useState('');
+  const [showAddCutting, setShowAddCutting] = useState(false);
+
+  // Kategori Jenis Kaos list with persistence
+  const [kaosCategoriesList, setKaosCategoriesList] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_KAOS_CAT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return Array.from(new Set([...DEFAULT_KAOS_CATEGORIES, ...parsed.map((c) => String(c).toUpperCase())]));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_KAOS_CATEGORIES;
+  });
+
+  const [newKaosCategoryInput, setNewKaosCategoryInput] = useState('');
+  const [showAddKaosCategory, setShowAddKaosCategory] = useState(false);
+
+  // Material list with persistence
+  const [materialsList, setMaterialsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_MATERIALS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const merged = Array.from(new Set([...DEFAULT_MATERIALS, ...parsed]));
+          return merged;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_MATERIALS;
+  });
+
+  const [newMaterialInput, setNewMaterialInput] = useState('');
+  const [showAddMaterial, setShowAddMaterial] = useState(false);
+
+  // Exclusive category list with persistence
+  const [exclusiveCategories, setExclusiveCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_EXCLUSIVE_CAT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...DEFAULT_EXCLUSIVE_CATEGORIES, ...parsed];
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_EXCLUSIVE_CATEGORIES;
+  });
+
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [showAddCategory, setShowAddCategory] = useState(false);
+
+  // Online image url input helper
+  const [onlineImageUrl, setOnlineImageUrl] = useState('');
 
   const [customColor, setCustomColor] = useState('#000000');
   const [colorWheelOpen, setColorWheelOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Populate data when modal opens
   useEffect(() => {
-    if (product && product.id) {
+    const storedCharts = getStoredSizeCharts();
+    const getChartRows = (cutKey) => {
+      const chart = storedCharts[cutKey] || storedCharts.regular;
+      return chart.rows.map((r) => ({ ...r }));
+    };
+
+    if (product && (product.id || product.is_copy)) {
+      const initialImages = Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : product.image_url
+        ? [product.image_url]
+        : [];
+      const cutType = product.cutting_type || 'oversized';
+      const catLabel = (product.kaos_category || product.category_label || 'KASUAL').toUpperCase();
+      const initialSizeChart =
+        Array.isArray(product.size_chart) && product.size_chart.length > 0
+          ? product.size_chart.map((r) => ({ ...r }))
+          : getChartRows(cutType);
+
       setFormData({
         name: product.name || '',
         product_group: product.product_group || 'harian',
-        cutting_type: product.cutting_type || 'oversized',
+        cutting_type: cutType,
         sablon_type: product.sablon_type || 'dtf',
         exclusive_category: product.exclusive_category || 'dilio',
-        category_label: product.category_label || '',
-        material: product.material || '',
-        price: product.price || 0,
+        category_label: catLabel,
+        kaos_category: catLabel,
+        material: product.material || 'Cotton Combed 24s',
+        priceText: formatNumberDots(product.price || 0),
+        originalPriceText: formatNumberDots(product.original_price || ''),
         description: product.description || '',
-        image_url: product.image_url || '',
-        visual_mode: product.image_url ? 'image' : 'mockup',
+        image_url: initialImages[0] || product.image_url || '',
+        images: initialImages,
+        visual_mode: initialImages.length > 0 ? 'image' : 'mockup',
         is_new: Boolean(product.is_new),
         is_exclusive: Boolean(product.is_exclusive),
+        is_preorder: Boolean(product.is_preorder),
+        preorder_duration: product.preorder_duration || '',
         placeholder_title: product.placeholder_title || product.name || '',
         placeholder_bg: product.placeholder_bg || '#E5E7EB',
         placeholder_text_color: product.placeholder_text_color || '#374151',
         colors: safeColors(product.colors),
         extra_colors_count: product.extra_colors_count || 0,
+        size_chart: initialSizeChart,
       });
+
+      if (cutType && !cuttingsList.some((c) => c.value === cutType)) {
+        setCuttingsList((prev) => [...prev, { value: cutType, label: cutType.toUpperCase() }]);
+      }
+      if (catLabel) {
+        setKaosCategoriesList((prev) => (prev.includes(catLabel) ? prev : [catLabel, ...prev]));
+      }
+      if (product.material) {
+        setMaterialsList((prev) => (prev.includes(product.material) ? prev : [product.material, ...prev]));
+      }
     } else if (product && product.product_group === 'eksklusif') {
       setFormData({
         name: '',
         product_group: 'eksklusif',
-        cutting_type: product.cutting_type || 'oversized',
+        cutting_type: 'oversized',
         sablon_type: 'plastisol',
         exclusive_category: 'dilio',
-        category_label: 'LIMITED EDITION',
+        category_label: 'STREETWEAR',
+        kaos_category: 'STREETWEAR',
         material: 'Cotton Combed 24s',
-        price: 185000,
+        priceText: '185.000',
+        originalPriceText: '220.000',
         description: 'Koleksi eksklusif limited edition dengan desain spesial dan bahan premium.',
         image_url: '',
-        visual_mode: 'mockup',
+        images: [],
+        visual_mode: 'image',
         is_new: true,
         is_exclusive: true,
+        is_preorder: false,
+        preorder_duration: '',
         placeholder_title: 'LIMITED\nEDITION',
         placeholder_bg: '#1E293B',
         placeholder_text_color: '#FACC15',
         colors: ['#000000'],
         extra_colors_count: 0,
+        size_chart: getChartRows('oversized'),
       });
     } else {
       setFormData({
@@ -103,83 +273,266 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         cutting_type: 'oversized',
         sablon_type: 'dtf',
         exclusive_category: 'dilio',
-        category_label: 'COTTON COMBED 24S',
+        category_label: 'KASUAL',
+        kaos_category: 'KASUAL',
         material: 'Cotton Combed 24s',
-        price: 65000,
+        priceText: '65.000',
+        originalPriceText: '',
         description: 'Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear.',
         image_url: '',
-        visual_mode: 'mockup',
+        images: [],
+        visual_mode: 'image',
         is_new: false,
         is_exclusive: false,
+        is_preorder: false,
+        preorder_duration: '',
         placeholder_title: 'Oversized\nFit',
         placeholder_bg: '#E5E7EB',
         placeholder_text_color: '#374151',
-        colors: ['#000000', '#FFFFFF', '#15803D'],
-        extra_colors_count: 12,
+        colors: ['#000000'],
+        extra_colors_count: 0,
+        size_chart: getChartRows('oversized'),
       });
     }
   }, [product, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran file maksimal 5MB.');
-      return;
-    }
+  // Handle Multi Image File Upload
+  const handleMultipleImagesUpload = async (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
 
     setIsUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-      const filePath = `products/${fileName}`;
+    const newImageUrls = [];
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, { cacheControl: '3600', upsert: true });
-
-      if (!uploadError && uploadData) {
-        const { data: publicUrlData } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-
-        if (publicUrlData?.publicUrl) {
-          setFormData((prev) => ({
-            ...prev,
-            image_url: publicUrlData.publicUrl,
-            visual_mode: 'image',
-          }));
-          setIsUploading(false);
-          return;
-        }
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File ${file.name} melebihi ukuran maksimal 5MB.`);
+        continue;
       }
 
-      // Fallback to base64 if storage bucket not initialized
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          image_url: reader.result,
-          visual_mode: 'image',
-        }));
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          image_url: reader.result,
-          visual_mode: 'image',
-        }));
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+        if (!uploadError && uploadData) {
+          const { data: publicUrlData } = supabase.storage
+            .from('product-images')
+            .getPublicUrl(filePath);
+
+          if (publicUrlData?.publicUrl) {
+            newImageUrls.push(publicUrlData.publicUrl);
+            continue;
+          }
+        }
+
+        // Fallback to Base64
+        const base64Url = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        newImageUrls.push(base64Url);
+      } catch {
+        const base64Url = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        newImageUrls.push(base64Url);
+      }
     }
+
+    if (newImageUrls.length > 0) {
+      setFormData((prev) => {
+        const updatedImages = [...prev.images, ...newImageUrls];
+        return {
+          ...prev,
+          images: updatedImages,
+          image_url: updatedImages[0] || '',
+          visual_mode: 'image',
+        };
+      });
+    }
+
+    setIsUploading(false);
+  };
+
+  // Add Online Image URL
+  const handleAddOnlineImageUrl = () => {
+    if (!onlineImageUrl.trim()) return;
+    const url = onlineImageUrl.trim();
+    setFormData((prev) => {
+      const updated = [...prev.images, url];
+      return {
+        ...prev,
+        images: updated,
+        image_url: updated[0] || '',
+        visual_mode: 'image',
+      };
+    });
+    setOnlineImageUrl('');
+  };
+
+  // Set an image as primary thumbnail
+  const handleSetPrimaryImage = (index) => {
+    setFormData((prev) => {
+      const target = prev.images[index];
+      const remaining = prev.images.filter((_, i) => i !== index);
+      const reordered = [target, ...remaining];
+      return {
+        ...prev,
+        images: reordered,
+        image_url: reordered[0],
+      };
+    });
+  };
+
+  // Delete an image
+  const handleRemoveImage = (index) => {
+    setFormData((prev) => {
+      const updated = prev.images.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        images: updated,
+        image_url: updated[0] || '',
+        visual_mode: updated.length > 0 ? 'image' : 'mockup',
+      };
+    });
+  };
+
+  // Add new material
+  const handleAddNewMaterial = () => {
+    const trimmed = newMaterialInput.trim();
+    if (!trimmed) return;
+    if (!materialsList.includes(trimmed)) {
+      const updated = [...materialsList, trimmed];
+      setMaterialsList(updated);
+      try {
+        localStorage.setItem(CUSTOM_MATERIALS_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+    }
+    setFormData((prev) => ({ ...prev, material: trimmed }));
+    setNewMaterialInput('');
+    setShowAddMaterial(false);
+  };
+
+  // Add new cutting type
+  const handleAddNewCutting = () => {
+    const trimmed = newCuttingInput.trim();
+    if (!trimmed) return;
+    const slug = trimmed
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    if (!slug) return;
+    const newCut = { value: slug, label: trimmed };
+
+    if (!cuttingsList.some((c) => c.value === slug)) {
+      const updated = [...cuttingsList, newCut];
+      setCuttingsList(updated);
+      try {
+        localStorage.setItem(CUSTOM_CUTTINGS_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+    }
+    setFormData((prev) => ({ ...prev, cutting_type: slug }));
+    setNewCuttingInput('');
+    setShowAddCutting(false);
+  };
+
+  // Add new kaos category (Kasual, Polo, Olahraga, Hoodie, etc.)
+  const handleAddNewKaosCategory = () => {
+    const trimmed = newKaosCategoryInput.trim().toUpperCase();
+    if (!trimmed) return;
+    if (!kaosCategoriesList.includes(trimmed)) {
+      const updated = [...kaosCategoriesList, trimmed];
+      setKaosCategoriesList(updated);
+      try {
+        localStorage.setItem(CUSTOM_KAOS_CAT_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+    }
+    setFormData((prev) => ({
+      ...prev,
+      category_label: trimmed,
+      kaos_category: trimmed,
+    }));
+    setNewKaosCategoryInput('');
+    setShowAddKaosCategory(false);
+  };
+
+  // Size chart row handlers
+  const handleSizeChartChange = (index, field, val) => {
+    setFormData((prev) => {
+      const rows = Array.isArray(prev.size_chart) ? [...prev.size_chart] : [];
+      rows[index] = { ...rows[index], [field]: val };
+      return { ...prev, size_chart: rows };
+    });
+  };
+
+  const handleAddSizeRow = () => {
+    setFormData((prev) => ({
+      ...prev,
+      size_chart: [
+        ...(Array.isArray(prev.size_chart) ? prev.size_chart : []),
+        { size: 'XXL', chest: '58', length: '76', sleeve: '25' },
+      ],
+    }));
+  };
+
+  const handleRemoveSizeRow = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      size_chart: (prev.size_chart || []).filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleResetSizeChart = () => {
+    const stored = getStoredSizeCharts();
+    const cutKey = formData.cutting_type || 'regular';
+    const chart = stored[cutKey] || stored.regular;
+    setFormData((prev) => ({
+      ...prev,
+      size_chart: chart.rows.map((r) => ({ ...r })),
+    }));
+  };
+
+  // Add new exclusive category
+  const handleAddNewCategory = () => {
+    const trimmed = newCategoryInput.trim();
+    if (!trimmed) return;
+    const slug = trimmed
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const newCat = { value: slug, label: trimmed };
+
+    if (!exclusiveCategories.some((c) => c.value === slug)) {
+      const updated = [...exclusiveCategories, newCat];
+      setExclusiveCategories(updated);
+      try {
+        const customOnly = updated.filter(
+          (c) => !DEFAULT_EXCLUSIVE_CATEGORIES.some((d) => d.value === c.value)
+        );
+        localStorage.setItem(CUSTOM_EXCLUSIVE_CAT_KEY, JSON.stringify(customOnly));
+      } catch {
+        // ignore
+      }
+    }
+    setFormData((prev) => ({ ...prev, exclusive_category: slug }));
+    setNewCategoryInput('');
+    setShowAddCategory(false);
   };
 
   const handleChange = (e) => {
@@ -190,21 +543,45 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         [name]: type === 'checkbox' ? checked : value,
       };
 
-      // Auto adjust labels based on selections
+      if (name === 'category_label') {
+        updated.kaos_category = value;
+      }
+
+      // Auto adjust labels based on product_group
       if (name === 'product_group') {
         if (value === 'harian') {
-          updated.category_label = 'COTTON COMBED 24S';
+          updated.category_label = 'KASUAL';
+          updated.kaos_category = 'KASUAL';
           updated.is_exclusive = false;
         } else if (value === 'custom') {
           updated.category_label = 'GRAPHIC TEES';
+          updated.kaos_category = 'GRAPHIC TEES';
           updated.is_exclusive = false;
         } else if (value === 'eksklusif') {
           updated.category_label = 'STREETWEAR';
+          updated.kaos_category = 'STREETWEAR';
           updated.is_exclusive = true;
         }
       }
       return updated;
     });
+  };
+
+  // Real-time dotted price handlers
+  const handlePriceChange = (e) => {
+    const rawDigits = e.target.value.replace(/\D/g, '');
+    setFormData((prev) => ({
+      ...prev,
+      priceText: formatNumberDots(rawDigits),
+    }));
+  };
+
+  const handleOriginalPriceChange = (e) => {
+    const rawDigits = e.target.value.replace(/\D/g, '');
+    setFormData((prev) => ({
+      ...prev,
+      originalPriceText: formatNumberDots(rawDigits),
+    }));
   };
 
   const addColorDot = (hex) => {
@@ -223,6 +600,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     }));
   };
 
+  // Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -230,47 +608,100 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       return;
     }
 
-    const { visual_mode: _vm, ...cleanFormData } = formData;
+    const numericPrice = parseNumberDots(formData.priceText);
+    const numericOriginalPrice = parseNumberDots(formData.originalPriceText);
+
+    if (numericPrice <= 0) {
+      alert('Harga produk harus lebih dari 0.');
+      return;
+    }
+
+    const { visual_mode: _vm, priceText: _pt, originalPriceText: _opt, ...restData } = formData;
+
+    const cutKey =
+      formData.product_group === 'harian' || formData.product_group === 'eksklusif'
+        ? (formData.cutting_type || 'oversized')
+        : null;
+
+    // Also update stored default size chart for this cutting if rows are present
+    if (cutKey && Array.isArray(formData.size_chart) && formData.size_chart.length > 0) {
+      try {
+        const storedCharts = getStoredSizeCharts();
+        if (storedCharts[cutKey]) {
+          storedCharts[cutKey] = {
+            ...storedCharts[cutKey],
+            rows: formData.size_chart,
+          };
+          localStorage.setItem(SIZE_CHARTS_STORAGE_KEY, JSON.stringify(storedCharts));
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     const payload = {
-      ...cleanFormData,
-      price: Number(cleanFormData.price) || 0,
-      extra_colors_count: Number(cleanFormData.extra_colors_count) || 0,
+      ...restData,
+      price: numericPrice,
+      original_price: numericOriginalPrice > 0 ? numericOriginalPrice : null,
+      images: formData.images,
+      image_url: formData.images[0] || formData.image_url || '',
+      is_preorder: Boolean(formData.is_preorder),
+      preorder_duration: formData.is_preorder ? formData.preorder_duration : '',
+      extra_colors_count: Number(formData.extra_colors_count) || 0,
       is_exclusive: formData.product_group === 'eksklusif' || Boolean(formData.is_exclusive),
-      cutting_type:
-        formData.product_group === 'harian' || formData.product_group === 'eksklusif'
-          ? (formData.cutting_type || 'oversized')
-          : null,
+      cutting_type: cutKey,
+      kaos_category: formData.category_label || 'KASUAL',
+      category_label: formData.category_label || 'KASUAL',
+      size_chart: Array.isArray(formData.size_chart) ? formData.size_chart : [],
       sablon_type: formData.product_group === 'custom' ? formData.sablon_type : null,
       exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
       placeholder_title: formData.placeholder_title || formData.name,
-      colors: safeColors(cleanFormData.colors),
+      colors: safeColors(formData.colors),
     };
 
     onSave(payload);
   };
 
-  const isEditing = Boolean(product && product.id);
+  const isEditing = Boolean(product && product.id && !product.is_copy);
+  const isDuplicating = Boolean(product && product.is_copy);
+
+  // Discount preview calculation
+  const numPrice = parseNumberDots(formData.priceText);
+  const numOrig = parseNumberDots(formData.originalPriceText);
+  const hasDiscountPreview = numOrig > numPrice && numPrice > 0;
+  const discountPercentPreview = hasDiscountPreview
+    ? Math.round(((numOrig - numPrice) / numOrig) * 100)
+    : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-8 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-6 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 bg-neutral-50/50">
           <div>
-            <h3 className="text-xl font-black text-neutral-900">
-              {isEditing
-                ? 'Edit Produk'
-                : formData.product_group === 'eksklusif'
-                ? '👑 Tambah Katalog Exclusive (Limited Edition)'
-                : 'Tambah Produk Baru'}
+            <h3 className="text-xl font-black text-neutral-900 flex items-center gap-2">
+              {isDuplicating ? (
+                <>
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                  <span>Duplikat Produk Baru</span>
+                </>
+              ) : isEditing ? (
+                'Edit Produk'
+              ) : formData.product_group === 'eksklusif' ? (
+                '👑 Tambah Katalog Exclusive (Limited Edition)'
+              ) : (
+                'Tambah Produk Baru'
+              )}
             </h3>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Kelola data katalog produk Kaos Dilio (Otomatis sync ke website).
+              {isDuplicating
+                ? `Menyalin dari "${product.name}". Sesuaikan data yang ingin diubah.`
+                : 'Kelola data katalog produk Kaos Dilio (Otomatis sync ke website).'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors"
+            className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -289,7 +720,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Contoh: Oversized Fit"
+                placeholder="Contoh: Oversized Fit Hitam Solid"
                 required
                 className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
               />
@@ -307,55 +738,157 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               >
                 <option value="harian">Kaos Harian (Koleksi Kaos)</option>
                 <option value="custom">Bikin Kaos Custom (Sablon)</option>
-                <option value="eksklusif">👑 LIMITED EDITION (Banner Exclusive Homepage)</option>
+                <option value="eksklusif">👑 LIMITED EDITION (Banner Exclusive)</option>
               </select>
-              {formData.product_group === 'eksklusif' && (
-                <div className="mt-2.5 p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex items-center gap-2 text-xs text-amber-900">
-                  <span className="text-base shrink-0">👑</span>
-                  <span>
-                    <strong>Banner Exclusive:</strong> Produk ini otomatis tampil di banner <strong>[LIMITED EDITION]</strong> di Homepage!
+            </div>
+
+            {/* Price with Auto-Dots */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                Harga Jual (Rp) *
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs">
+                  Rp
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  name="priceText"
+                  value={formData.priceText}
+                  onChange={handlePriceChange}
+                  placeholder="65.000"
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-bold text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                />
+              </div>
+              <span className="text-[10px] text-neutral-400 mt-1 block">
+                Otomatis titik pemisah ribuan
+              </span>
+            </div>
+
+            {/* Discount Price (Harga Coret) */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                Harga Coret / Normal (Opsional untuk Diskon)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs">
+                  Rp
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  name="originalPriceText"
+                  value={formData.originalPriceText}
+                  onChange={handleOriginalPriceChange}
+                  placeholder="Contoh: 85.000"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-bold text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                />
+              </div>
+              {hasDiscountPreview && (
+                <div className="mt-1.5 text-xs text-red-600 font-bold flex items-center gap-1.5 bg-red-50 p-1.5 rounded-lg border border-red-200">
+                  <span>🏷️ Promo Aktif: Diskon {discountPercentPreview}%</span>
+                  <span className="text-[11px] font-normal text-red-500">
+                    (Hemat Rp {formatNumberDots(numOrig - numPrice)})
                   </span>
                 </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                Harga (Rp) *
+            {/* Pre-Order Toggle & Duration */}
+            <div className="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80 space-y-2">
+              <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  name="is_preorder"
+                  checked={formData.is_preorder}
+                  onChange={handleChange}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span>Produk Pre-Order (PO)</span>
               </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="65000"
-                required
-                min="0"
-                step="1000"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
-              />
+
+              {formData.is_preorder && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="block text-[11px] font-bold text-amber-900">
+                    Estimasi Lama Pre-Order:
+                  </label>
+                  <input
+                    type="text"
+                    name="preorder_duration"
+                    value={formData.preorder_duration}
+                    onChange={handleChange}
+                    placeholder="Contoh: 7 Hari Kerja, 10 Hari, 14 Hari"
+                    className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500"
+                  />
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {['1-2 Hari', '2-3 Hari', '3-5 Hari', '7 Hari Kerja', '14 Hari Kerja'].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, preorder_duration: chip }))}
+                        className="px-2 py-0.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-[10px] font-bold text-amber-950 transition-colors"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 2. Category Sub-filter */}
+          {/* 2. Category Sub-filter & Material */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+            {/* Pola Cutting (Sidebar Filter: Oversized, Regular, Fitted, Boxy, Long Sleeve + Add New) */}
             {(formData.product_group === 'harian' || formData.product_group === 'eksklusif') && (
               <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                  Tshirt Cut (Tipe Cutting)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                    Pola Cutting (Filter Sidebar)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCutting(!showAddCutting)}
+                    className="text-[11px] font-bold text-neutral-900 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Tambah Cutting Baru</span>
+                  </button>
+                </div>
+
                 <select
                   name="cutting_type"
                   value={formData.cutting_type || 'oversized'}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
                 >
-                  <option value="oversized">Oversized</option>
-                  <option value="regular">Regular</option>
-                  <option value="fitted">Fitted</option>
-                  <option value="boxy">Boxy</option>
-                  <option value="long-sleeve">Long Sleeve</option>
+                  {cuttingsList.map((cut) => (
+                    <option key={cut.value} value={cut.value}>
+                      {cut.label}
+                    </option>
+                  ))}
                 </select>
+
+                {showAddCutting && (
+                  <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
+                    <input
+                      type="text"
+                      value={newCuttingInput}
+                      onChange={(e) => setNewCuttingInput(e.target.value)}
+                      placeholder="Contoh: Raglan, Crop Tee, Muscle Fit..."
+                      className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNewCutting}
+                      className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                    >
+                      Simpan
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -376,57 +909,255 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               </div>
             )}
 
+            {/* Exclusive Category Dropdown + Add New */}
             {formData.product_group === 'eksklusif' && (
               <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                  Kategori Brand Eksklusif
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                    Kategori Exclusive
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCategory(!showAddCategory)}
+                    className="text-[11px] font-bold text-neutral-900 hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Tambah Kategori Baru</span>
+                  </button>
+                </div>
+
                 <select
                   name="exclusive_category"
                   value={formData.exclusive_category}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
                 >
-                  <option value="dilio">Dilio (Brand Sendiri)</option>
-                  <option value="thinking-out">Thinking Out (Partner Brand)</option>
-                  <option value="dilio-x-one-piece">Dilio x One Piece (Collab)</option>
+                  {exclusiveCategories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
                 </select>
+
+                {showAddCategory && (
+                  <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
+                    <input
+                      type="text"
+                      value={newCategoryInput}
+                      onChange={(e) => setNewCategoryInput(e.target.value)}
+                      placeholder="Nama kategori exclusive baru..."
+                      className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNewCategory}
+                      className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800"
+                    >
+                      Simpan
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* Material Dropdown + Add New Material (Req 5) */}
             <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                Label Kategori di Card
-              </label>
-              <input
-                type="text"
-                name="category_label"
-                value={formData.category_label}
-                onChange={handleChange}
-                placeholder="Contoh: COTTON COMBED 24S / STREETWEAR"
-                className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
-              />
-            </div>
-          </div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                  Bahan Kain (Material)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowAddMaterial(!showAddMaterial)}
+                  className="text-[11px] font-bold text-neutral-900 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Tambah Bahan Baru</span>
+                </button>
+              </div>
 
-          {/* 3. Material & Description */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                Bahan Kain
-              </label>
-              <input
-                type="text"
+              <select
                 name="material"
                 value={formData.material}
                 onChange={handleChange}
-                placeholder="Cotton Combed 24s"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
-              />
+                className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+              >
+                {materialsList.map((mat) => (
+                  <option key={mat} value={mat}>
+                    {mat}
+                  </option>
+                ))}
+              </select>
+
+              {showAddMaterial && (
+                <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    value={newMaterialInput}
+                    onChange={(e) => setNewMaterialInput(e.target.value)}
+                    placeholder="Contoh: Heavyweight 16s, Cotton Combed 20s"
+                    className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewMaterial}
+                    className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Badges Toggle */}
-            <div className="flex items-center gap-6 pt-5">
+            {/* Kategori / Jenis Kaos (Label di Card & Filter Atas) - Dropdown + Add New (Req 1) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                  Kategori / Jenis Kaos (Label di Card)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowAddKaosCategory(!showAddKaosCategory)}
+                  className="text-[11px] font-bold text-neutral-900 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Tambah Kategori Baru</span>
+                </button>
+              </div>
+
+              <select
+                name="category_label"
+                value={formData.category_label}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+              >
+                {kaosCategoriesList.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+
+              {showAddKaosCategory && (
+                <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    value={newKaosCategoryInput}
+                    onChange={(e) => setNewKaosCategoryInput(e.target.value)}
+                    placeholder="Contoh: HOODIE, KASUAL, POLO..."
+                    className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewKaosCategory}
+                    className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 2B. Editable Size Chart (Req 4) */}
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-neutral-700" />
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                    Informasi Size Chart Produk (cm)
+                  </h4>
+                  <p className="text-[11px] text-neutral-500">
+                    Sesuaikan ukuran Lebar Dada, Panjang Badan, & Panjang Lengan untuk produk ini.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetSizeChart}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-100 cursor-pointer"
+                >
+                  Reset Sesuai Cutting
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddSizeRow}
+                  className="px-2.5 py-1 text-[11px] font-bold text-white bg-neutral-900 rounded-lg hover:bg-neutral-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Tambah Ukuran</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto bg-white rounded-xl border border-neutral-200">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-neutral-100 text-neutral-600 uppercase text-[10px] font-bold">
+                  <tr>
+                    <th className="py-2 px-3">Size</th>
+                    <th className="py-2 px-3">Lebar Dada (cm)</th>
+                    <th className="py-2 px-3">Panjang Badan (cm)</th>
+                    <th className="py-2 px-3">Lengan (cm)</th>
+                    <th className="py-2 px-2 text-center w-10">Hapus</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {(formData.size_chart || []).map((row, idx) => (
+                    <tr key={idx}>
+                      <td className="p-1.5">
+                        <input
+                          type="text"
+                          value={row.size}
+                          onChange={(e) => handleSizeChartChange(idx, 'size', e.target.value)}
+                          className="w-16 px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg font-bold text-neutral-900"
+                        />
+                      </td>
+                      <td className="p-1.5">
+                        <input
+                          type="text"
+                          value={row.chest}
+                          onChange={(e) => handleSizeChartChange(idx, 'chest', e.target.value)}
+                          className="w-full px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg"
+                        />
+                      </td>
+                      <td className="p-1.5">
+                        <input
+                          type="text"
+                          value={row.length}
+                          onChange={(e) => handleSizeChartChange(idx, 'length', e.target.value)}
+                          className="w-full px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg"
+                        />
+                      </td>
+                      <td className="p-1.5">
+                        <input
+                          type="text"
+                          value={row.sleeve}
+                          onChange={(e) => handleSizeChartChange(idx, 'sleeve', e.target.value)}
+                          className="w-full px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg"
+                        />
+                      </td>
+                      <td className="p-1.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSizeRow(idx)}
+                          className="p-1 text-neutral-400 hover:text-red-600 rounded-lg cursor-pointer"
+                          title="Hapus baris ukuran"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 3. Description & Badges */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-6 pt-2">
               <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-neutral-700">
                 <input
                   type="checkbox"
@@ -446,7 +1177,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   onChange={handleChange}
                   className="w-4 h-4 rounded text-black focus:ring-black"
                 />
-                <span>Badge "EXCLUSIVE" (Banner Exclusive)</span>
+                <span>Badge "EXCLUSIVE"</span>
               </label>
             </div>
 
@@ -465,19 +1196,24 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
             </div>
           </div>
 
-          {/* 4. Visual Card Appearance (Mockup Pastel vs Real Photo) */}
+          {/* 4. Multi-Image Upload (Req 3) */}
           <div className="border-t border-neutral-100 pt-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                Tampilan Visual Produk (Card Preview)
-              </h4>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  Foto Produk (Bisa Diisi Lebih Dari 1 Gambar)
+                </h4>
+                <p className="text-[11px] text-neutral-500">
+                  Foto pertama akan menjadi foto utama (thumbnail) di katalog.
+                </p>
+              </div>
 
               {/* Mode Toggle Buttons */}
               <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, visual_mode: 'mockup' }))}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formData.visual_mode === 'mockup'
                       ? 'bg-white text-neutral-900 shadow-2xs'
                       : 'text-neutral-500 hover:text-neutral-900'
@@ -488,174 +1224,191 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, visual_mode: 'image' }))}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     formData.visual_mode === 'image'
                       ? 'bg-white text-neutral-900 shadow-2xs'
                       : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
-                  📷 Foto Asli Produk
+                  📷 Foto Asli Produk ({formData.images.length})
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-6 items-start">
-              {/* Live Preview Card */}
-              <div
-                className="w-36 h-44 rounded-2xl flex flex-col items-center justify-center p-3 text-center shadow-xs border border-neutral-200/50 shrink-0 relative overflow-hidden"
-                style={{
-                  backgroundColor: formData.visual_mode === 'image' && formData.image_url ? '#F3F4F6' : formData.placeholder_bg,
-                }}
-              >
-                {(formData.is_exclusive || formData.product_group === 'eksklusif') && (
-                  <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
-                    EXCLUSIVE
-                  </span>
-                )}
-                {formData.is_new && (
-                  <span className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs shadow-xs">
-                    NEW
-                  </span>
-                )}
+            {formData.visual_mode === 'image' ? (
+              <div className="space-y-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-200/80">
+                {/* Upload & Add Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1">
+                      Pilih Foto dari Komputer (Bisa pilih sekaligus banyak)
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      disabled={isUploading}
+                      onChange={handleMultipleImagesUpload}
+                      className="w-full text-xs text-neutral-600 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neutral-900 file:text-white hover:file:bg-neutral-800 cursor-pointer disabled:opacity-50"
+                    />
+                    {isUploading && (
+                      <span className="text-[11px] font-bold text-neutral-900 inline-flex items-center gap-1 mt-1 animate-pulse">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Mengunggah foto...
+                      </span>
+                    )}
+                  </div>
 
-                {formData.visual_mode === 'image' && formData.image_url ? (
-                  <img
-                    src={formData.image_url}
-                    alt="Preview"
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1">
+                      Atau Tambah Link Gambar Online
+                    </label>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="url"
+                        value={onlineImageUrl}
+                        onChange={(e) => setOnlineImageUrl(e.target.value)}
+                        placeholder="https://images.unsplash.com/... atau link foto"
+                        className="flex-1 px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-neutral-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddOnlineImageUrl}
+                        className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                      >
+                        Tambah
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Uploaded Images Gallery Grid */}
+                {formData.images.length > 0 ? (
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-neutral-700 block">
+                      Daftar Foto Produk ({formData.images.length} Foto):
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {formData.images.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group rounded-xl overflow-hidden border border-neutral-200 bg-white shadow-2xs aspect-square flex flex-col"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Foto ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* Primary Badge */}
+                          {idx === 0 && (
+                            <span className="absolute top-1.5 left-1.5 bg-neutral-900/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                              <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                              <span>Utama</span>
+                            </span>
+                          )}
+
+                          {/* Action Overlay */}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-1 text-white">
+                            {idx !== 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleSetPrimaryImage(idx)}
+                                className="px-2 py-1 bg-white/20 hover:bg-white/40 text-[10px] font-bold rounded cursor-pointer"
+                              >
+                                Jadi Utama
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(idx)}
+                              className="p-1 text-red-300 hover:text-red-100 rounded cursor-pointer"
+                              title="Hapus foto ini"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
+                  <div className="p-4 bg-white rounded-xl border border-dashed border-neutral-300 text-center text-xs text-neutral-400">
+                    Belum ada foto ditambahkan. Klik tombol upload di atas untuk menambahkan 1 atau beberapa foto.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-6 items-start bg-neutral-50 p-4 rounded-2xl border border-neutral-200/70">
+                {/* Live Mockup Preview */}
+                <div
+                  className="w-36 h-44 rounded-2xl flex flex-col items-center justify-center p-3 text-center shadow-xs border border-neutral-200/50 shrink-0 relative overflow-hidden"
+                  style={{ backgroundColor: formData.placeholder_bg }}
+                >
                   <span
                     className="text-base font-extrabold whitespace-pre-line leading-tight"
                     style={{ color: formData.placeholder_text_color }}
                   >
                     {formData.placeholder_title || 'Teks Produk'}
                   </span>
-                )}
-              </div>
+                </div>
 
-              {/* Controls depending on mode */}
-              <div className="flex-1 space-y-3 w-full">
-                {formData.visual_mode === 'image' ? (
-                  <div className="space-y-3 bg-neutral-50 p-4 rounded-2xl border border-neutral-200/70">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-neutral-700">
-                          Upload Foto Produk (Maks 5MB)
-                        </label>
-                        {isUploading && (
-                          <span className="text-[11px] font-bold text-neutral-900 inline-flex items-center gap-1 animate-pulse">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            Mengunggah ke Cloud...
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={isUploading}
-                        onChange={handleImageUpload}
-                        className="w-full text-xs text-neutral-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neutral-900 file:text-white hover:file:bg-neutral-800 cursor-pointer disabled:opacity-50"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                        Atau Tempel URL Gambar Online
-                      </label>
-                      <input
-                        type="url"
-                        name="image_url"
-                        value={formData.image_url}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            image_url: e.target.value,
-                            visual_mode: 'image',
-                          }))
-                        }
-                        placeholder="https://images.unsplash.com/... atau link foto"
-                        className="w-full px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-neutral-900"
-                      />
-                    </div>
-
-                    {formData.image_url && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            image_url: '',
-                            visual_mode: 'mockup',
-                          }))
-                        }
-                        className="text-xs text-red-600 hover:underline font-semibold block"
-                      >
-                        Hapus Foto &amp; Kembali ke Mockup Pastel
-                      </button>
-                    )}
+                <div className="flex-1 space-y-3 w-full">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                      Teks Mockup (Gunakan enter/baris baru)
+                    </label>
+                    <input
+                      type="text"
+                      name="placeholder_title"
+                      value={formData.placeholder_title}
+                      onChange={handleChange}
+                      placeholder="Contoh: Oversized\nFit"
+                      className="w-full px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs"
+                    />
                   </div>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                        Teks Mockup (Gunakan enter/baris baru)
-                      </label>
-                      <input
-                        type="text"
-                        name="placeholder_title"
-                        value={formData.placeholder_title}
-                        onChange={handleChange}
-                        placeholder="Contoh: Oversized\nFit"
-                        className="w-full px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
-                      />
-                    </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                        Pilih Warna Background Card (Preset Mockup)
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {PRESET_BG_COLORS.map((preset) => (
-                          <button
-                            type="button"
-                            key={preset.hex}
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                placeholder_bg: preset.hex,
-                                placeholder_text_color: preset.text,
-                              }))
-                            }
-                            className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
-                              formData.placeholder_bg === preset.hex
-                                ? 'ring-2 ring-neutral-900 border-transparent scale-110'
-                                : 'border-neutral-300 hover:scale-105'
-                            }`}
-                            style={{ backgroundColor: preset.hex }}
-                            title={preset.name}
-                          >
-                            {formData.placeholder_bg === preset.hex && (
-                              <Check
-                                className="w-3.5 h-3.5"
-                                style={{ color: preset.text }}
-                              />
-                            )}
-                          </button>
-                        ))}
-                      </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                      Pilih Warna Background Card (Preset Mockup)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {PRESET_BG_COLORS.map((preset) => (
+                        <button
+                          type="button"
+                          key={preset.hex}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              placeholder_bg: preset.hex,
+                              placeholder_text_color: preset.text,
+                            }))
+                          }
+                          className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
+                            formData.placeholder_bg === preset.hex
+                              ? 'ring-2 ring-neutral-900 border-transparent scale-110'
+                              : 'border-neutral-300 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: preset.hex }}
+                          title={preset.name}
+                        >
+                          {formData.placeholder_bg === preset.hex && (
+                            <Check className="w-3.5 h-3.5" style={{ color: preset.text }} />
+                          )}
+                        </button>
+                      ))}
                     </div>
-                  </>
-                )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* 5. Color Dots Swatches */}
           <div className="border-t border-neutral-100 pt-5 space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-neutral-900 uppercase tracking-wider">
-                Varian Warna (Lingkaran di Bawah Card)
+                Varian Warna Produk
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-neutral-500 font-medium">+Angka Tambahan:</span>
@@ -686,7 +1439,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   <button
                     type="button"
                     onClick={() => removeColorDot(idx)}
-                    className="text-neutral-400 hover:text-red-500 ml-0.5"
+                    className="text-neutral-400 hover:text-red-500 ml-0.5 cursor-pointer"
                     title="Hapus warna"
                   >
                     <X className="w-3 h-3" />
@@ -708,7 +1461,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   type="button"
                   key={hex}
                   onClick={() => addColorDot(hex)}
-                  className="w-6 h-6 rounded-full border border-neutral-300 hover:scale-110 transition-transform shadow-2xs"
+                  className="w-6 h-6 rounded-full border border-neutral-300 hover:scale-110 transition-transform shadow-2xs cursor-pointer"
                   style={{ backgroundColor: hex }}
                   title={`Tambah ${hex}`}
                 />
@@ -730,17 +1483,25 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-neutral-300 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition-colors"
+              className="px-5 py-2.5 rounded-xl border border-neutral-300 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition-colors cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isUploading}
-              className="px-6 py-2.5 rounded-xl bg-neutral-900 text-white font-bold text-xs shadow-md hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-neutral-900 text-white font-bold text-xs shadow-md hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2 cursor-pointer"
             >
               {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{isUploading ? 'Mengunggah Foto...' : isEditing ? 'Simpan Perubahan' : 'Tambah Produk'}</span>
+              <span>
+                {isUploading
+                  ? 'Mengunggah Foto...'
+                  : isDuplicating
+                  ? 'Simpan Sebagai Produk Baru'
+                  : isEditing
+                  ? 'Simpan Perubahan'
+                  : 'Tambah Produk'}
+              </span>
             </button>
           </div>
         </form>

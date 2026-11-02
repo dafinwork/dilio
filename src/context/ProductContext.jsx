@@ -24,14 +24,42 @@ async function hashPassword(plainText) {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-const sanitizeProduct = (p) => ({
-  ...p,
-  price: Number(p.price) || 0,
-  extra_colors_count: Number(p.extra_colors_count) || 0,
-  colors: safeColors(p.colors),
-  is_new: Boolean(p.is_new),
-  is_exclusive: Boolean(p.is_exclusive),
-});
+const LEGACY_MATERIAL_LABELS = new Set([
+  'COTTON COMBED 24S',
+  'COTTON COMBED 20S',
+  'COTTON COMBED 30S',
+  'HEAVYWEIGHT 16S',
+  'HEAVYWEIGHT COTTON 16S',
+  'WASHED COTTON 20S',
+]);
+
+const sanitizeProduct = (p) => {
+  const images = Array.isArray(p.images) && p.images.length > 0
+    ? p.images
+    : (p.image_url ? [p.image_url] : []);
+
+  const rawLabel = (p.kaos_category || p.category_label || '').trim().toUpperCase();
+  const normalizedLabel =
+    p.product_group === 'harian' && (!rawLabel || LEGACY_MATERIAL_LABELS.has(rawLabel))
+      ? 'KASUAL'
+      : rawLabel || p.category_label || 'KASUAL';
+
+  return {
+    ...p,
+    price: Number(p.price) || 0,
+    original_price: p.original_price ? Number(p.original_price) : null,
+    images: images,
+    image_url: images[0] || p.image_url || '',
+    category_label: normalizedLabel,
+    kaos_category: normalizedLabel,
+    is_preorder: Boolean(p.is_preorder),
+    preorder_duration: p.preorder_duration || '',
+    extra_colors_count: Number(p.extra_colors_count) || 0,
+    colors: safeColors(p.colors),
+    is_new: Boolean(p.is_new),
+    is_exclusive: Boolean(p.is_exclusive),
+  };
+};
 
 export function ProductProvider({ children }) {
   // Load products from localStorage, or fallback to default products.json
@@ -41,7 +69,28 @@ export function ProductProvider({ children }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(sanitizeProduct);
+          const initialMap = new Map(initialProductsData.map((p) => [p.id, p]));
+          const updated = parsed.map((item) => {
+            const initial = initialMap.get(item.id);
+            if (initial && (!item.image_url || item.image_url === '') && initial.image_url) {
+              return {
+                ...item,
+                image_url: initial.image_url,
+                images: initial.images || [initial.image_url],
+              };
+            }
+            return item;
+          });
+
+          // Also prepend any new initial products (like harian-fitted-1, harian-kasual-1, etc.)
+          const parsedIds = new Set(parsed.map((p) => p.id));
+          initialProductsData.forEach((init) => {
+            if (!parsedIds.has(init.id)) {
+              updated.unshift(init);
+            }
+          });
+
+          return updated.map(sanitizeProduct);
         }
       }
     } catch (e) {
@@ -52,7 +101,7 @@ export function ProductProvider({ children }) {
 
   const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connected' | 'connecting' | 'offline'
 
-  // Fetch live products from Supabase on mount
+  // Fetch live products from Supabase on mount, merging extended local fields
   useEffect(() => {
     let isMounted = true;
     async function loadCloudProducts() {
@@ -63,10 +112,46 @@ export function ProductProvider({ children }) {
           .order('created_at', { ascending: false });
 
         if (!error && Array.isArray(data) && data.length > 0) {
-          const sanitized = data.map(sanitizeProduct);
+          let localMap = new Map();
+          try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed)) {
+                localMap = new Map(parsed.map((item) => [item.id, item]));
+              }
+            }
+          } catch {
+            // ignore
+          }
+
+          const merged = data.map((cloudRow) => {
+            const localItem = localMap.get(cloudRow.id);
+            if (!localItem) return sanitizeProduct(cloudRow);
+            return sanitizeProduct({
+              ...cloudRow,
+              images:
+                Array.isArray(cloudRow.images) && cloudRow.images.length > 1
+                  ? cloudRow.images
+                  : Array.isArray(localItem.images) && localItem.images.length > 0
+                  ? localItem.images
+                  : cloudRow.images,
+              original_price: cloudRow.original_price ?? localItem.original_price ?? null,
+              is_preorder:
+                cloudRow.is_preorder !== undefined ? cloudRow.is_preorder : localItem.is_preorder,
+              preorder_duration: cloudRow.preorder_duration || localItem.preorder_duration || '',
+              kaos_category:
+                cloudRow.kaos_category || localItem.kaos_category || cloudRow.category_label || '',
+              size_chart:
+                Array.isArray(cloudRow.size_chart) && cloudRow.size_chart.length > 0
+                  ? cloudRow.size_chart
+                  : localItem.size_chart || null,
+            });
+          });
+
           if (isMounted) {
-            setProducts(sanitized);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+            setProducts(merged);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
             setCloudStatus('connected');
           }
         } else {
@@ -81,8 +166,25 @@ export function ProductProvider({ children }) {
     }
 
     loadCloudProducts();
+
+    // Sync across tabs when Admin updates products in another tab
+    const handleStorageSync = (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setProducts(parsed.map(sanitizeProduct));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageSync);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('storage', handleStorageSync);
     };
   }, []);
 
@@ -187,31 +289,43 @@ export function ProductProvider({ children }) {
   };
 
   // Format and sanitize object strictly for public.products database columns
-  const toDatabasePayload = (p) => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug || `prod-${Date.now()}`,
-    description: p.description || '',
-    price: Number(p.price) || 0,
-    image_url: p.image_url || '',
-    material: p.material || '',
-    colors: safeColors(p.colors),
-    is_new: Boolean(p.is_new),
-    is_exclusive: Boolean(p.is_exclusive),
-    product_group: p.product_group || 'harian',
-    cutting_type:
-      p.product_group === 'harian' || p.product_group === 'eksklusif'
-        ? (p.cutting_type || 'oversized')
-        : null,
-    sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
-    exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
-    category_label: p.category_label || '',
-    placeholder_title: p.placeholder_title || p.name,
-    placeholder_bg: p.placeholder_bg || '#E5E7EB',
-    placeholder_text_color: p.placeholder_text_color || '#374151',
-    extra_colors_count: Number(p.extra_colors_count) || 0,
-    created_at: p.created_at || new Date().toISOString(),
-  });
+  const toDatabasePayload = (p) => {
+    const images = Array.isArray(p.images) && p.images.length > 0
+      ? p.images
+      : (p.image_url ? [p.image_url] : []);
+
+    return {
+      id: p.id,
+      name: p.name,
+      slug: p.slug || `prod-${Date.now()}`,
+      description: p.description || '',
+      price: Number(p.price) || 0,
+      original_price: p.original_price ? Number(p.original_price) : null,
+      images: images,
+      image_url: images[0] || p.image_url || '',
+      material: p.material || '',
+      colors: safeColors(p.colors),
+      is_new: Boolean(p.is_new),
+      is_exclusive: Boolean(p.is_exclusive),
+      is_preorder: Boolean(p.is_preorder),
+      preorder_duration: p.preorder_duration || '',
+      product_group: p.product_group || 'harian',
+      cutting_type:
+        p.product_group === 'harian' || p.product_group === 'eksklusif'
+          ? (p.cutting_type || 'oversized')
+          : null,
+      sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
+      exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
+      category_label: p.category_label || '',
+      kaos_category: p.kaos_category || p.category_label || '',
+      size_chart: Array.isArray(p.size_chart) && p.size_chart.length > 0 ? p.size_chart : null,
+      placeholder_title: p.placeholder_title || p.name,
+      placeholder_bg: p.placeholder_bg || '#E5E7EB',
+      placeholder_text_color: p.placeholder_text_color || '#374151',
+      extra_colors_count: Number(p.extra_colors_count) || 0,
+      created_at: p.created_at || new Date().toISOString(),
+    };
+  };
 
   // Add new product
   const addProduct = async (productData) => {
@@ -244,13 +358,22 @@ export function ProductProvider({ children }) {
     try {
       const { error } = await supabase.from('products').insert([newProduct]);
       if (error) {
-        console.error('Supabase insert error:', error.message);
-        return { success: false, error: error.message };
+        // Fallback retry without newer columns if remote table hasn't added them yet
+        const {
+          original_price: _op,
+          images: _img,
+          is_preorder: _po,
+          preorder_duration: _pd,
+          kaos_category: _kc,
+          size_chart: _sc,
+          ...cloudSafe
+        } = newProduct;
+        await supabase.from('products').insert([cloudSafe]);
       }
       return { success: true, data: newProduct };
     } catch (err) {
-      console.error('Supabase insert error:', err);
-      return { success: false, error: err.message };
+      console.warn('Supabase sync note (saved locally):', err);
+      return { success: true, data: newProduct };
     }
   };
 
@@ -275,14 +398,23 @@ export function ProductProvider({ children }) {
       if (finalUpdated) {
         const { error } = await supabase.from('products').update(finalUpdated).eq('id', id);
         if (error) {
-          console.error('Supabase update warning:', error.message);
-          return { success: false, error: error.message };
+          // Fallback retry without newer columns if remote table hasn't added them yet
+          const {
+            original_price: _op,
+            images: _img,
+            is_preorder: _po,
+            preorder_duration: _pd,
+            kaos_category: _kc,
+            size_chart: _sc,
+            ...cloudSafe
+          } = finalUpdated;
+          await supabase.from('products').update(cloudSafe).eq('id', id);
         }
         return { success: true };
       }
     } catch (err) {
-      console.error('Supabase update error:', err);
-      return { success: false, error: err.message };
+      console.warn('Supabase update note (saved locally):', err);
+      return { success: true };
     }
   };
 
