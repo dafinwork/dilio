@@ -286,23 +286,47 @@ export default function CititexDesignStudio() {
   };
 
   // Entry lewat tombol "Desain Custom" di katalog/modal detail:
-  // /bikin-kaos-custom?model=dilio-boxy&warna=%23181818&produk=Nama%20Kaos
+  // /bikin-kaos-custom?model=dilio-boxy&warna=%23181818&produk=Nama%20Kaos&foto=...
+  const [customShirtPhoto, setCustomShirtPhoto] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     if (step !== 'categories') return;
     const modelParam = searchParams.get('model');
     const colorParam = searchParams.get('warna');
-    if (!modelParam) return;
+    const fotoParam = searchParams.get('foto');
+    const produkParam = searchParams.get('produk');
+    if (!modelParam && !fotoParam && !produkParam) return;
+
+    if (fotoParam) {
+      const resolved =
+        fotoParam.startsWith('http://') ||
+        fotoParam.startsWith('https://') ||
+        fotoParam.startsWith('data:') ||
+        fotoParam.startsWith('blob:')
+          ? fotoParam
+          : `${BASE_URL}${fotoParam.startsWith('/') ? fotoParam : '/' + fotoParam}`;
+      setCustomShirtPhoto(resolved);
+    }
 
     const model =
       APPAREL_MODELS.find((m) => m.id === modelParam || m.slug === modelParam) ||
       APPAREL_MODELS.find((m) => m.category === 'T-Shirts' && m.slug.includes(modelParam)) ||
-      null;
-    if (!model) return;
+      (produkParam
+        ? {
+            id: 'katalog-item',
+            name: produkParam,
+            slug: 'katalog-item',
+            category: 'T-Shirts',
+            price: 55000,
+            defaultColor: 'white',
+            colors: ['white'],
+          }
+        : null);
+    if (model) {
+      setCurrentProduct(model);
+    }
 
-    setCurrentProduct(model);
-
-    let matchedColor = PRODUCT_COLORS.find((c) => c.id === model.defaultColor) || PRODUCT_COLORS[0];
+    let matchedColor = model ? (PRODUCT_COLORS.find((c) => c.id === model.defaultColor) || PRODUCT_COLORS[0]) : PRODUCT_COLORS[0];
     if (colorParam) {
       const upper = colorParam.toUpperCase();
       const exact = PRODUCT_COLORS.find((c) => String(c.hex).toUpperCase() === upper);
@@ -332,6 +356,7 @@ export default function CititexDesignStudio() {
     cleaned.delete('model');
     cleaned.delete('warna');
     cleaned.delete('produk');
+    cleaned.delete('foto');
     setSearchParams(cleaned, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -368,8 +393,8 @@ export default function CititexDesignStudio() {
     if (step !== 'editor' || !canvasElRef.current) return;
 
     const canvas = new Canvas(canvasElRef.current, {
-      width: 420,
-      height: 560,
+      width: 490,
+      height: 640,
       selection: true,
       preserveObjectStacking: true,
     });
@@ -491,8 +516,8 @@ export default function CititexDesignStudio() {
 
     const id = `txt-${Date.now()}`;
     const textbox = new Textbox(textInput || 'TEKS', {
-      left: 210,
-      top: 255,
+      left: 245,
+      top: 250,
       originX: 'center',
       originY: 'center',
       fill: textColor,
@@ -542,10 +567,10 @@ export default function CititexDesignStudio() {
 
     try {
       const imgObj = await FabricImage.fromURL(dataUrl);
-      imgObj.scaleToWidth(140);
+      imgObj.scaleToWidth(160);
       imgObj.set({
-        left: 210,
-        top: 255,
+        left: 245,
+        top: 260,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -579,10 +604,10 @@ export default function CititexDesignStudio() {
     try {
       const url = `${BASE_URL}/mockup-assets/clipart/${clipart.file}`;
       const imgObj = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
-      imgObj.scaleToWidth(130);
+      imgObj.scaleToWidth(150);
       imgObj.set({
-        left: 210,
-        top: 255,
+        left: 245,
+        top: 260,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -616,10 +641,10 @@ export default function CititexDesignStudio() {
       // Clipart
       const url = `${BASE_URL}/mockup-assets/clipart/${tmpl.clipart}`;
       const imgObj = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
-      imgObj.scaleToWidth(110);
+      imgObj.scaleToWidth(130);
       imgObj.set({
-        left: 210,
-        top: 180,
+        left: 245,
+        top: 220,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -639,8 +664,8 @@ export default function CititexDesignStudio() {
 
       // Text
       const textbox = new Textbox(tmpl.text, {
-        left: 210,
-        top: 360,
+        left: 245,
+        top: 350,
         originX: 'center',
         originY: 'center',
         fill: resolvedTextColor,
@@ -708,11 +733,14 @@ export default function CititexDesignStudio() {
   const activeAssetFolder = currentAngle === 'label' ? 'front' : currentAngle;
   const activeAssetColor = currentColor.assetId || 'black';
   const isUsingCuttingPhoto = Boolean(
-    currentAngle === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
+    !customShirtPhoto && currentAngle === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
   );
-  const shirtPhotoUrl = isUsingCuttingPhoto
-    ? `${BASE_URL}${currentProduct.cuttingImage}`
-    : `${BASE_URL}/mockup-assets/${activeAssetFolder}/${activeAssetColor}.jpg`;
+  const shirtPhotoUrl =
+    currentAngle === 'front' && customShirtPhoto
+      ? customShirtPhoto
+      : isUsingCuttingPhoto
+      ? `${BASE_URL}${currentProduct.cuttingImage}`
+      : `${BASE_URL}/mockup-assets/${activeAssetFolder}/${activeAssetColor}.jpg`;
 
   // WhatsApp order calculation
   const totalQty = Object.values(sizeQuantities).reduce((a, b) => a + b, 0);
@@ -763,9 +791,6 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
 
       const targetWidth = 980; // 490 * 2
       const targetHeight = 1280; // 640 * 2
-      const pad = 40;
-      const boxW = targetWidth - pad * 2; // 900
-      const boxH = targetHeight - pad * 2; // 1200
 
       const offCanvas = document.createElement('canvas');
       offCanvas.width = targetWidth;
@@ -787,19 +812,17 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
       const natW = shirtImg.naturalWidth || shirtImg.width || 490;
       const natH = shirtImg.naturalHeight || shirtImg.height || 640;
 
-      let drawW = boxW;
-      let drawH = boxH;
       if (natW > 0 && natH > 0) {
-        const scale = Math.min(boxW / natW, boxH / natH);
-        drawW = Math.round(natW * scale);
-        drawH = Math.round(natH * scale);
+        const scale = Math.min(targetWidth / natW, targetHeight / natH);
+        const drawW = Math.round(natW * scale);
+        const drawH = Math.round(natH * scale);
         const drawX = Math.round((targetWidth - drawW) / 2);
         const drawY = Math.round((targetHeight - drawH) / 2);
 
         ctx.drawImage(shirtImg, drawX, drawY, drawW, drawH);
       }
 
-      // 3. Draw fabric artwork scaled proportionally inside the chest printable area (1:1 with editor stage)
+      // 3. Draw fabric artwork 1:1 on 980x1280 stage (2x multiplier from 490x640 canvas)
       const artworkDataUrl = fabricCanvas.toDataURL({ format: 'png', multiplier: 2 });
       const artworkImg = new Image();
       artworkImg.src = artworkDataUrl;
@@ -809,13 +832,15 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
         artworkImg.onerror = () => resolve();
       });
 
-      const stageScale = isUsingCuttingPhoto ? 0.66 * (drawW / 980) : drawH / 1280;
-      const artW = Math.round(840 * stageScale);
-      const artH = Math.round(1120 * stageScale);
-      const artX = Math.round((targetWidth - artW) / 2);
-      const artY = Math.round((targetHeight - artH) / 2);
-
-      ctx.drawImage(artworkImg, artX, artY, artW, artH);
+      if (isUsingCuttingPhoto) {
+        const artW = Math.round(targetWidth * 0.66);
+        const artH = Math.round(targetHeight * 0.66);
+        const artX = Math.round((targetWidth - artW) / 2);
+        const artY = Math.round((targetHeight - artH) / 2);
+        ctx.drawImage(artworkImg, artX, artY, artW, artH);
+      } else {
+        ctx.drawImage(artworkImg, 0, 0, targetWidth, targetHeight);
+      }
 
       // 4. Download file
       const link = document.createElement('a');
@@ -976,7 +1001,10 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
               <div className="flex gap-[16px] items-center">
                 <button
                   type="button"
-                  onClick={() => setStep('categories')}
+                  onClick={() => {
+                    setStep('categories');
+                    setCustomShirtPhoto(null);
+                  }}
                   className="p-1 hover:bg-[#F4F5F5] rounded-full transition-colors cursor-pointer text-[#2F3133]"
                   title="Kembali ke kategori"
                 >
@@ -1796,19 +1824,14 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                     }}
                   />
 
-                  {/* Design area boundary (dashed) & Fabric.js Canvas — full-garment coverage */}
+                  {/* Fabric.js Canvas — full garment stage without bounding box clipping */}
                   <div
-                    className="absolute flex items-center justify-center transition-transform duration-150"
+                    className="absolute inset-0 flex items-center justify-center transition-transform duration-150"
                     style={{
-                      width: 420,
-                      height: 560,
                       transform: isUsingCuttingPhoto ? 'scale(0.66)' : 'scale(1)',
                     }}
                   >
-                    <div
-                      className="absolute inset-0 border border-dashed border-[#9DA0A4] pointer-events-none rounded-[2px] z-10"
-                    />
-                    <canvas ref={canvasElRef} width={420} height={560} />
+                    <canvas ref={canvasElRef} width={490} height={640} />
                   </div>
                 </div>
               </div>
@@ -1819,7 +1842,9 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                   const isSelected = currentAngle === ang.id;
                   const folder = ang.assetFolder;
                   const thumbSrc =
-                    ang.id === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
+                    ang.id === 'front' && customShirtPhoto
+                      ? customShirtPhoto
+                      : ang.id === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
                       ? `${BASE_URL}${currentProduct.cuttingImage}`
                       : `${BASE_URL}/mockup-assets/${folder}/${activeAssetColor}.jpg`;
 

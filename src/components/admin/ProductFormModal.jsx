@@ -789,10 +789,19 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   // Discount preview calculation
   const numPrice = parseNumberDots(formData.priceText);
   const numOrig = parseNumberDots(formData.originalPriceText);
-  const hasDiscountPreview = numOrig > numPrice && numPrice > 0;
-  const discountPercentPreview = hasDiscountPreview
+  const hasOrigPreview = numOrig > 0 && numOrig !== numPrice;
+  const isHigherOrig = numOrig > numPrice && numPrice > 0;
+  const discountPercentPreview = isHigherOrig
     ? Math.round(((numOrig - numPrice) / numOrig) * 100)
     : 0;
+
+  const handleSwapPrices = () => {
+    setFormData((prev) => ({
+      ...prev,
+      priceText: prev.originalPriceText,
+      originalPriceText: prev.priceText,
+    }));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
@@ -909,12 +918,25 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-bold text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
                 />
               </div>
-              {hasDiscountPreview && (
+              {hasOrigPreview && isHigherOrig && (
                 <div className="mt-1.5 text-xs text-red-600 font-bold flex items-center gap-1.5 bg-red-50 p-1.5 rounded-lg border border-red-200">
                   <span>🏷️ Promo Aktif: Diskon {discountPercentPreview}%</span>
                   <span className="text-[11px] font-normal text-red-500">
                     (Hemat Rp {formatNumberDots(numOrig - numPrice)})
                   </span>
+                </div>
+              )}
+              {hasOrigPreview && !isHigherOrig && (
+                <div className="mt-1.5 text-[11px] text-amber-800 font-semibold flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  <span>🏷️ Rp {formatNumberDots(numOrig)} aktif dicoret di samping harga jual Rp {formatNumberDots(numPrice)}.</span>
+                  <button
+                    type="button"
+                    onClick={handleSwapPrices}
+                    className="underline text-amber-900 font-bold cursor-pointer hover:text-black ml-1.5 shrink-0"
+                    title="Tukar jika Rp 100.000 adalah harga normal dan Rp 50.000 adalah harga promo"
+                  >
+                    Tukar Posisi?
+                  </button>
                 </div>
               )}
             </div>

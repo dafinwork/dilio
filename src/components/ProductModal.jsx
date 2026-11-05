@@ -44,8 +44,11 @@ export default function ProductModal({ product, onClose }) {
   const currentImage = images[activeImageIndex] || '';
 
   const hasDiscount =
-    Boolean(product.original_price) && Number(product.original_price) > Number(product.price);
-  const discountPercent = hasDiscount
+    Boolean(product.original_price) &&
+    Number(product.original_price) > 0 &&
+    Number(product.original_price) !== Number(product.price);
+  const isHigherOriginal = Number(product.original_price) > Number(product.price);
+  const discountPercent = isHigherOriginal
     ? Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)
     : 0;
 
@@ -88,6 +91,8 @@ export default function ProductModal({ product, onClose }) {
     const params = new URLSearchParams({ model: modelId });
     if (colorList[0]) params.set('warna', colorList[0]);
     if (prod.name) params.set('produk', prod.name);
+    const photo = currentImage || prod.image_url || (prod.images && prod.images[0]);
+    if (photo) params.set('foto', photo);
     return `/bikin-kaos-custom?${params.toString()}`;
   };
 
@@ -239,9 +244,11 @@ export default function ProductModal({ product, onClose }) {
                         <span className="text-sm text-neutral-400 line-through">
                           {formatRupiah(product.original_price)}
                         </span>
-                        <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                          Diskon {discountPercent}% (Hemat {formatRupiah(Number(product.original_price) - Number(product.price))})
-                        </span>
+                        {discountPercent > 0 && (
+                          <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                            Diskon {discountPercent}% (Hemat {formatRupiah(Number(product.original_price) - Number(product.price))})
+                          </span>
+                        )}
                       </div>
                       <p className="text-2xl font-black text-neutral-900 mt-0.5">
                         {formatRupiah(product.price)}

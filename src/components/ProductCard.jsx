@@ -30,8 +30,11 @@ export default function ProductCard({ product, onSelect }) {
 
   const isMinimalist = product.category_label === 'MINIMALIST';
   const hasDiscount =
-    Boolean(product.original_price) && Number(product.original_price) > Number(product.price);
-  const discountPercent = hasDiscount
+    Boolean(product.original_price) &&
+    Number(product.original_price) > 0 &&
+    Number(product.original_price) !== Number(product.price);
+  const isHigherOriginal = Number(product.original_price) > Number(product.price);
+  const discountPercent = isHigherOriginal
     ? Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)
     : 0;
 
@@ -179,9 +182,11 @@ export default function ProductCard({ product, onSelect }) {
                 <span className="text-xs text-neutral-400 line-through">
                   {formatRupiah(product.original_price)}
                 </span>
-                <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1 py-0.2 rounded">
-                  Hemat {formatRupiah(Number(product.original_price) - Number(product.price))}
-                </span>
+                {discountPercent > 0 && (
+                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1 py-0.2 rounded">
+                    Hemat {formatRupiah(Number(product.original_price) - Number(product.price))}
+                  </span>
+                )}
               </div>
               <span className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
                 {formatRupiah(product.price)}

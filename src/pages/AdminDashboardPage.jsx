@@ -625,15 +625,17 @@ export default function AdminDashboardPage() {
 
                       {/* Price */}
                       <td className="py-3.5 px-4">
-                        {item.original_price && Number(item.original_price) > Number(item.price) ? (
+                        {item.original_price && Number(item.original_price) > 0 && Number(item.original_price) !== Number(item.price) ? (
                           <div>
                             <div className="flex items-center gap-1">
                               <span className="text-[10px] text-neutral-400 line-through">
                                 {formatRupiah(item.original_price)}
                               </span>
-                              <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
-                                -{Math.round(((Number(item.original_price) - Number(item.price)) / Number(item.original_price)) * 100)}%
-                              </span>
+                              {Number(item.original_price) > Number(item.price) && (
+                                <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
+                                  -{Math.round(((Number(item.original_price) - Number(item.price)) / Number(item.original_price)) * 100)}%
+                                </span>
+                              )}
                             </div>
                             <span className="font-extrabold text-neutral-900 block">
                               {formatRupiah(item.price)}
