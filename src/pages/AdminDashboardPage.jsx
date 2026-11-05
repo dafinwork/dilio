@@ -734,15 +734,17 @@ export default function AdminDashboardPage() {
       </main>
 
       {/* Add / Edit Product Modal */}
-      <ProductFormModal
-        isOpen={modalOpen}
-        product={editingProduct}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingProduct(null);
-        }}
-        onSave={handleSaveProduct}
-      />
+      {modalOpen && (
+        <ProductFormModal
+          isOpen={modalOpen}
+          product={editingProduct}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingProduct(null);
+          }}
+          onSave={handleSaveProduct}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (

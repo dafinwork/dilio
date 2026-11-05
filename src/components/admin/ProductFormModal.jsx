@@ -213,6 +213,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
 
+  // Tombstone "dihapus" untuk tiap list (agar default/custom bisa dihapus permanen)
+  const [removedKaosCats, setRemovedKaosCats] = useState(() => readRemovedValues(REMOVED_KAOS_CAT_KEY));
+  const [removedCuttings, setRemovedCuttings] = useState(() => readRemovedValues(REMOVED_CUTTINGS_KEY));
+  const [removedMaterials, setRemovedMaterials] = useState(() => readRemovedValues(REMOVED_MATERIALS_KEY));
+  const [removedExclusiveCats, setRemovedExclusiveCats] = useState(() => readRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY));
+
   // Panel "Kelola & Hapus" per list
   const [showManageCutting, setShowManageCutting] = useState(false);
   const [showManageKaosCat, setShowManageKaosCat] = useState(false);
@@ -305,12 +311,6 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       conf.setCurrent(fallback);
     }
   };
-
-  // Tombstone "dihapus" untuk tiap list (agar default/custom bisa dihapus permanen)
-  const [removedKaosCats, setRemovedKaosCats] = useState(() => readRemovedValues(REMOVED_KAOS_CAT_KEY));
-  const [removedCuttings, setRemovedCuttings] = useState(() => readRemovedValues(REMOVED_CUTTINGS_KEY));
-  const [removedMaterials, setRemovedMaterials] = useState(() => readRemovedValues(REMOVED_MATERIALS_KEY));
-  const [removedExclusiveCats, setRemovedExclusiveCats] = useState(() => readRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY));
 
   // Online image url input helper
   const [onlineImageUrl, setOnlineImageUrl] = useState('');
