@@ -737,12 +737,21 @@ export default function CititexDesignStudio() {
   // Real photoshoot cutout URL (uses Dilio cutting photo without neck label when applicable)
   const activeAssetFolder = currentAngle === 'label' ? 'front' : currentAngle;
   const activeAssetColor = currentColor.assetId || 'black';
+  const specificCuttingAngle =
+    !customShirtPhoto &&
+    currentProduct.cuttingAngles &&
+    currentProduct.cuttingAngles[currentAngle] &&
+    activeAssetColor === 'black'
+      ? currentProduct.cuttingAngles[currentAngle]
+      : null;
   const isUsingCuttingPhoto = Boolean(
     !customShirtPhoto && currentAngle === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
   );
   const shirtPhotoUrl =
     currentAngle === 'front' && customShirtPhoto
       ? customShirtPhoto
+      : specificCuttingAngle
+      ? `${BASE_URL}${specificCuttingAngle}`
       : isUsingCuttingPhoto
       ? `${BASE_URL}${currentProduct.cuttingImage}`
       : `${BASE_URL}/mockup-assets/${activeAssetFolder}/${activeAssetColor}.jpg`;
@@ -1836,6 +1845,8 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                   const thumbSrc =
                     ang.id === 'front' && customShirtPhoto
                       ? customShirtPhoto
+                      : currentProduct.cuttingAngles && currentProduct.cuttingAngles[ang.id] && activeAssetColor === 'black'
+                      ? `${BASE_URL}${currentProduct.cuttingAngles[ang.id]}`
                       : ang.id === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
                       ? `${BASE_URL}${currentProduct.cuttingImage}`
                       : `${BASE_URL}/mockup-assets/${folder}/${activeAssetColor}.jpg`;

@@ -173,6 +173,12 @@ export const APPAREL_MODELS = [
     price: 68000,
     defaultColor: 'black',
     cuttingImage: '/cuttings/Long Sleeve.png',
+    cuttingAngles: {
+      front: '/cuttings/Long Sleeve.png',
+      back: '/cuttings/long-sleeve-back.jpg',
+      left: '/cuttings/long-sleeve-left.jpg',
+      right: '/cuttings/long-sleeve-right.jpg',
+    },
     hoverAngle: 'back',
     pills: ['29 Warna', 'S-3XL', 'Cotton Combed 24s', 'Long Sleeve'],
     desc: 'Kaos lengan panjang dengan manset rib elastis berkualitas premium, memberikan tampilan rapi sepanjang hari.',
