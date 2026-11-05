@@ -738,7 +738,6 @@ export default function CititexDesignStudio() {
   const activeAssetFolder = currentAngle === 'label' ? 'front' : currentAngle;
   const activeAssetColor = currentColor.assetId || 'black';
   const specificCuttingAngle =
-    !customShirtPhoto &&
     currentProduct.cuttingAngles &&
     currentProduct.cuttingAngles[currentAngle] &&
     activeAssetColor === 'black'
