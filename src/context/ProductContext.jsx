@@ -58,6 +58,8 @@ const sanitizeProduct = (p) => {
     colors: safeColors(p.colors),
     is_new: Boolean(p.is_new),
     is_exclusive: Boolean(p.is_exclusive),
+    mockup_angles:
+      p.mockup_angles && typeof p.mockup_angles === 'object' ? p.mockup_angles : null,
   };
 };
 
@@ -323,6 +325,8 @@ export function ProductProvider({ children }) {
       placeholder_bg: p.placeholder_bg || '#E5E7EB',
       placeholder_text_color: p.placeholder_text_color || '#374151',
       extra_colors_count: Number(p.extra_colors_count) || 0,
+      mockup_angles:
+        p.mockup_angles && typeof p.mockup_angles === 'object' ? p.mockup_angles : null,
       created_at: p.created_at || new Date().toISOString(),
     };
   };
@@ -366,6 +370,7 @@ export function ProductProvider({ children }) {
           preorder_duration: _pd,
           kaos_category: _kc,
           size_chart: _sc,
+          mockup_angles: _ma,
           ...cloudSafe
         } = newProduct;
         await supabase.from('products').insert([cloudSafe]);
@@ -406,6 +411,7 @@ export function ProductProvider({ children }) {
             preorder_duration: _pd,
             kaos_category: _kc,
             size_chart: _sc,
+            mockup_angles: _ma,
             ...cloudSafe
           } = finalUpdated;
           await supabase.from('products').update(cloudSafe).eq('id', id);

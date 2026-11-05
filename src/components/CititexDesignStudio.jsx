@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Canvas, FabricImage, Textbox } from 'fabric';
+import { useProducts } from '../context/ProductContext';
 import { getWhatsAppUrl, getClosestColorId } from '../utils/helpers';
 import {
   BASE_URL,
@@ -287,7 +288,14 @@ export default function CititexDesignStudio() {
 
   // Entry lewat tombol "Desain Custom" di katalog/modal detail:
   // /bikin-kaos-custom?model=dilio-boxy&warna=%23181818&produk=Nama%20Kaos&foto=...
+  const { products } = useProducts();
   const [customShirtPhoto, setCustomShirtPhoto] = useState(null);
+  const [customAngles, setCustomAngles] = useState({
+    front: null,
+    back: null,
+    left: null,
+    right: null,
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     if (step !== 'categories') return;
@@ -295,18 +303,42 @@ export default function CititexDesignStudio() {
     const colorParam = searchParams.get('warna');
     const fotoParam = searchParams.get('foto');
     const produkParam = searchParams.get('produk');
-    if (!modelParam && !fotoParam && !produkParam) return;
+    const produkIdParam = searchParams.get('produk_id');
+    const fotoBackParam = searchParams.get('foto_back');
+    const fotoLeftParam = searchParams.get('foto_left');
+    const fotoRightParam = searchParams.get('foto_right');
+    if (!modelParam && !fotoParam && !produkParam && !produkIdParam) return;
 
-    if (fotoParam) {
-      const resolved =
-        fotoParam.startsWith('http://') ||
-        fotoParam.startsWith('https://') ||
-        fotoParam.startsWith('data:') ||
-        fotoParam.startsWith('blob:')
-          ? fotoParam
-          : `${BASE_URL}${fotoParam.startsWith('/') ? fotoParam : '/' + fotoParam}`;
-      setCustomShirtPhoto(resolved);
+    let catalogItem = null;
+    if (produkIdParam && Array.isArray(products)) {
+      catalogItem = products.find((p) => String(p.id) === String(produkIdParam));
     }
+
+    const resolveUrl = (url) => {
+      if (!url) return null;
+      return url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('data:') ||
+        url.startsWith('blob:')
+        ? url
+        : `${BASE_URL}${url.startsWith('/') ? url : '/' + url}`;
+    };
+
+    let resolvedFront = null;
+    if (fotoParam) {
+      resolvedFront = resolveUrl(fotoParam);
+      setCustomShirtPhoto(resolvedFront);
+    } else if (catalogItem?.image_url) {
+      resolvedFront = resolveUrl(catalogItem.image_url);
+      setCustomShirtPhoto(resolvedFront);
+    }
+
+    setCustomAngles({
+      front: resolvedFront || resolveUrl(catalogItem?.mockup_angles?.front),
+      back: resolveUrl(fotoBackParam) || resolveUrl(catalogItem?.mockup_angles?.back),
+      left: resolveUrl(fotoLeftParam) || resolveUrl(catalogItem?.mockup_angles?.left),
+      right: resolveUrl(fotoRightParam) || resolveUrl(catalogItem?.mockup_angles?.right),
+    });
 
     const model =
       APPAREL_MODELS.find((m) => m.id === modelParam || m.slug === modelParam) ||
@@ -357,6 +389,10 @@ export default function CititexDesignStudio() {
     cleaned.delete('warna');
     cleaned.delete('produk');
     cleaned.delete('foto');
+    cleaned.delete('produk_id');
+    cleaned.delete('foto_back');
+    cleaned.delete('foto_left');
+    cleaned.delete('foto_right');
     setSearchParams(cleaned, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -746,9 +782,14 @@ export default function CititexDesignStudio() {
   const isUsingCuttingPhoto = Boolean(
     !customShirtPhoto && currentAngle === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'
   );
+  const customAnglePhoto =
+    currentAngle === 'front'
+      ? (customShirtPhoto || customAngles?.front)
+      : customAngles?.[currentAngle];
+
   const shirtPhotoUrl =
-    currentAngle === 'front' && customShirtPhoto
-      ? customShirtPhoto
+    customAnglePhoto
+      ? customAnglePhoto
       : specificCuttingAngle
       ? `${BASE_URL}${specificCuttingAngle}`
       : isUsingCuttingPhoto
@@ -1841,9 +1882,14 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                 {ANGLES.map((ang) => {
                   const isSelected = currentAngle === ang.id;
                   const folder = ang.assetFolder;
+                  const customAngleThumb =
+                    ang.id === 'front'
+                      ? (customShirtPhoto || customAngles?.front)
+                      : customAngles?.[ang.id];
+
                   const thumbSrc =
-                    ang.id === 'front' && customShirtPhoto
-                      ? customShirtPhoto
+                    customAngleThumb
+                      ? customAngleThumb
                       : currentProduct.cuttingAngles && currentProduct.cuttingAngles[ang.id] && activeAssetColor === 'black'
                       ? `${BASE_URL}${currentProduct.cuttingAngles[ang.id]}`
                       : ang.id === 'front' && currentProduct.cuttingImage && activeAssetColor === 'black'

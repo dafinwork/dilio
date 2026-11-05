@@ -132,6 +132,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     colors: ['#000000'],
     extra_colors_count: 0,
     size_chart: [],
+    mockup_angles: { front: '', back: '', left: '', right: '' },
   });
 
   // Pola Cutting list with persistence
@@ -365,6 +366,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         colors: safeColors(product.colors),
         extra_colors_count: product.extra_colors_count || 0,
         size_chart: initialSizeChart,
+        mockup_angles: product.mockup_angles || { front: '', back: '', left: '', right: '' },
       });
 
       if (cutType && !cuttingsList.some((c) => c.value === cutType)) {
@@ -402,6 +404,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         colors: ['#000000'],
         extra_colors_count: 0,
         size_chart: getChartRows('oversized'),
+        mockup_angles: { front: '', back: '', left: '', right: '' },
       });
     } else {
       setFormData({
@@ -429,6 +432,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         colors: ['#000000'],
         extra_colors_count: 0,
         size_chart: getChartRows('oversized'),
+        mockup_angles: { front: '', back: '', left: '', right: '' },
       });
     }
   }, [product, isOpen]);
@@ -499,6 +503,72 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     }
 
     setIsUploading(false);
+  };
+
+  // Angle Image Upload (Belakang, Kiri, Kanan untuk Studio Custom)
+  const handleAngleImageUpload = async (angleKey, file) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`File ${file.name} melebihi ukuran maksimal 5MB.`);
+      return;
+    }
+
+    setIsUploading(true);
+    let finalUrl = '';
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `angle-${angleKey}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (!uploadError && uploadData) {
+        const { data: publicUrlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        if (publicUrlData?.publicUrl) {
+          finalUrl = publicUrlData.publicUrl;
+        }
+      }
+
+      if (!finalUrl) {
+        finalUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+    } catch {
+      finalUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (finalUrl) {
+      setFormData((prev) => ({
+        ...prev,
+        mockup_angles: {
+          ...(prev.mockup_angles || {}),
+          [angleKey]: finalUrl,
+        },
+      }));
+    }
+    setIsUploading(false);
+  };
+
+  const handleRemoveAngleImage = (angleKey) => {
+    setFormData((prev) => ({
+      ...prev,
+      mockup_angles: {
+        ...(prev.mockup_angles || {}),
+        [angleKey]: '',
+      },
+    }));
   };
 
   // Add Online Image URL
@@ -778,6 +848,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
       placeholder_title: formData.placeholder_title || formData.name,
       colors: safeColors(formData.colors),
+      mockup_angles: formData.mockup_angles || null,
     };
 
     onSave(payload);
@@ -1643,6 +1714,99 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                     Belum ada foto ditambahkan. Klik tombol upload di atas untuk menambahkan 1 atau beberapa foto.
                   </div>
                 )}
+
+                {/* Sub-section: Foto Sudut Mockup Studio Custom (Belakang, Lengan Kiri, Lengan Kanan) */}
+                <div className="pt-4 border-t border-neutral-200">
+                  <div className="flex flex-col gap-1 mb-3">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900">
+                      <span>👕</span>
+                      <span>Foto Sudut Mockup Studio Custom (Belakang & Lengan)</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      Khusus untuk fitur <span className="font-bold text-neutral-800">"Desain Custom Kaos Ini"</span> di katalog. Upload foto asli baju tampak belakang, lengan kiri, dan lengan kanan agar pelanggan bisa menempelkan sablon di semua sudut baju ini secara realistis.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { key: 'back', label: 'Tampak Belakang', desc: 'Punggung baju' },
+                      { key: 'left', label: 'Lengan Kiri', desc: 'Sisi lengan kiri' },
+                      { key: 'right', label: 'Lengan Kanan', desc: 'Sisi lengan kanan' },
+                    ].map((slot) => {
+                      const currentVal = formData.mockup_angles?.[slot.key];
+                      return (
+                        <div
+                          key={slot.key}
+                          className="bg-white rounded-xl border border-neutral-200 p-3 flex flex-col gap-2.5 shadow-2xs hover:border-neutral-300 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs text-neutral-800">{slot.label}</span>
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                currentVal
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-neutral-100 text-neutral-500'
+                              }`}
+                            >
+                              {currentVal ? 'Terisi' : 'Default Pola'}
+                            </span>
+                          </div>
+
+                          <div className="relative aspect-[4/5] rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200/70 flex items-center justify-center group">
+                            {currentVal ? (
+                              <>
+                                <img
+                                  src={currentVal}
+                                  alt={slot.label}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <label className="px-2.5 py-1.5 bg-white text-neutral-900 rounded-lg text-[10px] font-bold cursor-pointer hover:bg-neutral-100 shadow-xs">
+                                    Ganti
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      disabled={isUploading}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleAngleImageUpload(slot.key, file);
+                                      }}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveAngleImage(slot.key)}
+                                    className="p-1.5 bg-red-600 text-white rounded-lg text-[10px] font-bold hover:bg-red-700 cursor-pointer shadow-xs"
+                                    title="Hapus foto sudut ini"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <label className="w-full h-full flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-neutral-200/50 transition-colors">
+                                <Plus className="w-5 h-5 text-neutral-400 mb-1" />
+                                <span className="text-[11px] font-bold text-neutral-700">Upload Foto</span>
+                                <span className="text-[9px] text-neutral-400 mt-0.5">{slot.desc}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={isUploading}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleAngleImageUpload(slot.key, file);
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row gap-6 items-start bg-neutral-50 p-4 rounded-2xl border border-neutral-200/70">

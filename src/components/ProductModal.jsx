@@ -85,8 +85,12 @@ export default function ProductModal({ product, onClose }) {
     const params = new URLSearchParams({ model: modelId });
     if (colorList[0]) params.set('warna', colorList[0]);
     if (prod.name) params.set('produk', prod.name);
+    if (prod.id) params.set('produk_id', String(prod.id));
     const photo = currentImage || prod.image_url || (prod.images && prod.images[0]);
     if (photo) params.set('foto', photo);
+    if (prod.mockup_angles?.back) params.set('foto_back', prod.mockup_angles.back);
+    if (prod.mockup_angles?.left) params.set('foto_left', prod.mockup_angles.left);
+    if (prod.mockup_angles?.right) params.set('foto_right', prod.mockup_angles.right);
     return `/bikin-kaos-custom?${params.toString()}`;
   };
 
