@@ -393,8 +393,8 @@ export default function CititexDesignStudio() {
     if (step !== 'editor' || !canvasElRef.current) return;
 
     const canvas = new Canvas(canvasElRef.current, {
-      width: 490,
-      height: 640,
+      width: 560,
+      height: 720,
       selection: true,
       preserveObjectStacking: true,
     });
@@ -516,8 +516,8 @@ export default function CititexDesignStudio() {
 
     const id = `txt-${Date.now()}`;
     const textbox = new Textbox(textInput || 'TEKS', {
-      left: 245,
-      top: 250,
+      left: 280,
+      top: 290,
       originX: 'center',
       originY: 'center',
       fill: textColor,
@@ -567,10 +567,10 @@ export default function CititexDesignStudio() {
 
     try {
       const imgObj = await FabricImage.fromURL(dataUrl);
-      imgObj.scaleToWidth(160);
+      imgObj.scaleToWidth(180);
       imgObj.set({
-        left: 245,
-        top: 260,
+        left: 280,
+        top: 290,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -604,10 +604,10 @@ export default function CititexDesignStudio() {
     try {
       const url = `${BASE_URL}/mockup-assets/clipart/${clipart.file}`;
       const imgObj = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
-      imgObj.scaleToWidth(150);
+      imgObj.scaleToWidth(170);
       imgObj.set({
-        left: 245,
-        top: 260,
+        left: 280,
+        top: 290,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -641,10 +641,10 @@ export default function CititexDesignStudio() {
       // Clipart
       const url = `${BASE_URL}/mockup-assets/clipart/${tmpl.clipart}`;
       const imgObj = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
-      imgObj.scaleToWidth(130);
+      imgObj.scaleToWidth(150);
       imgObj.set({
-        left: 245,
-        top: 220,
+        left: 280,
+        top: 240,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -664,8 +664,8 @@ export default function CititexDesignStudio() {
 
       // Text
       const textbox = new Textbox(tmpl.text, {
-        left: 245,
-        top: 350,
+        left: 280,
+        top: 390,
         originX: 'center',
         originY: 'center',
         fill: resolvedTextColor,
@@ -789,8 +789,8 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
       fabricCanvas.discardActiveObject();
       fabricCanvas.renderAll();
 
-      const targetWidth = 980; // 490 * 2
-      const targetHeight = 1280; // 640 * 2
+      const targetWidth = 1120; // 560 * 2
+      const targetHeight = 1440; // 720 * 2
 
       const offCanvas = document.createElement('canvas');
       offCanvas.width = targetWidth;
@@ -809,8 +809,8 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
         shirtImg.onerror = () => resolve();
       });
 
-      const natW = shirtImg.naturalWidth || shirtImg.width || 490;
-      const natH = shirtImg.naturalHeight || shirtImg.height || 640;
+      const natW = shirtImg.naturalWidth || shirtImg.width || 560;
+      const natH = shirtImg.naturalHeight || shirtImg.height || 720;
 
       if (natW > 0 && natH > 0) {
         const scale = Math.min(targetWidth / natW, targetHeight / natH);
@@ -822,7 +822,7 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
         ctx.drawImage(shirtImg, drawX, drawY, drawW, drawH);
       }
 
-      // 3. Draw fabric artwork 1:1 on 980x1280 stage (2x multiplier from 490x640 canvas)
+      // 3. Draw fabric artwork 1:1 on 1120x1440 stage (2x multiplier from 560x720 canvas)
       const artworkDataUrl = fabricCanvas.toDataURL({ format: 'png', multiplier: 2 });
       const artworkImg = new Image();
       artworkImg.src = artworkDataUrl;
@@ -832,15 +832,7 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
         artworkImg.onerror = () => resolve();
       });
 
-      if (isUsingCuttingPhoto) {
-        const artW = Math.round(targetWidth * 0.66);
-        const artH = Math.round(targetHeight * 0.66);
-        const artX = Math.round((targetWidth - artW) / 2);
-        const artY = Math.round((targetHeight - artH) / 2);
-        ctx.drawImage(artworkImg, artX, artY, artW, artH);
-      } else {
-        ctx.drawImage(artworkImg, 0, 0, targetWidth, targetHeight);
-      }
+      ctx.drawImage(artworkImg, 0, 0, targetWidth, targetHeight);
 
       // 4. Download file
       const link = document.createElement('a');
@@ -1807,11 +1799,11 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                 </div>
               )}
 
-              {/* Center Canvas Container with Cititex exact aspect-[490/640] ratio */}
-              <div className="w-full h-full items-center sm:justify-center flex overflow-x-auto">
+              {/* Center Canvas Container — locked 1:1 with Fabric canvas so no clipping occurs */}
+              <div className="w-full h-full items-center sm:justify-center flex overflow-x-auto p-4">
                 <div
                   id="canvas-container"
-                  className="relative bg-white h-[640px] xl:h-full aspect-[490/640] max-h-[1000px] shadow-sm flex items-center justify-center overflow-hidden transition-transform duration-150"
+                  className="relative bg-white w-[560px] h-[720px] max-w-[95vw] max-h-[85vh] shadow-sm flex items-center justify-center transition-transform duration-150 shrink-0"
                   style={{ transform: `scale(${zoomLevel})` }}
                 >
                   {/* Real studio photoshoot backdrop */}
@@ -1824,14 +1816,9 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                     }}
                   />
 
-                  {/* Fabric.js Canvas — full garment stage without bounding box clipping */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center transition-transform duration-150"
-                    style={{
-                      transform: isUsingCuttingPhoto ? 'scale(0.66)' : 'scale(1)',
-                    }}
-                  >
-                    <canvas ref={canvasElRef} width={490} height={640} />
+                  {/* Fabric.js Canvas — edge-to-edge covering entire 560x720 shirt area without inner limits */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <canvas ref={canvasElRef} width={560} height={720} />
                   </div>
                 </div>
               </div>

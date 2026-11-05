@@ -121,7 +121,7 @@ export default function ProductModal({ product, onClose }) {
               onMouseLeave={() => setIsPaused(false)}
             >
               <div
-                className="flex-1 w-full min-h-[340px] sm:min-h-[420px] flex items-center justify-center p-6 relative text-center overflow-hidden"
+                className="flex-1 w-full min-h-[340px] sm:min-h-[420px] aspect-square sm:aspect-[4/5] flex items-center justify-center p-4 sm:p-6 relative text-center overflow-hidden"
                 style={{ backgroundColor: currentImage ? '#F3F4F6' : product.placeholder_bg || '#E5E7EB' }}
               >
                 {/* Floating Badges Left */}
@@ -159,7 +159,7 @@ export default function ProductModal({ product, onClose }) {
                   <img
                     src={currentImage}
                     alt={`${product.name} foto ${activeImageIndex + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+                    className="w-full h-full object-contain p-4 sm:p-6 transition-opacity duration-300"
                   />
                 ) : (
                   <div
