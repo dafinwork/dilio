@@ -97,7 +97,7 @@ export default function ProductModal({ product, onClose }) {
         <div className="absolute inset-0" onClick={onClose} />
 
         {/* Modal Dialog */}
-        <div className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 animate-in zoom-in-95 duration-200">
+        <div className="relative bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 animate-in zoom-in-95 duration-200">
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -110,13 +110,13 @@ export default function ProductModal({ product, onClose }) {
           <div className="flex flex-col sm:flex-row">
             {/* Visual Showcase (Multi-Image Gallery or Mockup) */}
             <div
-              className="sm:w-1/2 flex flex-col bg-neutral-100"
+              className="sm:w-1/2 flex flex-col bg-white"
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
               <div
-                className="flex-1 w-full min-h-[340px] sm:min-h-[420px] aspect-square sm:aspect-[4/5] flex items-center justify-center p-4 sm:p-6 relative text-center overflow-hidden"
-                style={{ backgroundColor: currentImage ? '#F3F4F6' : product.placeholder_bg || '#E5E7EB' }}
+                className="relative w-full aspect-square sm:aspect-[4/5] sm:h-full min-h-[340px] sm:min-h-[420px] flex items-center justify-center text-center overflow-hidden"
+                style={{ backgroundColor: currentImage ? '#FFFFFF' : product.placeholder_bg || '#E5E7EB' }}
               >
                 {/* Floating Badges Left */}
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5 items-start">
@@ -148,16 +148,16 @@ export default function ProductModal({ product, onClose }) {
                   </div>
                 )}
 
-                {/* Main Visual Display */}
+                {/* Main Visual Display - matches ProductCard 1:1 (object-cover edge-to-edge without padding) */}
                 {currentImage ? (
                   <img
                     src={currentImage}
                     alt={`${product.name} foto ${activeImageIndex + 1}`}
-                    className="w-full h-full object-contain p-4 sm:p-6 transition-opacity duration-300"
+                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                   />
                 ) : (
                   <div
-                    className="font-extrabold text-3xl tracking-tight leading-tight whitespace-pre-line"
+                    className="font-extrabold text-3xl tracking-tight leading-tight whitespace-pre-line p-6"
                     style={{ color: product.placeholder_text_color || '#1E293B' }}
                   >
                     {product.placeholder_title || product.name}
