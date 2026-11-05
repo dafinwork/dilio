@@ -25,7 +25,7 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
-import { formatRupiah, safeColors } from '../utils/helpers';
+import { formatRupiah, safeColors, computeDiscountInfo } from '../utils/helpers';
 import ProductFormModal from '../components/admin/ProductFormModal';
 
 // Urutan produk di slider [LIMITED EDITION] Homepage (disimpan lokal, diatur dari tabel admin)
@@ -625,27 +625,33 @@ export default function AdminDashboardPage() {
 
                       {/* Price */}
                       <td className="py-3.5 px-4">
-                        {item.original_price && Number(item.original_price) > 0 && Number(item.original_price) !== Number(item.price) ? (
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-neutral-400 line-through">
-                                {formatRupiah(item.original_price)}
-                              </span>
-                              {Number(item.original_price) > Number(item.price) && (
-                                <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
-                                  -{Math.round(((Number(item.original_price) - Number(item.price)) / Number(item.original_price)) * 100)}%
+                        {(() => {
+                          const disc = computeDiscountInfo(item.price, item.original_price);
+                          if (disc.hasDiscount) {
+                            return (
+                              <div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-neutral-400 line-through">
+                                    {formatRupiah(disc.displayOriginalPrice)}
+                                  </span>
+                                  {disc.discountPercent > 0 && (
+                                    <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
+                                      -{disc.discountPercent}%
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-extrabold text-neutral-900 block">
+                                  {formatRupiah(item.price)}
                                 </span>
-                              )}
-                            </div>
-                            <span className="font-extrabold text-neutral-900 block">
+                              </div>
+                            );
+                          }
+                          return (
+                            <span className="font-extrabold text-neutral-900">
                               {formatRupiah(item.price)}
                             </span>
-                          </div>
-                        ) : (
-                          <span className="font-extrabold text-neutral-900">
-                            {formatRupiah(item.price)}
-                          </span>
-                        )}
+                          );
+                        })()}
                       </td>
 
                       {/* Color Dots */}

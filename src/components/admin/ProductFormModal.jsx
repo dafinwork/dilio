@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Check, Loader2, Plus, Trash2, Star, Clock, Sparkles, Ruler } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { safeColors, formatNumberDots, parseNumberDots } from '../../utils/helpers';
+import { safeColors, formatNumberDots, parseNumberDots, computeDiscountInfo } from '../../utils/helpers';
 import { getStoredSizeCharts, SIZE_CHARTS_STORAGE_KEY } from '../SizeChartModal';
 import ColorWheelModal from './ColorWheelModal';
 
@@ -789,11 +789,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   // Discount preview calculation
   const numPrice = parseNumberDots(formData.priceText);
   const numOrig = parseNumberDots(formData.originalPriceText);
-  const hasOrigPreview = numOrig > 0 && numOrig !== numPrice;
-  const isHigherOrig = numOrig > numPrice && numPrice > 0;
-  const discountPercentPreview = isHigherOrig
-    ? Math.round(((numOrig - numPrice) / numOrig) * 100)
-    : 0;
+  const discountInfo = computeDiscountInfo(numPrice, numOrig);
 
   const handleSwapPrices = () => {
     setFormData((prev) => ({
@@ -801,6 +797,15 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       priceText: prev.originalPriceText,
       originalPriceText: prev.priceText,
     }));
+  };
+
+  const handleApplyDeductionAsOriginal = () => {
+    if (discountInfo.hasDiscount && discountInfo.displayOriginalPrice) {
+      setFormData((prev) => ({
+        ...prev,
+        originalPriceText: formatNumberDots(discountInfo.displayOriginalPrice),
+      }));
+    }
   };
 
   return (
@@ -918,25 +923,42 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-bold text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
                 />
               </div>
-              {hasOrigPreview && isHigherOrig && (
-                <div className="mt-1.5 text-xs text-red-600 font-bold flex items-center gap-1.5 bg-red-50 p-1.5 rounded-lg border border-red-200">
-                  <span>🏷️ Promo Aktif: Diskon {discountPercentPreview}%</span>
-                  <span className="text-[11px] font-normal text-red-500">
-                    (Hemat Rp {formatNumberDots(numOrig - numPrice)})
-                  </span>
-                </div>
-              )}
-              {hasOrigPreview && !isHigherOrig && (
-                <div className="mt-1.5 text-[11px] text-amber-800 font-semibold flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
-                  <span>🏷️ Rp {formatNumberDots(numOrig)} aktif dicoret di samping harga jual Rp {formatNumberDots(numPrice)}.</span>
-                  <button
-                    type="button"
-                    onClick={handleSwapPrices}
-                    className="underline text-amber-900 font-bold cursor-pointer hover:text-black ml-1.5 shrink-0"
-                    title="Tukar jika Rp 100.000 adalah harga normal dan Rp 50.000 adalah harga promo"
-                  >
-                    Tukar Posisi?
-                  </button>
+              {discountInfo.hasDiscount && (
+                <div className="mt-2 space-y-1.5">
+                  <div className="text-xs text-red-600 font-bold flex items-center flex-wrap gap-1.5 bg-red-50 p-2 rounded-xl border border-red-200">
+                    <span>🏷️ Promo Aktif: Diskon {discountInfo.discountPercent}%</span>
+                    <span className="text-[11px] font-normal text-red-500">
+                      (Hemat Rp {formatNumberDots(discountInfo.savings)})
+                    </span>
+                    <span className="text-[11px] text-neutral-600 font-medium block w-full mt-0.5">
+                      Tampil di Web: Coret <span className="line-through font-bold text-neutral-500">Rp {formatNumberDots(discountInfo.displayOriginalPrice)}</span> → Harga Jual <span className="font-black text-neutral-900">Rp {formatNumberDots(numPrice)}</span>
+                    </span>
+                  </div>
+                  {discountInfo.isDeductionMode && (
+                    <div className="text-[11px] text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div>
+                        <span className="font-bold">💡 Input Rp {formatNumberDots(numOrig)} otomatis dihitung sebagai potongan hemat Rp {formatNumberDots(discountInfo.savings)}.</span>
+                        <span className="block text-[10px] text-amber-700">Web akan otomatis mencoret Rp {formatNumberDots(discountInfo.displayOriginalPrice)} (persis Foto 4).</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={handleApplyDeductionAsOriginal}
+                          className="text-[10px] bg-amber-600 hover:bg-amber-700 text-white font-bold px-2 py-1 rounded-md cursor-pointer transition-colors"
+                          title="Ubah angka di form menjadi Rp 150.000 agar eksplisit"
+                        >
+                          Set Rp {formatNumberDots(discountInfo.displayOriginalPrice)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSwapPrices}
+                          className="text-[10px] underline text-amber-900 font-semibold cursor-pointer px-1"
+                        >
+                          Tukar Posisi
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

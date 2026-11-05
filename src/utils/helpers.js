@@ -30,6 +30,51 @@ export function parseNumberDots(val) {
 }
 
 /**
+ * Calculates discount details supporting both user input patterns:
+ * 1. Full original price: originalPrice > price (e.g. original=150.000, price=100.000 -> 33% discount, save 50.000)
+ * 2. Discount amount: originalPrice < price (e.g. original=50.000, price=100.000 -> user intended "diskon 50.000",
+ *    so normal price is 150.000, 33% discount, save 50.000 - matches Foto 4 perfectly!)
+ */
+export function computeDiscountInfo(price, originalPrice) {
+  const p = Number(price) || 0;
+  const rawOrig = Number(originalPrice) || 0;
+
+  if (rawOrig <= 0 || p <= 0 || rawOrig === p) {
+    return {
+      hasDiscount: false,
+      displayOriginalPrice: null,
+      discountPercent: 0,
+      savings: 0,
+      isDeductionMode: false,
+    };
+  }
+
+  if (rawOrig > p) {
+    const savings = rawOrig - p;
+    const discountPercent = Math.round((savings / rawOrig) * 100);
+    return {
+      hasDiscount: true,
+      displayOriginalPrice: rawOrig,
+      discountPercent,
+      savings,
+      isDeductionMode: false,
+    };
+  }
+
+  // User input the discount amount (e.g. 50.000) instead of full price (150.000)
+  const displayOriginalPrice = p + rawOrig;
+  const savings = rawOrig;
+  const discountPercent = Math.round((savings / displayOriginalPrice) * 100);
+  return {
+    hasDiscount: true,
+    displayOriginalPrice,
+    discountPercent,
+    savings,
+    isDeductionMode: true,
+  };
+}
+
+/**
  * Ensures colors is always a valid array of hex color strings.
  */
 export function safeColors(colors) {

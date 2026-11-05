@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush } from 'lucide-react';
-import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting } from '../utils/helpers';
+import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting, computeDiscountInfo } from '../utils/helpers';
 import SizeChartModal from './SizeChartModal';
 
 export default function ProductModal({ product, onClose }) {
@@ -43,14 +43,8 @@ export default function ProductModal({ product, onClose }) {
 
   const currentImage = images[activeImageIndex] || '';
 
-  const hasDiscount =
-    Boolean(product.original_price) &&
-    Number(product.original_price) > 0 &&
-    Number(product.original_price) !== Number(product.price);
-  const isHigherOriginal = Number(product.original_price) > Number(product.price);
-  const discountPercent = isHigherOriginal
-    ? Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)
-    : 0;
+  const { hasDiscount, displayOriginalPrice, discountPercent, savings } =
+    computeDiscountInfo(product.price, product.original_price);
 
   const nextImage = () => {
     if (images.length > 1) {
@@ -242,11 +236,11 @@ export default function ProductModal({ product, onClose }) {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-neutral-400 line-through">
-                          {formatRupiah(product.original_price)}
+                          {formatRupiah(displayOriginalPrice)}
                         </span>
                         {discountPercent > 0 && (
                           <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                            Diskon {discountPercent}% (Hemat {formatRupiah(Number(product.original_price) - Number(product.price))})
+                            Diskon {discountPercent}% (Hemat {formatRupiah(savings)})
                           </span>
                         )}
                       </div>

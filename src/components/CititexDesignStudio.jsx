@@ -543,7 +543,7 @@ export default function CititexDesignStudio() {
     showToast('Teks berhasil ditambahkan ke desain!');
   };
 
-  // File Upload & Crop Handler
+  // File Upload Handler (Langsung tempel foto ke kaos tanpa dipaksa modal crop)
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -552,8 +552,7 @@ export default function CititexDesignStudio() {
     reader.onload = (evt) => {
       const dataUrl = evt.target?.result;
       if (dataUrl) {
-        setPendingCropImage(dataUrl);
-        setCropModalOpen(true);
+        handleApplyCroppedImage(dataUrl);
       }
     };
     reader.readAsDataURL(file);
@@ -567,20 +566,26 @@ export default function CititexDesignStudio() {
 
     try {
       const imgObj = await FabricImage.fromURL(dataUrl);
-      imgObj.scaleToWidth(180);
+      // Ukuran awal pas dan proporsional sesuai rasio gambar tanpa batasan kotak
+      const maxInitialDim = 260;
+      if (imgObj.width > imgObj.height) {
+        imgObj.scaleToWidth(Math.min(maxInitialDim, imgObj.width));
+      } else {
+        imgObj.scaleToHeight(Math.min(maxInitialDim, imgObj.height));
+      }
       imgObj.set({
         left: 280,
         top: 290,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
-        cornerSize: 8,
+        cornerSize: 10,
         transparentCorners: false,
         cornerStyle: 'circle',
         padding: 4,
       });
       imgObj.__id = `img-${Date.now()}`;
-      imgObj.__name = 'Gambar Upload';
+      imgObj.__name = 'Foto Upload';
 
       canvas.add(imgObj);
       canvas.setActiveObject(imgObj);
@@ -589,7 +594,7 @@ export default function CititexDesignStudio() {
 
       // Save to My Images history
       setMyImages((prev) => [{ id: Date.now(), url: dataUrl }, ...prev]);
-      showToast('Gambar berhasil ditempel ke kaos!');
+      showToast('Foto berhasil ditempel ke kaos! Kamu bebas memindah & mengatur ukurannya.');
     } catch (err) {
       console.error(err);
       showToast('Gagal memuat gambar.');
