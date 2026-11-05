@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -21,10 +21,32 @@ import {
   Copy,
   Clock,
   Tag,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import { formatRupiah, safeColors } from '../utils/helpers';
 import ProductFormModal from '../components/admin/ProductFormModal';
+
+// Urutan produk di slider [LIMITED EDITION] Homepage (disimpan lokal, diatur dari tabel admin)
+const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
+
+function readSliderOrderMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SLIDER_ORDER_KEY));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeSliderOrderMap(map) {
+  try {
+    localStorage.setItem(SLIDER_ORDER_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+}
 
 export default function AdminDashboardPage() {
   const {
@@ -60,6 +82,13 @@ export default function AdminDashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  // Slider order: refs only so button clicks trigger re-render via tick below
+  const sliderOrderMapRef = useRef(readSliderOrderMap());
+  const [sliderOrderTick, setSliderOrderTick] = useState(0);
+
+  const isExclusiveItem = (item) =>
+    item.product_group === 'eksklusif' || item.is_exclusive === true;
 
   // Notification toast
   const [toastMessage, setToastMessage] = useState('');
@@ -179,6 +208,30 @@ export default function AdminDashboardPage() {
     deleteProduct(id);
     setDeleteConfirmId(null);
     showToast('Produk berhasil dihapus dari katalog!');
+  };
+
+  // Pindahkan urutan produk di slider Exclusive Homepage
+  const handleMoveSliderOrder = (id, toFront) => {
+    const orderMap = readSliderOrderMap();
+    const exclusiveProducts = products.filter(isExclusiveItem);
+    const existingOrders = exclusiveProducts
+      .map((p) => orderMap[p.id])
+      .filter((n) => typeof n === 'number');
+
+    // Nilai ekstrem baru memastikan item ini selalu paling depan / paling belakang
+    const nextValue = toFront
+      ? Math.min(0, ...existingOrders) - 1
+      : Math.max(0, ...existingOrders) + 1;
+
+    orderMap[id] = nextValue;
+    writeSliderOrderMap(orderMap);
+    sliderOrderMapRef.current = orderMap;
+    setSliderOrderTick((t) => t + 1);
+    showToast(
+      toFront
+        ? 'Produk dipindah ke DEPAN slider Exclusive di Homepage!'
+        : 'Produk dipindah ke BELAKANG slider Exclusive di Homepage!'
+    );
   };
 
   // Handle Reset to Default
@@ -460,10 +513,22 @@ export default function AdminDashboardPage() {
               );
             })}
           </div>
+
+          {/* Legend tombol urutan slider Exclusive */}
+          <div className="flex items-center gap-2 pt-2 border-t border-neutral-100 text-[11px] text-neutral-500">
+            <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span>
+              Produk <b>Exclusive</b>: tombol <b>« Depan / Belakang »</b> di kolom Aksi mengatur urutan
+              tampil di slider [LIMITED EDITION] Homepage.
+            </span>
+          </div>
         </div>
 
         {/* Product Table */}
-        <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-2xs overflow-hidden">
+        <div
+          className="bg-white rounded-2xl border border-neutral-200/80 shadow-2xs overflow-hidden"
+          data-slider-order-tick={String(sliderOrderTick)}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 uppercase tracking-wider text-[11px] font-bold">
@@ -607,6 +672,24 @@ export default function AdminDashboardPage() {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
+                          {isExclusiveItem(item) && (
+                            <>
+                              <button
+                                onClick={() => handleMoveSliderOrder(item.id, true)}
+                                className="p-1.5 rounded-lg text-neutral-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                title="Pindah ke DEPAN slider [LIMITED EDITION] di Homepage"
+                              >
+                                <ChevronsLeft className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveSliderOrder(item.id, false)}
+                                className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
+                                title="Pindah ke BELAKANG slider [LIMITED EDITION] di Homepage"
+                              >
+                                <ChevronsRight className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                           <button
                             onClick={() => handleDuplicateProduct(item)}
                             className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"

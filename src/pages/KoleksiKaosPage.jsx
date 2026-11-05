@@ -101,7 +101,16 @@ export default function KoleksiKaosPage() {
 
   // Top Category Tabs (Kasual, Polo, Olahraga + custom categories from Admin)
   const categoryTabs = useMemo(() => {
-    const tabs = [...DEFAULT_CATEGORY_TABS];
+    // Respect admin's "removed" categories (tombstone list from CMS delete feature)
+    let removedCats = [];
+    try {
+      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_kaos_categories'));
+      if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase());
+    } catch {
+      // ignore
+    }
+
+    const tabs = DEFAULT_CATEGORY_TABS.filter((t) => !removedCats.includes(t.value));
     const known = new Set(tabs.map((t) => t.value));
     known.add('casual'); // alias for kasual
 
@@ -110,6 +119,7 @@ export default function KoleksiKaosPage() {
       const trimmed = rawCat.trim();
       const lower = trimmed.toLowerCase();
       if (!lower || known.has(lower) || IGNORED_MATERIAL_LABELS.has(lower)) return;
+      if (removedCats.includes(lower)) return;
       known.add(lower);
       const formattedLabel = trimmed
         .toLowerCase()
@@ -143,6 +153,15 @@ export default function KoleksiKaosPage() {
 
   // Sidebar Cutting Options (Default 5 + custom cuttings from Admin)
   const cuttingOptions = useMemo(() => {
+    // Respect admin's "removed" cuttings (tombstone list from CMS delete feature)
+    let removedCuttings = [];
+    try {
+      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_cuttings'));
+      if (Array.isArray(removed)) removedCuttings = removed.map((c) => String(c).toLowerCase());
+    } catch {
+      // ignore
+    }
+
     const base = [
       { label: 'Semua Cut', value: 'all' },
       { label: 'Oversized', value: 'oversized' },
@@ -150,7 +169,8 @@ export default function KoleksiKaosPage() {
       { label: 'Fitted', value: 'fitted' },
       { label: 'Boxy', value: 'boxy' },
       { label: 'Long Sleeve', value: 'long-sleeve' },
-    ];
+    ].filter((c) => c.value === 'all' || !removedCuttings.includes(c.value));
+
     const known = new Set(base.map((b) => b.value));
     const ignored = new Set(['kasual', 'casual', 'polo', 'olahraga']);
 
@@ -158,6 +178,7 @@ export default function KoleksiKaosPage() {
       if (!val) return;
       const norm = normalizeCutting(val);
       if (!norm || known.has(norm) || ignored.has(norm)) return;
+      if (removedCuttings.includes(norm)) return;
       known.add(norm);
       const formatted =
         lbl ||

@@ -315,7 +315,7 @@ export function ProductProvider({ children }) {
           ? (p.cutting_type || 'oversized')
           : null,
       sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
-      exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || 'dilio') : null,
+      exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || null) : null,
       category_label: p.category_label || '',
       kaos_category: p.kaos_category || p.category_label || '',
       size_chart: Array.isArray(p.size_chart) && p.size_chart.length > 0 ? p.size_chart : null,

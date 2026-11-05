@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
-import { formatRupiah, getWhatsAppUrl, safeColors, getColorName } from '../utils/helpers';
+import { Link } from 'react-router-dom';
+import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush } from 'lucide-react';
+import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting } from '../utils/helpers';
 import SizeChartModal from './SizeChartModal';
 
 export default function ProductModal({ product, onClose }) {
@@ -58,6 +59,36 @@ export default function ProductModal({ product, onClose }) {
     if (images.length > 1) {
       setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
     }
+  };
+
+  // Map katalog product -> model studio custom (dipakai tombol "Desain Custom")
+  const getStudioDesignUrl = (prod) => {
+    if (!prod) return '/bikin-kaos-custom';
+    const cut = normalizeCutting(prod.cutting_type);
+    const cat = (prod.kaos_category || prod.category_label || '').toLowerCase();
+    const modelId =
+      cat.includes('hoodie') || cat.includes('jaket') || cat.includes('jacket')
+        ? 'dilio-heavy-hoodie'
+        : cat.includes('polo')
+        ? 'dilio-polo-24s'
+        : cat.includes('olahraga') || cat.includes('sport') || cut === 'olahraga'
+        ? 'dilio-pro-sport'
+        : cut === 'boxy'
+        ? 'dilio-boxy'
+        : cut === 'fitted'
+        ? 'dilio-fitted'
+        : cut === 'long-sleeve'
+        ? 'dilio-long-sleeve'
+        : cut === 'regular'
+        ? 'dilio-regular'
+        : 'dilio-oversize';
+
+    // Warna dikirim sebagai hex katalog pertama; studio akan mengarahkan ke warna terdekat
+    const colorList = safeColors(prod.colors);
+    const params = new URLSearchParams({ model: modelId });
+    if (colorList[0]) params.set('warna', colorList[0]);
+    if (prod.name) params.set('produk', prod.name);
+    return `/bikin-kaos-custom?${params.toString()}`;
   };
 
   return (
@@ -307,8 +338,8 @@ export default function ProductModal({ product, onClose }) {
                 </div>
               </div>
 
-              {/* CTA WhatsApp Button */}
-              <div className="pt-4 border-t border-neutral-100">
+              {/* CTA WhatsApp & Desain Custom Buttons */}
+              <div className="pt-4 border-t border-neutral-100 space-y-2">
                 <a
                   href={getWhatsAppUrl(product)}
                   target="_blank"
@@ -320,6 +351,18 @@ export default function ProductModal({ product, onClose }) {
                     {product.is_preorder ? 'Pre-Order via WhatsApp' : 'Konsultasi / Order via WhatsApp'}
                   </span>
                 </a>
+
+                <Link
+                  to={getStudioDesignUrl(product)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-neutral-950 rounded-xl text-sm font-black shadow-md hover:shadow-lg transition-all cursor-pointer"
+                >
+                  <Brush className="w-4 h-4" />
+                  <span>Desain Custom Kaos Ini</span>
+                </Link>
+                <p className="text-center text-[10px] text-neutral-400">
+                  Langsung terbuka di studio mockup: model sesuai kaos yang kamu pilih
+                  {product.cutting_type ? ` (Cutting: ${product.cutting_type})` : ''}.
+                </p>
               </div>
             </div>
           </div>

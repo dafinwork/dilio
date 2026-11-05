@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Canvas, FabricImage, Textbox } from 'fabric';
-import { getWhatsAppUrl } from '../utils/helpers';
+import { getWhatsAppUrl, getClosestColorId } from '../utils/helpers';
 import {
   BASE_URL,
   CITITEX_CATEGORIES,
@@ -285,6 +285,57 @@ export default function CititexDesignStudio() {
     setTimeout(() => setToastMessage(''), 2500);
   };
 
+  // Entry lewat tombol "Desain Custom" di katalog/modal detail:
+  // /bikin-kaos-custom?model=dilio-boxy&warna=%23181818&produk=Nama%20Kaos
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (step !== 'categories') return;
+    const modelParam = searchParams.get('model');
+    const colorParam = searchParams.get('warna');
+    if (!modelParam) return;
+
+    const model =
+      APPAREL_MODELS.find((m) => m.id === modelParam || m.slug === modelParam) ||
+      APPAREL_MODELS.find((m) => m.category === 'T-Shirts' && m.slug.includes(modelParam)) ||
+      null;
+    if (!model) return;
+
+    setCurrentProduct(model);
+
+    let matchedColor = PRODUCT_COLORS.find((c) => c.id === model.defaultColor) || PRODUCT_COLORS[0];
+    if (colorParam) {
+      const upper = colorParam.toUpperCase();
+      const exact = PRODUCT_COLORS.find((c) => String(c.hex).toUpperCase() === upper);
+      if (exact) {
+        matchedColor = exact;
+      } else {
+        // Fallback: keluarga warna terdekat hex katalog -> warna studio
+        const BASE_TO_STUDIO = {
+          hitam: 'black',
+          putih: 'white',
+          navy: 'navy',
+          abu: 'sport_grey',
+          biru: 'royal_blue',
+          hijau: 'irish_green',
+          merah: 'red',
+          kuning: 'daisy',
+          coklat: 'sand',
+        };
+        const baseId = getClosestColorId(colorParam);
+        matchedColor = PRODUCT_COLORS.find((c) => c.id === BASE_TO_STUDIO[baseId]) || matchedColor;
+      }
+    }
+    setCurrentColor(matchedColor);
+    setStep('editor');
+    // Hapus params agar refresh tidak mengulang step hop
+    const cleaned = new URLSearchParams(searchParams);
+    cleaned.delete('model');
+    cleaned.delete('warna');
+    cleaned.delete('produk');
+    setSearchParams(cleaned, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Helper to sync layer list & Undo stack
   const syncCanvasState = useCallback((canvas, pushHistory = true) => {
     if (!canvas) return;
@@ -317,8 +368,8 @@ export default function CititexDesignStudio() {
     if (step !== 'editor' || !canvasElRef.current) return;
 
     const canvas = new Canvas(canvasElRef.current, {
-      width: 280,
-      height: 380,
+      width: 420,
+      height: 560,
       selection: true,
       preserveObjectStacking: true,
     });
@@ -440,8 +491,8 @@ export default function CititexDesignStudio() {
 
     const id = `txt-${Date.now()}`;
     const textbox = new Textbox(textInput || 'TEKS', {
-      left: 140,
-      top: 170,
+      left: 210,
+      top: 255,
       originX: 'center',
       originY: 'center',
       fill: textColor,
@@ -493,8 +544,8 @@ export default function CititexDesignStudio() {
       const imgObj = await FabricImage.fromURL(dataUrl);
       imgObj.scaleToWidth(140);
       imgObj.set({
-        left: 140,
-        top: 170,
+        left: 210,
+        top: 255,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -530,8 +581,8 @@ export default function CititexDesignStudio() {
       const imgObj = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
       imgObj.scaleToWidth(130);
       imgObj.set({
-        left: 140,
-        top: 170,
+        left: 210,
+        top: 255,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -567,8 +618,8 @@ export default function CititexDesignStudio() {
       const imgObj = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
       imgObj.scaleToWidth(110);
       imgObj.set({
-        left: 140,
-        top: 120,
+        left: 210,
+        top: 180,
         originX: 'center',
         originY: 'center',
         cornerColor: '#2F3133',
@@ -588,8 +639,8 @@ export default function CititexDesignStudio() {
 
       // Text
       const textbox = new Textbox(tmpl.text, {
-        left: 140,
-        top: 240,
+        left: 210,
+        top: 360,
         originX: 'center',
         originY: 'center',
         fill: resolvedTextColor,
@@ -759,8 +810,8 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
       });
 
       const stageScale = isUsingCuttingPhoto ? 0.66 * (drawW / 980) : drawH / 1280;
-      const artW = Math.round(560 * stageScale);
-      const artH = Math.round(760 * stageScale);
+      const artW = Math.round(840 * stageScale);
+      const artH = Math.round(1120 * stageScale);
       const artX = Math.round((targetWidth - artW) / 2);
       const artY = Math.round((targetHeight - artH) / 2);
 
@@ -1745,19 +1796,19 @@ Mohon konfirmasi ketersediaan stok & estimasi pengerjaan sablonnya ya, terima ka
                     }}
                   />
 
-                  {/* Printable area boundary (dashed) & Fabric.js Canvas */}
+                  {/* Design area boundary (dashed) & Fabric.js Canvas — full-garment coverage */}
                   <div
                     className="absolute flex items-center justify-center transition-transform duration-150"
                     style={{
-                      width: 280,
-                      height: 380,
+                      width: 420,
+                      height: 560,
                       transform: isUsingCuttingPhoto ? 'scale(0.66)' : 'scale(1)',
                     }}
                   >
                     <div
                       className="absolute inset-0 border border-dashed border-[#9DA0A4] pointer-events-none rounded-[2px] z-10"
                     />
-                    <canvas ref={canvasElRef} width={280} height={380} />
+                    <canvas ref={canvasElRef} width={420} height={560} />
                   </div>
                 </div>
               </div>

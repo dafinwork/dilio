@@ -21,7 +21,17 @@ export default function HomePage() {
   const sliderRef = useRef(null);
   const dragStateRef = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
 
-  // Priority order matching user's Image 1 mockup
+  // Custom slider order set from CMS (localStorage key) — legacy priorityIds as fallback
+  const sliderOrderMap = useMemo(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('kaos_dilio_slider_order'));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch {
+      // ignore
+    }
+    return {};
+  }, []);
+
   const priorityIds = [
     'prod-1790257639822',
     'exclusive-collab-onepiece-gear5',
@@ -33,6 +43,14 @@ export default function HomePage() {
     return allProducts
       .filter((p) => p.product_group === 'eksklusif' || p.is_exclusive)
       .sort((a, b) => {
+        // 1. Urutan manual dari CMS (tombol depan/belakang di dashboard admin)
+        const ordA = typeof sliderOrderMap[a.id] === 'number' ? sliderOrderMap[a.id] : null;
+        const ordB = typeof sliderOrderMap[b.id] === 'number' ? sliderOrderMap[b.id] : null;
+        if (ordA !== null && ordB !== null) return ordA - ordB;
+        if (ordA !== null) return -1;
+        if (ordB !== null) return 1;
+
+        // 2. Fallback legacy: prioritas bawaan lalu produk terbaru
         const idxA = priorityIds.indexOf(a.id);
         const idxB = priorityIds.indexOf(b.id);
         if (idxA !== -1 && idxB !== -1) return idxA - idxB;
@@ -40,12 +58,21 @@ export default function HomePage() {
         if (idxB !== -1) return 1;
         return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       });
-  }, [allProducts]);
+  }, [allProducts, sliderOrderMap]);
 
   // Dynamically derive exclusive categories (supports categories added in admin)
   const limitedTabs = useMemo(() => {
     const tabs = [...DEFAULT_EXCLUSIVE_TABS];
     const knownValues = new Set(tabs.map((t) => t.value));
+
+    // Respect admin's "removed" categories (tombstone list from CMS delete feature)
+    let removedCats = [];
+    try {
+      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_exclusive_cats'));
+      if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase());
+    } catch {
+      // ignore
+    }
 
     // Also check saved custom categories from localStorage
     try {
@@ -54,7 +81,12 @@ export default function HomePage() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           parsed.forEach((cat) => {
-            if (cat && cat.value && !knownValues.has(cat.value)) {
+            if (
+              cat &&
+              cat.value &&
+              !knownValues.has(cat.value) &&
+              !removedCats.includes(String(cat.value).toLowerCase())
+            ) {
               knownValues.add(cat.value);
               tabs.push({ label: cat.label || cat.value, value: cat.value });
             }
@@ -67,7 +99,11 @@ export default function HomePage() {
 
     // Check actual products in case any has a unique exclusive_category
     exclusiveProducts.forEach((p) => {
-      if (p.exclusive_category && !knownValues.has(p.exclusive_category)) {
+      if (
+        p.exclusive_category &&
+        !knownValues.has(p.exclusive_category) &&
+        !removedCats.includes(String(p.exclusive_category).toLowerCase())
+      ) {
         knownValues.add(p.exclusive_category);
         const autoLabel = p.exclusive_category
           .replace(/-/g, ' ')

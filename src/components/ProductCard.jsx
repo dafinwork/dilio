@@ -78,11 +78,6 @@ export default function ProductCard({ product, onSelect }) {
               -{discountPercent}%
             </span>
           )}
-          {totalImages > 1 && (
-            <span className="px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold rounded-md shadow-xs">
-              📷 {totalImages}
-            </span>
-          )}
         </div>
 
         {/* Real Image or Mockup Typography */}

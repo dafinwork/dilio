@@ -22,13 +22,27 @@ export default function DesainEksklusifPage() {
     const list = [...DEFAULT_EXCLUSIVE_TABS];
     const knownValues = new Set(list.map((t) => t.value));
 
+    // Respect admin's "removed" categories (tombstone list from CMS delete feature)
+    let removedCats = [];
+    try {
+      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_exclusive_cats'));
+      if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase());
+    } catch {
+      // ignore
+    }
+
     try {
       const saved = localStorage.getItem('kaos_dilio_custom_exclusive_cats');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           parsed.forEach((cat) => {
-            if (cat && cat.value && !knownValues.has(cat.value)) {
+            if (
+              cat &&
+              cat.value &&
+              !knownValues.has(cat.value) &&
+              !removedCats.includes(String(cat.value).toLowerCase())
+            ) {
               knownValues.add(cat.value);
               list.push({ label: cat.label || cat.value, value: cat.value });
             }
@@ -40,7 +54,12 @@ export default function DesainEksklusifPage() {
     }
 
     allProducts.forEach((p) => {
-      if (p.product_group === 'eksklusif' && p.exclusive_category && !knownValues.has(p.exclusive_category)) {
+      if (
+        p.product_group === 'eksklusif' &&
+        p.exclusive_category &&
+        !knownValues.has(p.exclusive_category) &&
+        !removedCats.includes(String(p.exclusive_category).toLowerCase())
+      ) {
         knownValues.add(p.exclusive_category);
         const autoLabel = p.exclusive_category
           .replace(/-/g, ' ')

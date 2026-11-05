@@ -68,6 +68,44 @@ const CUSTOM_KAOS_CAT_KEY = 'kaos_dilio_custom_kaos_categories';
 const CUSTOM_CUTTINGS_KEY = 'kaos_dilio_custom_cuttings';
 const CUSTOM_EXCLUSIVE_CAT_KEY = 'kaos_dilio_custom_exclusive_cats';
 
+// Tombstone lists: nama/value item default/custom yg "dihapus" admin
+// (dipakai juga oleh halaman katalog agar tab filter ikut hilang)
+const REMOVED_KAOS_CAT_KEY = 'kaos_dilio_removed_kaos_categories';
+const REMOVED_CUTTINGS_KEY = 'kaos_dilio_removed_cuttings';
+const REMOVED_MATERIALS_KEY = 'kaos_dilio_removed_materials';
+const REMOVED_EXCLUSIVE_CAT_KEY = 'kaos_dilio_removed_exclusive_cats';
+const PRODUCT_CACHE_KEY = 'kaos_dilio_catalog_products';
+
+function readRemovedValues(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRemovedValues(key, values) {
+  try {
+    localStorage.setItem(key, JSON.stringify(values));
+  } catch {
+    // ignore
+  }
+}
+
+// Hitung berapa produk masih memakai nilai kategori/cutting/bahan tertentu
+function countProductsUsing(fieldCandidates, value) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PRODUCT_CACHE_KEY) || '[]');
+    if (!Array.isArray(parsed)) return 0;
+    return parsed.filter((p) =>
+      fieldCandidates.some((f) => String(p[f] || '').toLowerCase() === String(value).toLowerCase())
+    ).length;
+  } catch {
+    return 0;
+  }
+}
+
 export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -175,6 +213,105 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
 
+  // Panel "Kelola & Hapus" per list
+  const [showManageCutting, setShowManageCutting] = useState(false);
+  const [showManageKaosCat, setShowManageKaosCat] = useState(false);
+  const [showManageMaterial, setShowManageMaterial] = useState(false);
+  const [showManageExclusiveCat, setShowManageExclusiveCat] = useState(false);
+
+  // List bersih: default + custom, dikurangi yang sudah dihapus admin
+  const cleanCuttingsList = cuttingsList.filter((c) => !removedCuttings.includes(c.value));
+  const cleanKaosCategoriesList = kaosCategoriesList.filter(
+    (c) => !removedKaosCats.includes(String(c).toLowerCase())
+  );
+  const cleanMaterialsList = materialsList.filter((m) => !removedMaterials.includes(m));
+  const cleanExclusiveCategories = exclusiveCategories.filter(
+    (c) => !removedExclusiveCats.includes(c.value)
+  );
+
+  // Hapus item dari list (tombstone permanen + cek pemakaian produk)
+  const handleDeleteListItem = ({ kind, value }) => {
+    const labelMap = {
+      cuttings: {
+        key: REMOVED_CUTTINGS_KEY,
+        fields: ['cutting_type'],
+        current: formData.cutting_type,
+        setCurrent: (next) => setFormData((prev) => ({ ...prev, cutting_type: next })),
+        cleanList: cleanCuttingsList,
+      },
+      kaosCat: {
+        key: REMOVED_KAOS_CAT_KEY,
+        fields: ['kaos_category', 'category_label'],
+        current: (formData.category_label || '').toUpperCase(),
+        setCurrent: (next) =>
+          setFormData((prev) => ({ ...prev, category_label: next, kaos_category: next })),
+        cleanList: cleanKaosCategoriesList,
+      },
+      materials: {
+        key: REMOVED_MATERIALS_KEY,
+        fields: ['material'],
+        current: formData.material,
+        setCurrent: (next) => setFormData((prev) => ({ ...prev, material: next })),
+        cleanList: cleanMaterialsList,
+      },
+      exclusiveCat: {
+        key: REMOVED_EXCLUSIVE_CAT_KEY,
+        fields: ['exclusive_category'],
+        current: formData.exclusive_category,
+        setCurrent: (next) => setFormData((prev) => ({ ...prev, exclusive_category: next })),
+        cleanList: cleanExclusiveCategories,
+      },
+    };
+
+    const conf = labelMap[kind];
+    if (!conf || !value) return;
+
+    const usedCount = countProductsUsing(conf.fields, value);
+    const warnText =
+      usedCount > 0
+        ? `Nilai "${value}" masih dipakai oleh ${usedCount} produk di katalog.\n\nTetap hapus dari daftar pilihan? (Produk yang sudah memakai tidak akan berubah, hanya pilihannya yang hilang dari dropdown/filter.)`
+        : `Hapus "${value}" dari daftar pilihan?`;
+    if (!window.confirm(warnText)) return;
+
+    const nextRemoved =
+      kind === 'kaosCat' ? [...removedKaosCats, String(value).toLowerCase()]
+      : kind === 'exclusiveCat' ? [...removedExclusiveCats, value]
+      : kind === 'cuttings' ? [...removedCuttings, value]
+      : [...removedMaterials, value];
+
+    const setterMap = {
+      cuttings: setRemovedCuttings,
+      kaosCat: setRemovedKaosCats,
+      materials: setRemovedMaterials,
+      exclusiveCat: setRemovedExclusiveCats,
+    };
+    setterMap[kind](nextRemoved);
+    writeRemovedValues(conf.key, nextRemoved);
+
+    // Kalau nilai form saat ini adalah yang dihapus, pindahkan ke pilihan lain
+    if (String(conf.current || '').toLowerCase() === String(value).toLowerCase()) {
+      const remaining = conf.cleanList.find((item) => {
+        const itemVal = kind === 'kaosCat' ? String(item).toLowerCase() : item.value;
+        return String(itemVal).toLowerCase() !== String(value).toLowerCase();
+      });
+      const fallback =
+        kind === 'kaosCat'
+          ? remaining || 'KASUAL'
+          : kind === 'cuttings'
+          ? remaining?.value || 'oversized'
+          : kind === 'exclusiveCat'
+          ? remaining?.value || ''
+          : remaining || 'Cotton Combed 24s';
+      conf.setCurrent(fallback);
+    }
+  };
+
+  // Tombstone "dihapus" untuk tiap list (agar default/custom bisa dihapus permanen)
+  const [removedKaosCats, setRemovedKaosCats] = useState(() => readRemovedValues(REMOVED_KAOS_CAT_KEY));
+  const [removedCuttings, setRemovedCuttings] = useState(() => readRemovedValues(REMOVED_CUTTINGS_KEY));
+  const [removedMaterials, setRemovedMaterials] = useState(() => readRemovedValues(REMOVED_MATERIALS_KEY));
+  const [removedExclusiveCats, setRemovedExclusiveCats] = useState(() => readRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY));
+
   // Online image url input helper
   const [onlineImageUrl, setOnlineImageUrl] = useState('');
 
@@ -208,7 +345,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         product_group: product.product_group || 'harian',
         cutting_type: cutType,
         sablon_type: product.sablon_type || 'dtf',
-        exclusive_category: product.exclusive_category || 'dilio',
+        exclusive_category: product.exclusive_category ?? '',
         category_label: catLabel,
         kaos_category: catLabel,
         material: product.material || 'Cotton Combed 24s',
@@ -547,22 +684,6 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         updated.kaos_category = value;
       }
 
-      // Auto adjust labels based on product_group
-      if (name === 'product_group') {
-        if (value === 'harian') {
-          updated.category_label = 'KASUAL';
-          updated.kaos_category = 'KASUAL';
-          updated.is_exclusive = false;
-        } else if (value === 'custom') {
-          updated.category_label = 'GRAPHIC TEES';
-          updated.kaos_category = 'GRAPHIC TEES';
-          updated.is_exclusive = false;
-        } else if (value === 'eksklusif') {
-          updated.category_label = 'STREETWEAR';
-          updated.kaos_category = 'STREETWEAR';
-          updated.is_exclusive = true;
-        }
-      }
       return updated;
     });
   };
@@ -728,18 +849,20 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                Grup Produk (Halaman) *
+                Jenis Katalog
               </label>
-              <select
-                name="product_group"
-                value={formData.product_group}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
-              >
-                <option value="harian">Kaos Harian (Koleksi Kaos)</option>
-                <option value="custom">Bikin Kaos Custom (Sablon)</option>
-                <option value="eksklusif">👑 LIMITED EDITION (Banner Exclusive)</option>
-              </select>
+              <div className="w-full px-3.5 py-2.5 bg-neutral-100 border border-neutral-200 rounded-xl font-semibold text-neutral-700 text-xs inline-flex items-center gap-2">
+                {formData.product_group === 'eksklusif' ? (
+                  <span className="uppercase">👑 Limited Edition (Exclusive)</span>
+                ) : formData.product_group === 'custom' ? (
+                  <span className="uppercase">✨ Kaos Custom (Sablon)</span>
+                ) : (
+                  <span className="uppercase">👕 Kaos Harian (Koleksi Kaos)</span>
+                )}
+              </div>
+              <span className="text-[10px] text-neutral-400 mt-1 block">
+                Untuk produk exclusive gunakan tombol "+ Tambah Katalog Exclusive" di dashboard.
+              </span>
             </div>
 
             {/* Price with Auto-Dots */}
@@ -856,6 +979,14 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                     <Plus className="w-3 h-3" />
                     <span>Tambah Cutting Baru</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowManageCutting(!showManageCutting)}
+                    className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer ml-2"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Kelola &amp; Hapus</span>
+                  </button>
                 </div>
 
                 <select
@@ -864,12 +995,39 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
                 >
-                  {cuttingsList.map((cut) => (
+                  {cleanCuttingsList.map((cut) => (
                     <option key={cut.value} value={cut.value}>
                       {cut.label}
                     </option>
                   ))}
                 </select>
+
+                {showManageCutting && (
+                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                    <span className="text-[10px] text-neutral-500 block">
+                      Item yang dihapus tidak tampil lagi di dropdown, filter sidebar katalog, dan tab
+                      kategori (termasuk opsi default bawaan). Produk yang memakai tidak ikut berubah.
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cleanCuttingsList.map((cut) => (
+                        <span
+                          key={cut.value}
+                          className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-neutral-200 rounded-full text-[11px] font-semibold text-neutral-800"
+                        >
+                          {cut.label}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteListItem({ kind: 'cuttings', value: cut.value })}
+                            className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
+                            title={`Hapus ${cut.label}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {showAddCutting && (
                   <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
@@ -924,6 +1082,14 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                     <Plus className="w-3 h-3" />
                     <span>Tambah Kategori Baru</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowManageExclusiveCat(!showManageExclusiveCat)}
+                    className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1 ml-2"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Kelola &amp; Hapus</span>
+                  </button>
                 </div>
 
                 <select
@@ -932,12 +1098,42 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
                 >
-                  {exclusiveCategories.map((cat) => (
+                  <option value="">— Tanpa Kategori (tampil hanya di "Semua") —</option>
+                  {cleanExclusiveCategories.map((cat) => (
                     <option key={cat.value} value={cat.value}>
                       {cat.label}
                     </option>
                   ))}
                 </select>
+
+                {showManageExclusiveCat && (
+                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                    <span className="text-[10px] text-neutral-500 block">
+                      Item yang dihapus tidak tampil lagi sebagai tab kategori exclusive di halaman
+                      Desain Eksklusif &amp; slider Homepage.
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cleanExclusiveCategories.map((cat) => (
+                        <span
+                          key={cat.value}
+                          className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-neutral-200 rounded-full text-[11px] font-semibold text-neutral-800"
+                        >
+                          {cat.label}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeleteListItem({ kind: 'exclusiveCat', value: cat.value })
+                            }
+                            className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
+                            title={`Hapus ${cat.label}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {showAddCategory && (
                   <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
@@ -974,6 +1170,14 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   <Plus className="w-3 h-3" />
                   <span>Tambah Bahan Baru</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowManageMaterial(!showManageMaterial)}
+                  className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer ml-2"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Kelola &amp; Hapus</span>
+                </button>
               </div>
 
               <select
@@ -982,12 +1186,35 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
               >
-                {materialsList.map((mat) => (
+                {cleanMaterialsList.map((mat) => (
                   <option key={mat} value={mat}>
                     {mat}
                   </option>
                 ))}
               </select>
+
+              {showManageMaterial && (
+                <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                  <div className="flex flex-wrap gap-1.5">
+                    {cleanMaterialsList.map((mat) => (
+                      <span
+                        key={mat}
+                        className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-neutral-200 rounded-full text-[11px] font-semibold text-neutral-800"
+                      >
+                        {mat}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteListItem({ kind: 'materials', value: mat })}
+                          className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
+                          title={`Hapus ${mat}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {showAddMaterial && (
                 <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
@@ -1023,6 +1250,14 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   <Plus className="w-3 h-3" />
                   <span>Tambah Kategori Baru</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowManageKaosCat(!showManageKaosCat)}
+                  className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer ml-2"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Kelola &amp; Hapus</span>
+                </button>
               </div>
 
               <select
@@ -1031,12 +1266,39 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
               >
-                {kaosCategoriesList.map((cat) => (
+                {cleanKaosCategoriesList.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>
                 ))}
               </select>
+
+              {showManageKaosCat && (
+                <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                  <span className="text-[10px] text-neutral-500 block">
+                    Item yang dihapus tidak tampil lagi sebagai tab kategori katalog (Kasual, Polo,
+                    dll). Produk yang memakai tidak ikut berubah.
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {cleanKaosCategoriesList.map((cat) => (
+                      <span
+                        key={cat}
+                        className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-neutral-200 rounded-full text-[11px] font-semibold text-neutral-800"
+                      >
+                        {cat}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteListItem({ kind: 'kaosCat', value: cat })}
+                          className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
+                          title={`Hapus ${cat}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {showAddKaosCategory && (
                 <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
