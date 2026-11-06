@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { X, Ruler, Info } from 'lucide-react';
 
 export const SIZE_CHARTS_STORAGE_KEY = 'kaos_dilio_size_charts';
@@ -129,24 +129,6 @@ export default function SizeChartModal({
   const hasCustomProductChart = Array.isArray(customChart) && customChart.length > 0;
   const chartsMap = getStoredSizeCharts();
 
-  const resolvedDefault = hasCustomProductChart
-    ? 'custom'
-    : defaultType && chartsMap[defaultType]
-    ? defaultType
-    : 'regular';
-
-  const [selectedType, setSelectedType] = useState(resolvedDefault);
-
-  useEffect(() => {
-    setSelectedType(
-      hasCustomProductChart
-        ? 'custom'
-        : defaultType && chartsMap[defaultType]
-        ? defaultType
-        : 'regular'
-    );
-  }, [defaultType, hasCustomProductChart, isOpen]);
-
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -159,19 +141,25 @@ export default function SizeChartModal({
 
   if (!isOpen) return null;
 
-  const allCharts = hasCustomProductChart
-    ? {
-        custom: {
-          name: productName ? `Ukuran: ${productName}` : 'Ukuran Produk Ini',
-          description: 'Spesifikasi ukuran khusus untuk produk ini (disesuaikan oleh Admin).',
-          headers: ['Ukuran', 'Lebar Dada (A)', 'Panjang Badan (B)', 'Panjang Lengan (C)'],
-          rows: customChart,
-        },
-        ...chartsMap,
-      }
-    : chartsMap;
+  const fallbackChart = (defaultType && chartsMap[defaultType]) || chartsMap.regular;
 
-  const currentChart = allCharts[selectedType] || allCharts.regular;
+  const currentChart = hasCustomProductChart
+    ? {
+        name: productName || fallbackChart.name,
+        description: `Spesifikasi ukuran khusus untuk ${productName || 'produk ini'}.`,
+        headers: ['Ukuran', 'Lebar Dada (A)', 'Panjang Badan (B)', 'Panjang Lengan (C)'],
+        rows: customChart,
+      }
+    : {
+        ...fallbackChart,
+        name: productName || fallbackChart.name,
+      };
+
+  const formatDim = (val) => {
+    if (!val) return '-';
+    const s = String(val).trim();
+    return /\bcm\b/i.test(s) ? s : `${s} cm`;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -186,10 +174,10 @@ export default function SizeChartModal({
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-black text-neutral-900 tracking-tight">
-                Panduan Size Chart Kaos Dilio
+                Panduan Size Chart Kaos
               </h3>
               <p className="text-xs text-neutral-500">
-                Pilih model cutting untuk melihat spesifikasi ukuran detail
+                {productName ? `Spesifikasi ukuran untuk ${productName}` : 'Spesifikasi ukuran detail produk ini'}
               </p>
             </div>
           </div>
@@ -203,35 +191,14 @@ export default function SizeChartModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6">
-          {/* Cutting Type Switcher */}
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(allCharts).map(([key, item]) => {
-              const active = selectedType === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSelectedType(key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    active
-                      ? 'bg-neutral-900 text-white shadow-xs'
-                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900'
-                  }`}
-                >
-                  {item.name}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Description */}
-          <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/70 text-xs text-neutral-600">
+        <div className="p-6 overflow-y-auto space-y-5">
+          {/* Product Size Info Header */}
+          <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/70 text-xs text-neutral-600">
             <span className="font-bold text-neutral-900 block mb-0.5">{currentChart.name}</span>
             <p>{currentChart.description}</p>
           </div>
 
-          {/* Table */}
+          {/* Single Size Chart Table for this Product */}
           <div className="overflow-x-auto rounded-2xl border border-neutral-200">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead className="bg-neutral-100 text-neutral-700 font-bold uppercase tracking-wider text-[11px]">
@@ -247,9 +214,9 @@ export default function SizeChartModal({
                 {currentChart.rows.map((row, idx) => (
                   <tr key={idx} className="hover:bg-neutral-50/70 transition-colors">
                     <td className="py-2.5 px-4 font-black text-neutral-900">{row.size}</td>
-                    <td className="py-2.5 px-4 text-neutral-700 font-medium">{row.chest}</td>
-                    <td className="py-2.5 px-4 text-neutral-700 font-medium">{row.length}</td>
-                    <td className="py-2.5 px-4 text-neutral-700 font-medium">{row.sleeve}</td>
+                    <td className="py-2.5 px-4 text-neutral-700 font-medium">{formatDim(row.chest)}</td>
+                    <td className="py-2.5 px-4 text-neutral-700 font-medium">{formatDim(row.length)}</td>
+                    <td className="py-2.5 px-4 text-neutral-700 font-medium">{formatDim(row.sleeve)}</td>
                   </tr>
                 ))}
               </tbody>

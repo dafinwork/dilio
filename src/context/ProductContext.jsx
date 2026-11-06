@@ -57,7 +57,11 @@ const sanitizeProduct = (p) => {
     extra_colors_count: Number(p.extra_colors_count) || 0,
     colors: safeColors(p.colors),
     is_new: Boolean(p.is_new),
-    is_exclusive: Boolean(p.is_exclusive),
+    is_exclusive: Boolean(p.is_exclusive || p.product_group === 'eksklusif'),
+    is_customizable:
+      typeof p.is_customizable === 'boolean'
+        ? p.is_customizable
+        : !Boolean(p.is_exclusive || p.product_group === 'eksklusif'),
     mockup_angles:
       p.mockup_angles && typeof p.mockup_angles === 'object' ? p.mockup_angles : null,
   };
@@ -309,15 +313,16 @@ export function ProductProvider({ children }) {
       colors: safeColors(p.colors),
       is_new: Boolean(p.is_new),
       is_exclusive: Boolean(p.is_exclusive),
+      is_customizable: Boolean(p.is_customizable),
       is_preorder: Boolean(p.is_preorder),
       preorder_duration: p.preorder_duration || '',
-      product_group: p.product_group || 'harian',
+      product_group: p.is_exclusive ? 'eksklusif' : (p.product_group === 'custom' ? 'custom' : 'harian'),
       cutting_type:
-        p.product_group === 'harian' || p.product_group === 'eksklusif'
-          ? (p.cutting_type || 'oversized')
-          : null,
+        p.product_group === 'custom'
+          ? null
+          : (p.cutting_type || 'oversized'),
       sablon_type: p.product_group === 'custom' ? (p.sablon_type || 'dtf') : null,
-      exclusive_category: p.product_group === 'eksklusif' ? (p.exclusive_category || null) : null,
+      exclusive_category: p.is_exclusive ? (p.exclusive_category || null) : null,
       category_label: p.category_label || '',
       kaos_category: p.kaos_category || p.category_label || '',
       size_chart: Array.isArray(p.size_chart) && p.size_chart.length > 0 ? p.size_chart : null,
@@ -371,6 +376,7 @@ export function ProductProvider({ children }) {
           kaos_category: _kc,
           size_chart: _sc,
           mockup_angles: _ma,
+          is_customizable: _ic,
           ...cloudSafe
         } = newProduct;
         await supabase.from('products').insert([cloudSafe]);
@@ -412,6 +418,7 @@ export function ProductProvider({ children }) {
             kaos_category: _kc,
             size_chart: _sc,
             mockup_angles: _ma,
+            is_customizable: _ic,
             ...cloudSafe
           } = finalUpdated;
           await supabase.from('products').update(cloudSafe).eq('id', id);

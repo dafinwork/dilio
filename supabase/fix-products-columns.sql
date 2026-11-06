@@ -21,6 +21,7 @@ alter table public.products add column if not exists preorder_duration text defa
 alter table public.products add column if not exists kaos_category text default '';
 alter table public.products add column if not exists size_chart jsonb;
 alter table public.products add column if not exists mockup_angles jsonb;
+alter table public.products add column if not exists is_customizable boolean default false;
 
 -- Opsional: kloning image_url ke images agar produk lama langsung punya harga coret/foto tersinkron
 update public.products

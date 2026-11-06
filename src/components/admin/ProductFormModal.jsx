@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Check, Loader2, Plus, Trash2, Star, Clock, Sparkles, Ruler } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { safeColors, formatNumberDots, parseNumberDots, computeDiscountInfo } from '../../utils/helpers';
-import { getStoredSizeCharts, SIZE_CHARTS_STORAGE_KEY } from '../SizeChartModal';
+import { getStoredSizeCharts } from '../SizeChartModal';
 import ColorWheelModal from './ColorWheelModal';
 
 const PRESET_BG_COLORS = [
@@ -124,6 +124,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     visual_mode: 'image',
     is_new: false,
     is_exclusive: false,
+    is_customizable: false,
     is_preorder: false,
     preorder_duration: '',
     placeholder_title: '',
@@ -357,7 +358,11 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         images: initialImages,
         visual_mode: initialImages.length > 0 ? 'image' : 'mockup',
         is_new: Boolean(product.is_new),
-        is_exclusive: Boolean(product.is_exclusive),
+        is_exclusive: Boolean(product.is_exclusive || product.product_group === 'eksklusif'),
+        is_customizable:
+          typeof product.is_customizable === 'boolean'
+            ? product.is_customizable
+            : !Boolean(product.is_exclusive || product.product_group === 'eksklusif'),
         is_preorder: Boolean(product.is_preorder),
         preorder_duration: product.preorder_duration || '',
         placeholder_title: product.placeholder_title || product.name || '',
@@ -396,6 +401,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         visual_mode: 'image',
         is_new: true,
         is_exclusive: true,
+        is_customizable: false,
         is_preorder: false,
         preorder_duration: '',
         placeholder_title: 'LIMITED\nEDITION',
@@ -424,6 +430,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         visual_mode: 'image',
         is_new: false,
         is_exclusive: false,
+        is_customizable: false,
         is_preorder: false,
         preorder_duration: '',
         placeholder_title: 'Oversized\nFit',
@@ -754,6 +761,10 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         updated.kaos_category = value;
       }
 
+      if (name === 'is_exclusive') {
+        updated.product_group = checked ? 'eksklusif' : 'harian';
+      }
+
       return updated;
     });
   };
@@ -809,29 +820,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
 
     const { visual_mode: _vm, priceText: _pt, originalPriceText: _opt, ...restData } = formData;
 
-    const cutKey =
-      formData.product_group === 'harian' || formData.product_group === 'eksklusif'
-        ? (formData.cutting_type || 'oversized')
-        : null;
-
-    // Also update stored default size chart for this cutting if rows are present
-    if (cutKey && Array.isArray(formData.size_chart) && formData.size_chart.length > 0) {
-      try {
-        const storedCharts = getStoredSizeCharts();
-        if (storedCharts[cutKey]) {
-          storedCharts[cutKey] = {
-            ...storedCharts[cutKey],
-            rows: formData.size_chart,
-          };
-          localStorage.setItem(SIZE_CHARTS_STORAGE_KEY, JSON.stringify(storedCharts));
-        }
-      } catch {
-        // ignore
-      }
-    }
+    const isExcl = Boolean(formData.is_exclusive);
+    const cutKey = formData.cutting_type || 'oversized';
 
     const payload = {
       ...restData,
+      product_group: isExcl ? 'eksklusif' : 'harian',
       price: numericPrice,
       original_price: numericOriginalPrice > 0 ? numericOriginalPrice : null,
       images: formData.images,
@@ -839,16 +833,17 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       is_preorder: Boolean(formData.is_preorder),
       preorder_duration: formData.is_preorder ? formData.preorder_duration : '',
       extra_colors_count: Number(formData.extra_colors_count) || 0,
-      is_exclusive: formData.product_group === 'eksklusif' || Boolean(formData.is_exclusive),
+      is_exclusive: isExcl,
+      is_customizable: Boolean(formData.is_customizable),
       cutting_type: cutKey,
       kaos_category: formData.category_label || 'KASUAL',
       category_label: formData.category_label || 'KASUAL',
       size_chart: Array.isArray(formData.size_chart) ? formData.size_chart : [],
-      sablon_type: formData.product_group === 'custom' ? formData.sablon_type : null,
-      exclusive_category: formData.product_group === 'eksklusif' ? formData.exclusive_category : null,
+      sablon_type: null,
+      exclusive_category: isExcl ? formData.exclusive_category : null,
       placeholder_title: formData.placeholder_title || formData.name,
       colors: safeColors(formData.colors),
-      mockup_angles: formData.mockup_angles || null,
+      mockup_angles: formData.is_customizable ? (formData.mockup_angles || null) : null,
     };
 
     onSave(payload);
@@ -930,24 +925,6 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 required
                 className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                Jenis Katalog
-              </label>
-              <div className="w-full px-3.5 py-2.5 bg-neutral-100 border border-neutral-200 rounded-xl font-semibold text-neutral-700 text-xs inline-flex items-center gap-2">
-                {formData.product_group === 'eksklusif' ? (
-                  <span className="uppercase">👑 Limited Edition (Exclusive)</span>
-                ) : formData.product_group === 'custom' ? (
-                  <span className="uppercase">✨ Kaos Custom (Sablon)</span>
-                ) : (
-                  <span className="uppercase">👕 Kaos Harian (Koleksi Kaos)</span>
-                )}
-              </div>
-              <span className="text-[10px] text-neutral-400 mt-1 block">
-                Untuk produk exclusive gunakan tombol "+ Tambah Katalog Exclusive" di dashboard.
-              </span>
             </div>
 
             {/* Price with Auto-Dots */}
@@ -1034,7 +1011,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Pre-Order Toggle & Duration */}
+            {/* Ceklis 1: Pre-Order Toggle & Duration */}
             <div className="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80 space-y-2">
               <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
                 <input
@@ -1048,7 +1025,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               </label>
 
               {formData.is_preorder && (
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
                   <label className="block text-[11px] font-bold text-amber-900">
                     Estimasi Lama Pre-Order:
                   </label>
@@ -1066,11 +1043,219 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                         key={chip}
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, preorder_duration: chip }))}
-                        className="px-2 py-0.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-[10px] font-bold text-amber-950 transition-colors"
+                        className="px-2 py-0.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-[10px] font-bold text-amber-950 transition-colors cursor-pointer"
                       >
                         + {chip}
                       </button>
                     ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Ceklis 2: Katalog Exclusive (Limited Edition) + Pilihan Kategori */}
+            <div className="bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 space-y-2">
+              <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  name="is_exclusive"
+                  checked={formData.is_exclusive}
+                  onChange={handleChange}
+                  className="w-4 h-4 rounded text-neutral-900 focus:ring-neutral-900"
+                />
+                <span>👑 Katalog Exclusive (Limited Edition)</span>
+              </label>
+
+              {formData.is_exclusive && (
+                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-neutral-700">
+                      Pilih Kategori Exclusive:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCategory(!showAddCategory)}
+                        className="text-[10px] font-bold text-neutral-900 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Tambah</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowManageExclusiveCat(!showManageExclusiveCat)}
+                        className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Kelola</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <select
+                    name="exclusive_category"
+                    value={formData.exclusive_category}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1.5 bg-white border border-neutral-300 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+                  >
+                    <option value="">— Tanpa Kategori (tampil di "Semua") —</option>
+                    {cleanExclusiveCategories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {showManageExclusiveCat && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex flex-wrap gap-1.5">
+                        {cleanExclusiveCategories.map((cat) => (
+                          <span
+                            key={cat.value}
+                            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-white border border-neutral-200 rounded-full text-[10px] font-semibold text-neutral-800"
+                          >
+                            {cat.label}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteListItem({ kind: 'exclusiveCat', value: cat.value })
+                              }
+                              className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
+                              title={`Hapus ${cat.label}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {showAddCategory && (
+                    <div className="flex gap-1.5 pt-1">
+                      <input
+                        type="text"
+                        value={newCategoryInput}
+                        onChange={(e) => setNewCategoryInput(e.target.value)}
+                        placeholder="Nama kategori exclusive baru..."
+                        className="flex-1 px-2.5 py-1 bg-white border border-neutral-300 rounded-lg text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddNewCategory}
+                        className="px-2.5 py-1 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                      >
+                        Simpan
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Ceklis 3: Fitur Desain Custom Kaos Ini + Upload Sudut Mockup */}
+            <div className="sm:col-span-2 bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    name="is_customizable"
+                    checked={formData.is_customizable}
+                    onChange={handleChange}
+                    className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500"
+                  />
+                  <span>✏️ Aktifkan Fitur "Desain Custom Kaos Ini"</span>
+                </label>
+                <span className="text-[11px] text-neutral-500">
+                  {formData.is_customizable
+                    ? '✅ Tombol Desain Custom tampil di katalog'
+                    : 'Kosongkan jika kaos sudah bergambar/sablon'}
+                </span>
+              </div>
+
+              {formData.is_customizable && (
+                <div className="pt-2 border-t border-neutral-200/80 space-y-2.5 animate-in fade-in duration-150">
+                  <p className="text-[11px] text-neutral-600 leading-relaxed">
+                    Upload foto baju tampak <strong>Belakang, Lengan Kiri, dan Lengan Kanan</strong> agar pembeli bisa menempelkan desain sablon di setiap sisi baju ini saat membuka Studio Custom:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { key: 'back', label: 'Tampak Belakang', desc: 'Punggung baju' },
+                      { key: 'left', label: 'Lengan Kiri', desc: 'Sisi lengan kiri' },
+                      { key: 'right', label: 'Lengan Kanan', desc: 'Sisi lengan kanan' },
+                    ].map((slot) => {
+                      const currentVal = formData.mockup_angles?.[slot.key];
+                      return (
+                        <div
+                          key={slot.key}
+                          className="bg-white rounded-xl border border-neutral-200 p-2.5 flex flex-col gap-2 shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs text-neutral-800">{slot.label}</span>
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                currentVal
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-neutral-100 text-neutral-500'
+                              }`}
+                            >
+                              {currentVal ? 'Terisi' : 'Default Pola'}
+                            </span>
+                          </div>
+
+                          <div className="relative aspect-[4/5] rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200/70 flex items-center justify-center group">
+                            {currentVal ? (
+                              <>
+                                <img
+                                  src={currentVal}
+                                  alt={slot.label}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <label className="px-2.5 py-1.5 bg-white text-neutral-900 rounded-lg text-[10px] font-bold cursor-pointer hover:bg-neutral-100 shadow-xs">
+                                    Ganti
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      disabled={isUploading}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleAngleImageUpload(slot.key, file);
+                                      }}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveAngleImage(slot.key)}
+                                    className="p-1.5 bg-red-600 text-white rounded-lg text-[10px] font-bold hover:bg-red-700 cursor-pointer shadow-xs"
+                                    title="Hapus foto sudut ini"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <label className="w-full h-full flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-neutral-200/50 transition-colors">
+                                <Plus className="w-5 h-5 text-neutral-400 mb-1" />
+                                <span className="text-[11px] font-bold text-neutral-700">Upload Foto</span>
+                                <span className="text-[9px] text-neutral-400 mt-0.5">{slot.desc}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={isUploading}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleAngleImageUpload(slot.key, file);
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1080,7 +1265,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
           {/* 2. Category Sub-filter & Material */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
             {/* Pola Cutting (Sidebar Filter: Oversized, Regular, Fitted, Boxy, Long Sleeve + Add New) */}
-            {(formData.product_group === 'harian' || formData.product_group === 'eksklusif') && (
+            {(true) && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
@@ -1182,94 +1367,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               </div>
             )}
 
-            {/* Exclusive Category Dropdown + Add New */}
-            {formData.product_group === 'eksklusif' && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
-                    Kategori Exclusive
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddCategory(!showAddCategory)}
-                    className="text-[11px] font-bold text-neutral-900 hover:underline flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Tambah Kategori Baru</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowManageExclusiveCat(!showManageExclusiveCat)}
-                    className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1 ml-2"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Kelola &amp; Hapus</span>
-                  </button>
-                </div>
 
-                <select
-                  name="exclusive_category"
-                  value={formData.exclusive_category}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
-                >
-                  <option value="">— Tanpa Kategori (tampil hanya di "Semua") —</option>
-                  {cleanExclusiveCategories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-
-                {showManageExclusiveCat && (
-                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
-                    <span className="text-[10px] text-neutral-500 block">
-                      Item yang dihapus tidak tampil lagi sebagai tab kategori exclusive di halaman
-                      Desain Eksklusif &amp; slider Homepage.
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cleanExclusiveCategories.map((cat) => (
-                        <span
-                          key={cat.value}
-                          className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-neutral-200 rounded-full text-[11px] font-semibold text-neutral-800"
-                        >
-                          {cat.label}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDeleteListItem({ kind: 'exclusiveCat', value: cat.value })
-                            }
-                            className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
-                            title={`Hapus ${cat.label}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {showAddCategory && (
-                  <div className="mt-2 flex gap-1.5 animate-in fade-in duration-150">
-                    <input
-                      type="text"
-                      value={newCategoryInput}
-                      onChange={(e) => setNewCategoryInput(e.target.value)}
-                      placeholder="Nama kategori exclusive baru..."
-                      className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddNewCategory}
-                      className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800"
-                    >
-                      Simpan
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Material Dropdown + Add New Material (Req 5) */}
             <div>
@@ -1546,16 +1644,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 <span>Badge "New" (Ungu)</span>
               </label>
 
-              <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-neutral-700">
-                <input
-                  type="checkbox"
-                  name="is_exclusive"
-                  checked={formData.is_exclusive}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded text-black focus:ring-black"
-                />
-                <span>Badge "EXCLUSIVE"</span>
-              </label>
+
             </div>
 
             <div className="sm:col-span-2">
@@ -1715,98 +1804,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                   </div>
                 )}
 
-                {/* Sub-section: Foto Sudut Mockup Studio Custom (Belakang, Lengan Kiri, Lengan Kanan) */}
-                <div className="pt-4 border-t border-neutral-200">
-                  <div className="flex flex-col gap-1 mb-3">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900">
-                      <span>👕</span>
-                      <span>Foto Sudut Mockup Studio Custom (Belakang & Lengan)</span>
-                    </div>
-                    <p className="text-[11px] text-neutral-500 leading-relaxed">
-                      Khusus untuk fitur <span className="font-bold text-neutral-800">"Desain Custom Kaos Ini"</span> di katalog. Upload foto asli baju tampak belakang, lengan kiri, dan lengan kanan agar pelanggan bisa menempelkan sablon di semua sudut baju ini secara realistis.
-                    </p>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      { key: 'back', label: 'Tampak Belakang', desc: 'Punggung baju' },
-                      { key: 'left', label: 'Lengan Kiri', desc: 'Sisi lengan kiri' },
-                      { key: 'right', label: 'Lengan Kanan', desc: 'Sisi lengan kanan' },
-                    ].map((slot) => {
-                      const currentVal = formData.mockup_angles?.[slot.key];
-                      return (
-                        <div
-                          key={slot.key}
-                          className="bg-white rounded-xl border border-neutral-200 p-3 flex flex-col gap-2.5 shadow-2xs hover:border-neutral-300 transition-all"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-neutral-800">{slot.label}</span>
-                            <span
-                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                                currentVal
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-neutral-100 text-neutral-500'
-                              }`}
-                            >
-                              {currentVal ? 'Terisi' : 'Default Pola'}
-                            </span>
-                          </div>
-
-                          <div className="relative aspect-[4/5] rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200/70 flex items-center justify-center group">
-                            {currentVal ? (
-                              <>
-                                <img
-                                  src={currentVal}
-                                  alt={slot.label}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                  <label className="px-2.5 py-1.5 bg-white text-neutral-900 rounded-lg text-[10px] font-bold cursor-pointer hover:bg-neutral-100 shadow-xs">
-                                    Ganti
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      disabled={isUploading}
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) handleAngleImageUpload(slot.key, file);
-                                      }}
-                                      className="hidden"
-                                    />
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveAngleImage(slot.key)}
-                                    className="p-1.5 bg-red-600 text-white rounded-lg text-[10px] font-bold hover:bg-red-700 cursor-pointer shadow-xs"
-                                    title="Hapus foto sudut ini"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <label className="w-full h-full flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-neutral-200/50 transition-colors">
-                                <Plus className="w-5 h-5 text-neutral-400 mb-1" />
-                                <span className="text-[11px] font-bold text-neutral-700">Upload Foto</span>
-                                <span className="text-[9px] text-neutral-400 mt-0.5">{slot.desc}</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  disabled={isUploading}
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleAngleImageUpload(slot.key, file);
-                                  }}
-                                  className="hidden"
-                                />
-                              </label>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row gap-6 items-start bg-neutral-50 p-4 rounded-2xl border border-neutral-200/70">

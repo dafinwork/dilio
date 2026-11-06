@@ -357,17 +357,23 @@ export default function ProductModal({ product, onClose }) {
                   </span>
                 </a>
 
-                <Link
-                  to={getStudioDesignUrl(product)}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-neutral-950 rounded-xl text-sm font-black shadow-md hover:shadow-lg transition-all cursor-pointer"
-                >
-                  <Brush className="w-4 h-4" />
-                  <span>Desain Custom Kaos Ini</span>
-                </Link>
-                <p className="text-center text-[10px] text-neutral-400">
-                  Langsung terbuka di studio mockup: model sesuai kaos yang kamu pilih
-                  {product.cutting_type ? ` (Cutting: ${product.cutting_type})` : ''}.
-                </p>
+                {(typeof product.is_customizable === 'boolean'
+                  ? product.is_customizable
+                  : !(product.is_exclusive || product.product_group === 'eksklusif')) && (
+                  <>
+                    <Link
+                      to={getStudioDesignUrl(product)}
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-neutral-950 rounded-xl text-sm font-black shadow-md hover:shadow-lg transition-all cursor-pointer"
+                    >
+                      <Brush className="w-4 h-4" />
+                      <span>Desain Custom Kaos Ini</span>
+                    </Link>
+                    <p className="text-center text-[10px] text-neutral-400">
+                      Langsung terbuka di studio mockup: model sesuai kaos yang kamu pilih
+                      {product.cutting_type ? ` (Cutting: ${product.cutting_type})` : ''}.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
