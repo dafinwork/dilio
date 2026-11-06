@@ -1053,108 +1053,122 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Ceklis 2: Katalog Exclusive (Limited Edition) + Pilihan Kategori */}
-            <div className="bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 space-y-2">
-              <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  name="is_exclusive"
-                  checked={formData.is_exclusive}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded text-neutral-900 focus:ring-neutral-900"
-                />
-                <span>👑 Katalog Exclusive (Limited Edition)</span>
-              </label>
+            {/* Khusus Form Katalog Exclusive: Pilihan Kategori dibuat ceklis (seperti Pre-Order) */}
+            {formData.product_group === 'eksklusif' && (
+              <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/80 space-y-2">
+                <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formData.exclusive_category)}
+                    onChange={(e) => {
+                      if (!e.target.checked) {
+                        setFormData((prev) => ({ ...prev, exclusive_category: '' }));
+                      } else {
+                        const firstCat = cleanExclusiveCategories[0]?.value || '';
+                        setFormData((prev) => ({ ...prev, exclusive_category: firstCat }));
+                      }
+                    }}
+                    className="w-4 h-4 rounded text-neutral-900 focus:ring-neutral-900"
+                  />
+                  <span>👑 Kategori Khusus Exclusive</span>
+                </label>
 
-              {formData.is_exclusive && (
-                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-bold text-neutral-700">
-                      Pilih Kategori Exclusive:
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowAddCategory(!showAddCategory)}
-                        className="text-[10px] font-bold text-neutral-900 hover:underline flex items-center gap-0.5 cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Tambah</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowManageExclusiveCat(!showManageExclusiveCat)}
-                        className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Kelola</span>
-                      </button>
-                    </div>
-                  </div>
+                <p className="text-[10px] text-neutral-500">
+                  {Boolean(formData.exclusive_category)
+                    ? 'Baju akan masuk ke tab kategori yang dipilih di bawah.'
+                    : 'Kosongkan jika baju eksklusif ini tidak ada kategori khusus (langsung tampil di "Semua").'}
+                </p>
 
-                  <select
-                    name="exclusive_category"
-                    value={formData.exclusive_category}
-                    onChange={handleChange}
-                    className="w-full px-3 py-1.5 bg-white border border-neutral-300 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
-                  >
-                    <option value="">— Tanpa Kategori (tampil di "Semua") —</option>
-                    {cleanExclusiveCategories.map((cat) => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  {showManageExclusiveCat && (
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex flex-wrap gap-1.5">
-                        {cleanExclusiveCategories.map((cat) => (
-                          <span
-                            key={cat.value}
-                            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-white border border-neutral-200 rounded-full text-[10px] font-semibold text-neutral-800"
-                          >
-                            {cat.label}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleDeleteListItem({ kind: 'exclusiveCat', value: cat.value })
-                              }
-                              className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
-                              title={`Hapus ${cat.label}`}
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
+                {Boolean(formData.exclusive_category) && (
+                  <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-neutral-700">
+                        Pilih Kategori:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddCategory(!showAddCategory)}
+                          className="text-[10px] font-bold text-neutral-900 hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Tambah</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowManageExclusiveCat(!showManageExclusiveCat)}
+                          className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Kelola</span>
+                        </button>
                       </div>
                     </div>
-                  )}
 
-                  {showAddCategory && (
-                    <div className="flex gap-1.5 pt-1">
-                      <input
-                        type="text"
-                        value={newCategoryInput}
-                        onChange={(e) => setNewCategoryInput(e.target.value)}
-                        placeholder="Nama kategori exclusive baru..."
-                        className="flex-1 px-2.5 py-1 bg-white border border-neutral-300 rounded-lg text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddNewCategory}
-                        className="px-2.5 py-1 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
-                      >
-                        Simpan
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    <select
+                      name="exclusive_category"
+                      value={formData.exclusive_category}
+                      onChange={handleChange}
+                      className="w-full px-3 py-1.5 bg-white border border-neutral-300 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
+                    >
+                      {cleanExclusiveCategories.map((cat) => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    {showManageExclusiveCat && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex flex-wrap gap-1.5">
+                          {cleanExclusiveCategories.map((cat) => (
+                            <span
+                              key={cat.value}
+                              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-white border border-neutral-200 rounded-full text-[10px] font-semibold text-neutral-800"
+                            >
+                              {cat.label}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeleteListItem({ kind: 'exclusiveCat', value: cat.value })
+                                }
+                                className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
+                                title={`Hapus ${cat.label}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {showAddCategory && (
+                      <div className="flex gap-1.5 pt-1">
+                        <input
+                          type="text"
+                          value={newCategoryInput}
+                          onChange={(e) => setNewCategoryInput(e.target.value)}
+                          placeholder="Nama kategori exclusive baru..."
+                          className="flex-1 px-2.5 py-1 bg-white border border-neutral-300 rounded-lg text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddNewCategory}
+                          className="px-2.5 py-1 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Ceklis 3: Fitur Desain Custom Kaos Ini + Upload Sudut Mockup */}
-            <div className="sm:col-span-2 bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 space-y-3">
+            <div className={`bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 space-y-3 ${formData.product_group === "eksklusif" ? "sm:col-span-2" : "sm:col-span-1"}`}>
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
                   <input
