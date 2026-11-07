@@ -77,7 +77,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex sm:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-2">
             <a
               href={getWhatsAppUrl()}
               target="_blank"

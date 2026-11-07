@@ -96,12 +96,12 @@ export default function ProductModal({ product, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
         {/* Backdrop click */}
         <div className="absolute inset-0" onClick={onClose} />
 
         {/* Modal Dialog */}
-        <div className="relative bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 animate-in zoom-in-95 duration-200">
+        <div className="relative bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl z-10 animate-in zoom-in-95 duration-200">
           {/* Close Button */}
           <button
             onClick={onClose}

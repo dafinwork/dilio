@@ -844,15 +844,15 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-6 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative bg-white rounded-xl sm:rounded-2xl max-w-3xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden my-2 sm:my-4 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 bg-neutral-50/50">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-neutral-100 bg-neutral-50/50">
           <div>
-            <h3 className="text-xl font-black text-neutral-900 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-black text-neutral-900 flex items-center gap-2">
               {isDuplicating ? (
                 <>
-                  <Sparkles className="w-5 h-5 text-amber-500" />
+                  <Sparkles className="w-4 h-4 text-amber-500" />
                   <span>Duplikat Produk Baru</span>
                 </>
               ) : isEditing ? (
@@ -863,7 +863,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 'Tambah Produk Baru'
               )}
             </h3>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-[11px] text-neutral-500 mt-0.5">
               {isDuplicating
                 ? `Menyalin dari "${product.name}". Sesuaikan data yang ingin diubah.`
                 : 'Kelola data katalog produk Kaos Dilio (Otomatis sync ke website).'}
@@ -871,14 +871,14 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-4 sm:space-y-5 flex-1 text-xs sm:text-sm">
           {/* 1. Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
@@ -1472,8 +1472,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               {showManageKaosCat && (
                 <div className="mt-2 space-y-2 animate-in fade-in duration-150">
                   <span className="text-[10px] text-neutral-500 block">
-                    Item yang dihapus tidak tampil lagi sebagai tab kategori katalog (Kasual, Polo,
-                    dll). Produk yang memakai tidak ikut berubah.
+                    Kategori yang dihapus akan otomatis dialihkan ke KASUAL pada produk yang memakainya agar tab filter di website langsung bersih.
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {cleanKaosCategoriesList.map((cat) => (
@@ -1930,18 +1929,18 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-6 border-t border-neutral-100 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-neutral-300 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition-colors cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isUploading}
-              className="px-6 py-2.5 rounded-xl bg-neutral-900 text-white font-bold text-xs shadow-md hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-neutral-900 text-white font-bold text-xs shadow-xs hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 cursor-pointer"
             >
               {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>

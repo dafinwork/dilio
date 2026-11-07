@@ -21,13 +21,11 @@ import {
   Copy,
   Clock,
   Tag,
-  ChevronsLeft,
-  ChevronsRight,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import { formatRupiah, safeColors, computeDiscountInfo } from '../utils/helpers';
 import ProductFormModal from '../components/admin/ProductFormModal';
-import ManageCategoriesModal from '../components/admin/ManageCategoriesModal';
+import SliderReorderModal from '../components/admin/SliderReorderModal';
 
 // Urutan produk di slider [LIMITED EDITION] Homepage (disimpan lokal, diatur dari tabel admin)
 const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
@@ -81,7 +79,7 @@ export default function AdminDashboardPage() {
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
-  const [manageCategoriesModalOpen, setManageCategoriesModalOpen] = useState(false);
+  const [sliderReorderModalOpen, setSliderReorderModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
@@ -212,30 +210,6 @@ export default function AdminDashboardPage() {
     showToast('Produk berhasil dihapus dari katalog!');
   };
 
-  // Pindahkan urutan produk di slider Exclusive Homepage
-  const handleMoveSliderOrder = (id, toFront) => {
-    const orderMap = readSliderOrderMap();
-    const exclusiveProducts = products.filter(isExclusiveItem);
-    const existingOrders = exclusiveProducts
-      .map((p) => orderMap[p.id])
-      .filter((n) => typeof n === 'number');
-
-    // Nilai ekstrem baru memastikan item ini selalu paling depan / paling belakang
-    const nextValue = toFront
-      ? Math.min(0, ...existingOrders) - 1
-      : Math.max(0, ...existingOrders) + 1;
-
-    orderMap[id] = nextValue;
-    writeSliderOrderMap(orderMap);
-    sliderOrderMapRef.current = orderMap;
-    setSliderOrderTick((t) => t + 1);
-    showToast(
-      toFront
-        ? 'Produk dipindah ke DEPAN slider Exclusive di Homepage!'
-        : 'Produk dipindah ke BELAKANG slider Exclusive di Homepage!'
-    );
-  };
-
   // Handle Reset to Default
   const handleResetData = () => {
     if (window.confirm('Apakah Anda yakin ingin mereset seluruh data produk ke default katalog awal?')) {
@@ -321,34 +295,34 @@ export default function AdminDashboardPage() {
       {/* Top Admin Header */}
       <header className="bg-white border-b border-neutral-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-18">
-            <div className="flex items-center gap-3">
-              <span className="text-lg sm:text-xl font-black text-neutral-900">
+          <div className="flex items-center justify-between h-13 sm:h-14">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
                 Kaos Dilio <span className="text-neutral-400 font-normal">| CMS</span>
               </span>
               {cloudStatus === 'connected' ? (
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                   Supabase Cloud Active
                 </span>
               ) : cloudStatus === 'connecting' ? (
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
                   Menghubungkan Cloud...
                 </span>
               ) : (
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
                   Local Cache Active
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <Link
                 to="/studio"
                 target="_blank"
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-lg text-xs font-bold shadow-xs hover:opacity-90 transition-opacity"
                 title="Buka Studio Mockup Foto Produk (AI Photorealistic)"
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -360,29 +334,29 @@ export default function AdminDashboardPage() {
                   setPasswordModalOpen(true);
                   setPasswordChangeStatus({ error: '', success: '' });
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 hover:bg-neutral-50 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-neutral-200 rounded-lg text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
                 title="Ganti Password Admin"
               >
                 <KeyRound className="w-3.5 h-3.5 text-neutral-500" />
-                <span className="hidden sm:inline">Ganti Password</span>
+                <span className="hidden sm:inline">Password</span>
               </button>
 
               <Link
                 to="/"
                 target="_blank"
-                className="inline-flex items-center gap-1.5 px-3 py-2 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 hover:bg-neutral-50 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-neutral-200 rounded-lg text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
                 title="Buka Website Katalog"
               >
-                <span>Lihat Website</span>
+                <span>Lihat Web</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </Link>
 
               <button
                 onClick={logoutAdmin}
-                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-neutral-500 hover:text-red-600 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-neutral-500 hover:text-red-600 transition-colors"
                 title="Keluar dari Admin"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
@@ -391,59 +365,59 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4 sm:space-y-5">
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider">Total Produk</span>
-              <Layers className="w-4 h-4" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
+            <div className="flex items-center justify-between text-neutral-400 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider">Total Produk</span>
+              <Layers className="w-3.5 h-3.5" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-neutral-900">{stats.total}</p>
+            <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.total}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider">Kaos Harian</span>
-              <Shirt className="w-4 h-4" />
+          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
+            <div className="flex items-center justify-between text-neutral-400 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider">Kaos Harian</span>
+              <Shirt className="w-3.5 h-3.5" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-neutral-900">{stats.harian}</p>
+            <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.harian}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider">Kaos Custom</span>
-              <Sparkles className="w-4 h-4" />
+          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
+            <div className="flex items-center justify-between text-neutral-400 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider">Kaos Custom</span>
+              <Sparkles className="w-3.5 h-3.5" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-neutral-900">{stats.custom}</p>
+            <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.custom}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider">Limited Edition (Banner)</span>
-              <Crown className="w-4 h-4" />
+          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
+            <div className="flex items-center justify-between text-neutral-400 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider">Limited Edition (Banner)</span>
+              <Crown className="w-3.5 h-3.5" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-neutral-900">{stats.eksklusif}</p>
+            <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.eksklusif}</p>
           </div>
         </div>
 
         {/* Action Bar (Search, Category Tabs, Add Button) */}
-        <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-2xs space-y-4">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs space-y-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             {/* Search Box */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari produk (nama, bahan, label)..."
-                className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                className="w-full pl-9 pr-3 py-1.5 sm:py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900"
               />
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => {
                   setEditingProduct({
@@ -453,11 +427,11 @@ export default function AdminDashboardPage() {
                   });
                   setModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-neutral-950 rounded-xl text-xs sm:text-sm font-extrabold shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-amber-500 hover:bg-amber-600 text-neutral-950 rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
                 title="Tambah katalog baru khusus banner [LIMITED EDITION] di Homepage"
               >
-                <Crown className="w-4 h-4 text-neutral-950" />
-                <span>+ Tambah Katalog Exclusive</span>
+                <Crown className="w-3.5 h-3.5 text-neutral-950" />
+                <span>+ Tambah Exclusive</span>
               </button>
 
               <button
@@ -465,43 +439,43 @@ export default function AdminDashboardPage() {
                   setEditingProduct(null);
                   setModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Tambah Produk</span>
               </button>
 
               <button
-                onClick={() => setManageCategoriesModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs sm:text-sm font-bold shadow-2xs transition-colors cursor-pointer"
-                title="Kelola & hapus kategori kaos, cutting, bahan, atau exclusive"
+                onClick={() => setSliderReorderModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                title="Geser dan susun urutan tampilan kartu kaos di banner Limited Edition Homepage"
               >
-                <Tag className="w-4 h-4 text-neutral-600" />
-                <span>Kelola Kategori</span>
+                <Crown className="w-3.5 h-3.5 text-amber-600" />
+                <span>Urutan Slider</span>
               </button>
 
               <button
                 onClick={exportProductsJSON}
-                className="inline-flex items-center gap-1.5 px-3 py-2.5 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 hover:bg-neutral-50 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:py-2 border border-neutral-200 rounded-lg text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
                 title="Unduh backup data JSON"
               >
-                <Download className="w-4 h-4 text-neutral-500" />
-                <span className="hidden sm:inline">Export JSON</span>
+                <Download className="w-3.5 h-3.5 text-neutral-500" />
+                <span className="hidden sm:inline">Export</span>
               </button>
 
               <button
                 onClick={handleResetData}
-                className="inline-flex items-center gap-1.5 px-3 py-2.5 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:py-2 border border-neutral-200 rounded-lg text-xs font-semibold text-neutral-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                 title="Kembalikan data ke awal"
               >
-                <RotateCcw className="w-4 h-4" />
-                <span className="hidden sm:inline">Reset Default</span>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
               </button>
             </div>
           </div>
 
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-neutral-100 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-neutral-100 scrollbar-none">
             {[
               { label: 'Semua Kategori', value: 'all' },
               { label: '👕 Kaos Harian', value: 'harian' },
@@ -513,7 +487,7 @@ export default function AdminDashboardPage() {
                 <button
                   key={tab.value}
                   onClick={() => setCategoryFilter(tab.value)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors ${
                     isActive
                       ? 'bg-neutral-900 text-white shadow-2xs'
                       : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70 hover:text-neutral-900'
@@ -524,32 +498,189 @@ export default function AdminDashboardPage() {
               );
             })}
           </div>
-
-          {/* Legend tombol urutan slider Exclusive */}
-          <div className="flex items-center gap-2 pt-2 border-t border-neutral-100 text-[11px] text-neutral-500">
-            <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>
-              Produk <b>Exclusive</b>: tombol <b>« Depan / Belakang »</b> di kolom Aksi mengatur urutan
-              tampil di slider [LIMITED EDITION] Homepage.
-            </span>
-          </div>
         </div>
 
-        {/* Product Table */}
+        {/* Mobile Product Cards View (< md) */}
         <div
-          className="bg-white rounded-2xl border border-neutral-200/80 shadow-2xs overflow-hidden"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:hidden"
+          data-slider-order-tick-mobile={String(sliderOrderTick)}
+        >
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((item) => {
+              const mainImg = (Array.isArray(item.images) && item.images[0]) || item.image_url;
+              const totalImgs = Array.isArray(item.images) ? item.images.length : (item.image_url ? 1 : 0);
+              const disc = computeDiscountInfo(item.price, item.original_price);
+
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-xl border border-neutral-200/80 p-3 shadow-2xs flex flex-col justify-between gap-3"
+                >
+                  <div className="flex gap-2.5">
+                    {/* Thumbnail */}
+                    {mainImg ? (
+                      <div className="relative shrink-0">
+                        <img
+                          src={mainImg}
+                          alt={item.name}
+                          className="w-16 h-20 rounded-lg object-cover border border-neutral-200/80 shadow-2xs"
+                        />
+                        {totalImgs > 1 && (
+                          <span className="absolute bottom-0 right-0 bg-neutral-900/80 text-white text-[8px] font-bold px-1 rounded-xs">
+                            {totalImgs}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="w-16 h-20 rounded-lg flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[9px] leading-tight overflow-hidden"
+                        style={{
+                          backgroundColor: item.placeholder_bg || '#E5E7EB',
+                          color: item.placeholder_text_color || '#1E293B',
+                        }}
+                      >
+                        {item.placeholder_title ? item.placeholder_title.slice(0, 12) : item.name.slice(0, 8)}
+                      </div>
+                    )}
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="font-bold text-neutral-900 text-xs line-clamp-1">
+                          {item.name}
+                        </span>
+                        {item.is_new && (
+                          <span className="px-1 py-0.2 bg-[#5b21b6] text-white text-[8px] font-bold rounded-xs">
+                            NEW
+                          </span>
+                        )}
+                        {(item.is_exclusive || item.product_group === 'eksklusif') && (
+                          <span className="px-1 py-0.2 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs">
+                            EXCL
+                          </span>
+                        )}
+                        {item.is_preorder && (
+                          <span className="inline-flex items-center gap-0.5 px-1 py-0.2 bg-amber-500 text-neutral-950 text-[8px] font-black rounded-xs">
+                            <Clock className="w-2.5 h-2.5" />
+                            <span>PO</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-[11px] text-neutral-500 space-y-0.5">
+                        <p className="truncate">
+                          <span className="font-medium text-neutral-700 capitalize">
+                            {item.product_group === 'eksklusif' ? 'Limited Edition' : item.product_group}
+                          </span>
+                          {(item.cutting_type || item.exclusive_category) && (
+                            <span> • {item.cutting_type || item.exclusive_category}</span>
+                          )}
+                        </p>
+                        <p className="truncate text-neutral-400 text-[10px]">
+                          {item.material || '-'}{item.category_label ? ` • ${item.category_label}` : ''}
+                        </p>
+                      </div>
+
+                      {/* Price & Colors */}
+                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-neutral-100">
+                        <div>
+                          {disc.hasDiscount ? (
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-neutral-900 text-xs">
+                                {formatRupiah(item.price)}
+                              </span>
+                              <span className="text-[9px] text-neutral-400 line-through">
+                                {formatRupiah(disc.displayOriginalPrice)}
+                              </span>
+                              {disc.discountPercent > 0 && (
+                                <span className="text-[8px] font-bold text-red-600 bg-red-50 px-0.5 rounded">
+                                  -{disc.discountPercent}%
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="font-bold text-neutral-900 text-xs">
+                              {formatRupiah(item.price)}
+                            </span>
+                          )}
+                        </div>
+
+                        {safeColors(item.colors).length > 0 && (
+                          <div className="flex items-center gap-1">
+                            {safeColors(item.colors).slice(0, 3).map((hex, idx) => (
+                              <span
+                                key={idx}
+                                className="w-2.5 h-2.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
+                                style={{ backgroundColor: hex }}
+                                title={hex}
+                              />
+                            ))}
+                            {Number(item.extra_colors_count) > 0 && (
+                              <span className="text-[9px] font-semibold text-neutral-400">
+                                +{item.extra_colors_count}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Actions Bar */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
+                    <button
+                      onClick={() => {
+                        setEditingProduct(item);
+                        setModalOpen(true);
+                      }}
+                      className="flex-1 py-1.5 px-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit Produk</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDuplicateProduct(item)}
+                      className="py-1.5 px-2.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-semibold"
+                      title="Duplikat / Salin Produk"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Salin</span>
+                    </button>
+
+                    <button
+                      onClick={() => setDeleteConfirmId(item.id)}
+                      className="p-1.5 rounded-lg border border-neutral-200 text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Hapus Produk"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="col-span-full bg-white rounded-xl border border-neutral-200/80 p-8 text-center text-neutral-400 text-xs">
+              Tidak ada produk ditemukan sesuai filter.
+            </div>
+          )}
+        </div>
+
+        {/* Product Table (Desktop & Tablet >= md) */}
+        <div
+          className="hidden md:block bg-white rounded-xl border border-neutral-200/80 shadow-2xs overflow-hidden"
           data-slider-order-tick={String(sliderOrderTick)}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 uppercase tracking-wider text-[11px] font-bold">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 uppercase tracking-wider text-[10px] font-bold">
                 <tr>
-                  <th className="py-3.5 px-4">Produk</th>
-                  <th className="py-3.5 px-4">Grup / Kategori</th>
-                  <th className="py-3.5 px-4">Bahan / Spek</th>
-                  <th className="py-3.5 px-4">Harga</th>
-                  <th className="py-3.5 px-4">Warna</th>
-                  <th className="py-3.5 px-4 text-right">Aksi</th>
+                  <th className="py-2.5 px-3">Produk</th>
+                  <th className="py-2.5 px-3">Grup / Kategori</th>
+                  <th className="py-2.5 px-3">Bahan / Spek</th>
+                  <th className="py-2.5 px-3">Harga</th>
+                  <th className="py-2.5 px-3">Warna</th>
+                  <th className="py-2.5 px-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
@@ -557,8 +688,8 @@ export default function AdminDashboardPage() {
                   filteredProducts.map((item) => (
                     <tr key={item.id} className="hover:bg-neutral-50/70 transition-colors">
                       {/* Product Preview & Name */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-2.5">
                           {(() => {
                             const mainImg = (Array.isArray(item.images) && item.images[0]) || item.image_url;
                             const totalImgs = Array.isArray(item.images) ? item.images.length : (item.image_url ? 1 : 0);
@@ -567,7 +698,7 @@ export default function AdminDashboardPage() {
                                 <img
                                   src={mainImg}
                                   alt={item.name}
-                                  className="w-12 h-14 rounded-lg object-cover border border-neutral-200/80 shadow-2xs"
+                                  className="w-9 h-11 rounded-md object-cover border border-neutral-200/80 shadow-2xs"
                                 />
                                 {totalImgs > 1 && (
                                   <span className="absolute bottom-0 right-0 bg-neutral-900/80 text-white text-[8px] font-bold px-1 rounded-xs">
@@ -577,65 +708,65 @@ export default function AdminDashboardPage() {
                               </div>
                             ) : (
                               <div
-                                className="w-12 h-14 rounded-lg flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[9px] leading-tight overflow-hidden"
+                                className="w-9 h-11 rounded-md flex items-center justify-center p-1 text-center shrink-0 border border-neutral-200/60 font-black text-[8px] leading-tight overflow-hidden"
                                 style={{
                                   backgroundColor: item.placeholder_bg || '#E5E7EB',
                                   color: item.placeholder_text_color || '#1E293B',
                                 }}
                               >
-                                {item.placeholder_title ? item.placeholder_title.slice(0, 14) : item.name.slice(0, 10)}
+                                {item.placeholder_title ? item.placeholder_title.slice(0, 10) : item.name.slice(0, 8)}
                               </div>
                             );
                           })()}
-                          <div>
+                          <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-extrabold text-neutral-900">{item.name}</span>
+                              <span className="font-bold text-neutral-900 truncate max-w-[200px] sm:max-w-xs">{item.name}</span>
                               {item.is_new && (
-                                <span className="px-1.5 py-0.2 bg-[#5b21b6] text-white text-[9px] font-bold rounded-xs">
+                                <span className="px-1 py-0.2 bg-[#5b21b6] text-white text-[8px] font-bold rounded-xs">
                                   NEW
                                 </span>
                               )}
                               {(item.is_exclusive || item.product_group === 'eksklusif') && (
-                                <span className="px-1.5 py-0.5 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs shadow-xs">
-                                  EXCLUSIVE
+                                <span className="px-1 py-0.2 bg-black text-amber-300 border border-amber-300/30 text-[8px] font-black tracking-wider rounded-xs">
+                                  EXCL
                                 </span>
                               )}
                               {item.is_preorder && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500 text-neutral-950 text-[8px] font-black rounded-xs shadow-xs">
+                                <span className="inline-flex items-center gap-0.5 px-1 py-0.2 bg-amber-500 text-neutral-950 text-[8px] font-black rounded-xs">
                                   <Clock className="w-2.5 h-2.5" />
-                                  <span>PO{item.preorder_duration ? `: ${item.preorder_duration}` : ''}</span>
+                                  <span>PO</span>
                                 </span>
                               )}
                             </div>
-                            <span className="text-[11px] text-neutral-400 font-mono block mt-0.5">
-                              ID: {item.id}
+                            <span className="text-[10px] text-neutral-400 font-mono block mt-0.5">
+                              {item.id}
                             </span>
                           </div>
                         </div>
                       </td>
 
                       {/* Group & Sub-type */}
-                      <td className="py-3.5 px-4">
-                        <span className="capitalize font-semibold text-neutral-800 block">
+                      <td className="py-2 px-3">
+                        <span className="capitalize font-semibold text-neutral-800 block text-xs">
                           {item.product_group === 'eksklusif' ? 'Limited Edition' : item.product_group}
                         </span>
-                        <span className="text-[11px] text-neutral-500 uppercase">
+                        <span className="text-[10px] text-neutral-500 uppercase">
                           {item.cutting_type || item.sablon_type || item.exclusive_category || '-'}
                         </span>
                       </td>
 
                       {/* Material */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-medium text-neutral-700 block">
+                      <td className="py-2 px-3">
+                        <span className="font-medium text-neutral-700 block text-xs">
                           {item.material || '-'}
                         </span>
-                        <span className="text-[11px] text-neutral-400">
+                        <span className="text-[10px] text-neutral-400">
                           {item.category_label || '-'}
                         </span>
                       </td>
 
                       {/* Price */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2 px-3">
                         {(() => {
                           const disc = computeDiscountInfo(item.price, item.original_price);
                           if (disc.hasDiscount) {
@@ -646,19 +777,19 @@ export default function AdminDashboardPage() {
                                     {formatRupiah(disc.displayOriginalPrice)}
                                   </span>
                                   {disc.discountPercent > 0 && (
-                                    <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">
+                                    <span className="text-[9px] font-bold text-red-600 bg-red-50 px-0.5 rounded">
                                       -{disc.discountPercent}%
                                     </span>
                                   )}
                                 </div>
-                                <span className="font-extrabold text-neutral-900 block">
+                                <span className="font-bold text-neutral-900 block text-xs">
                                   {formatRupiah(item.price)}
                                 </span>
                               </div>
                             );
                           }
                           return (
-                            <span className="font-extrabold text-neutral-900">
+                            <span className="font-bold text-neutral-900 text-xs">
                               {formatRupiah(item.price)}
                             </span>
                           );
@@ -666,13 +797,13 @@ export default function AdminDashboardPage() {
                       </td>
 
                       {/* Color Dots */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2 px-3">
                         {safeColors(item.colors).length > 0 ? (
                           <div className="flex items-center gap-1">
                             {safeColors(item.colors).slice(0, 3).map((hex, idx) => (
                               <span
                                 key={idx}
-                                className="w-3.5 h-3.5 rounded-full border border-neutral-300 shadow-2xs inline-block"
+                                className="w-3 h-3 rounded-full border border-neutral-300 shadow-2xs inline-block"
                                 style={{ backgroundColor: hex }}
                                 title={hex}
                               />
@@ -689,32 +820,14 @@ export default function AdminDashboardPage() {
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          {isExclusiveItem(item) && (
-                            <>
-                              <button
-                                onClick={() => handleMoveSliderOrder(item.id, true)}
-                                className="p-1.5 rounded-lg text-neutral-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
-                                title="Pindah ke DEPAN slider [LIMITED EDITION] di Homepage"
-                              >
-                                <ChevronsLeft className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleMoveSliderOrder(item.id, false)}
-                                className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
-                                title="Pindah ke BELAKANG slider [LIMITED EDITION] di Homepage"
-                              >
-                                <ChevronsRight className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
+                      <td className="py-2 px-3 text-right">
+                        <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleDuplicateProduct(item)}
-                            className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                            className="p-1 rounded text-neutral-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                             title="Duplikat / Salin Produk Ini"
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3.5 h-3.5" />
                           </button>
 
                           <button
@@ -722,18 +835,18 @@ export default function AdminDashboardPage() {
                               setEditingProduct(item);
                               setModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+                            className="p-1 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
                             title="Edit Produk"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
 
                           <button
                             onClick={() => setDeleteConfirmId(item.id)}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            className="p-1 rounded text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                             title="Hapus Produk"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -765,11 +878,16 @@ export default function AdminDashboardPage() {
         />
       )}
 
-      {/* Manage Categories & Filters Modal */}
-      {manageCategoriesModalOpen && (
-        <ManageCategoriesModal
-          isOpen={manageCategoriesModalOpen}
-          onClose={() => setManageCategoriesModalOpen(false)}
+      {/* Slider Reorder Drag & Drop Modal */}
+      {sliderReorderModalOpen && (
+        <SliderReorderModal
+          isOpen={sliderReorderModalOpen}
+          onClose={() => setSliderReorderModalOpen(false)}
+          products={products}
+          onOrderChanged={() => {
+            setSliderOrderTick((t) => t + 1);
+            showToast('Urutan slider Exclusive Homepage berhasil diperbarui!');
+          }}
         />
       )}
 
