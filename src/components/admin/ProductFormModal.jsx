@@ -4,6 +4,27 @@ import { supabase } from '../../lib/supabase';
 import { safeColors, formatNumberDots, parseNumberDots, computeDiscountInfo } from '../../utils/helpers';
 import { getStoredSizeCharts } from '../SizeChartModal';
 import ColorWheelModal from './ColorWheelModal';
+import { useProducts } from '../../context/ProductContext';
+import {
+  DEFAULT_MATERIALS,
+  DEFAULT_KAOS_CATEGORIES,
+  DEFAULT_CUTTINGS,
+  DEFAULT_EXCLUSIVE_CATEGORIES,
+  CUSTOM_MATERIALS_KEY,
+  CUSTOM_KAOS_CAT_KEY,
+  CUSTOM_CUTTINGS_KEY,
+  CUSTOM_EXCLUSIVE_CAT_KEY,
+  REMOVED_KAOS_CAT_KEY,
+  REMOVED_CUTTINGS_KEY,
+  REMOVED_MATERIALS_KEY,
+  REMOVED_EXCLUSIVE_CAT_KEY,
+  readRemovedValues,
+  writeRemovedValues,
+  getAllKaosCategories,
+  getAllCuttings,
+  getAllMaterials,
+  getAllExclusiveCategories,
+} from '../../utils/categoryManager';
 
 const PRESET_BG_COLORS = [
   { name: 'Soft Lilac Grey', hex: '#E5E7EB', text: '#374151' },
@@ -28,85 +49,9 @@ const PRESET_DOT_COLORS = [
   '#64748B',
 ];
 
-const DEFAULT_MATERIALS = [
-  'Heavyweight 16s',
-  'Cotton Combed 24s',
-  'Cotton Combed 20s',
-  'Cotton Combed 30s',
-  'Washed Cotton 20s',
-  'Pique Cotton (Polo)',
-  'Dry-Fit / Polyester (Olahraga)',
-  'Cotton Fleece (Jaket/Hoodie)',
-];
-
-const DEFAULT_KAOS_CATEGORIES = [
-  'KASUAL',
-  'POLO',
-  'OLAHRAGA',
-  'BASIC',
-  'STREETWEAR',
-  'HOODIE',
-  'LIMITED EDITION',
-];
-
-const DEFAULT_CUTTINGS = [
-  { value: 'oversized', label: 'Oversized Fit' },
-  { value: 'regular', label: 'Regular Fit' },
-  { value: 'fitted', label: 'Fitted' },
-  { value: 'boxy', label: 'Boxy Cut' },
-  { value: 'long-sleeve', label: 'Long Sleeve (Lengan Panjang)' },
-];
-
-const DEFAULT_EXCLUSIVE_CATEGORIES = [
-  { value: 'dilio', label: 'Dilio (Brand Sendiri)' },
-  { value: 'thinking-out', label: 'Thinking Out (Partner Brand)' },
-  { value: 'dilio-x-one-piece', label: 'Dilio x One Piece (Collab)' },
-];
-
-const CUSTOM_MATERIALS_KEY = 'kaos_dilio_custom_materials';
-const CUSTOM_KAOS_CAT_KEY = 'kaos_dilio_custom_kaos_categories';
-const CUSTOM_CUTTINGS_KEY = 'kaos_dilio_custom_cuttings';
-const CUSTOM_EXCLUSIVE_CAT_KEY = 'kaos_dilio_custom_exclusive_cats';
-
-// Tombstone lists: nama/value item default/custom yg "dihapus" admin
-// (dipakai juga oleh halaman katalog agar tab filter ikut hilang)
-const REMOVED_KAOS_CAT_KEY = 'kaos_dilio_removed_kaos_categories';
-const REMOVED_CUTTINGS_KEY = 'kaos_dilio_removed_cuttings';
-const REMOVED_MATERIALS_KEY = 'kaos_dilio_removed_materials';
-const REMOVED_EXCLUSIVE_CAT_KEY = 'kaos_dilio_removed_exclusive_cats';
-const PRODUCT_CACHE_KEY = 'kaos_dilio_catalog_products';
-
-function readRemovedValues(key) {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(key));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeRemovedValues(key, values) {
-  try {
-    localStorage.setItem(key, JSON.stringify(values));
-  } catch {
-    // ignore
-  }
-}
-
-// Hitung berapa produk masih memakai nilai kategori/cutting/bahan tertentu
-function countProductsUsing(fieldCandidates, value) {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(PRODUCT_CACHE_KEY) || '[]');
-    if (!Array.isArray(parsed)) return 0;
-    return parsed.filter((p) =>
-      fieldCandidates.some((f) => String(p[f] || '').toLowerCase() === String(value).toLowerCase())
-    ).length;
-  } catch {
-    return 0;
-  }
-}
-
 export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
+  const { products = [], updateProduct } = useProducts();
+
   const [formData, setFormData] = useState({
     name: '',
     product_group: 'harian',
@@ -136,90 +81,41 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     mockup_angles: { front: '', back: '', left: '', right: '' },
   });
 
-  // Pola Cutting list with persistence
-  const [cuttingsList, setCuttingsList] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CUSTOM_CUTTINGS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingVals = new Set(DEFAULT_CUTTINGS.map((c) => c.value));
-          const customOnes = parsed.filter((c) => c && c.value && !existingVals.has(c.value));
-          return [...DEFAULT_CUTTINGS, ...customOnes];
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_CUTTINGS;
-  });
-
+  // Pola Cutting list with persistence & product sync
+  const [cuttingsList, setCuttingsList] = useState(() =>
+    getAllCuttings(products, product?.cutting_type)
+  );
   const [newCuttingInput, setNewCuttingInput] = useState('');
   const [showAddCutting, setShowAddCutting] = useState(false);
 
-  // Kategori Jenis Kaos list with persistence
-  const [kaosCategoriesList, setKaosCategoriesList] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CUSTOM_KAOS_CAT_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return Array.from(new Set([...DEFAULT_KAOS_CATEGORIES, ...parsed.map((c) => String(c).toUpperCase())]));
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_KAOS_CATEGORIES;
-  });
-
+  // Kategori Jenis Kaos list with persistence & product sync
+  const [kaosCategoriesList, setKaosCategoriesList] = useState(() =>
+    getAllKaosCategories(products, product?.kaos_category || product?.category_label)
+  );
   const [newKaosCategoryInput, setNewKaosCategoryInput] = useState('');
   const [showAddKaosCategory, setShowAddKaosCategory] = useState(false);
 
-  // Material list with persistence
-  const [materialsList, setMaterialsList] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CUSTOM_MATERIALS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const merged = Array.from(new Set([...DEFAULT_MATERIALS, ...parsed]));
-          return merged;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_MATERIALS;
-  });
-
+  // Material list with persistence & product sync
+  const [materialsList, setMaterialsList] = useState(() =>
+    getAllMaterials(products, product?.material)
+  );
   const [newMaterialInput, setNewMaterialInput] = useState('');
   const [showAddMaterial, setShowAddMaterial] = useState(false);
 
-  // Exclusive category list with persistence
-  const [exclusiveCategories, setExclusiveCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CUSTOM_EXCLUSIVE_CAT_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return [...DEFAULT_EXCLUSIVE_CATEGORIES, ...parsed];
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_EXCLUSIVE_CATEGORIES;
-  });
-
+  // Exclusive category list with persistence & product sync
+  const [exclusiveCategories, setExclusiveCategories] = useState(() =>
+    getAllExclusiveCategories(products, product?.exclusive_category)
+  );
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
 
-  // Tombstone "dihapus" untuk tiap list (agar default/custom bisa dihapus permanen)
+  // Tombstone "dihapus" untuk tiap list
   const [removedKaosCats, setRemovedKaosCats] = useState(() => readRemovedValues(REMOVED_KAOS_CAT_KEY));
   const [removedCuttings, setRemovedCuttings] = useState(() => readRemovedValues(REMOVED_CUTTINGS_KEY));
   const [removedMaterials, setRemovedMaterials] = useState(() => readRemovedValues(REMOVED_MATERIALS_KEY));
-  const [removedExclusiveCats, setRemovedExclusiveCats] = useState(() => readRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY));
+  const [removedExclusiveCats, setRemovedExclusiveCats] = useState(() =>
+    readRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY)
+  );
 
   // Panel "Kelola & Hapus" per list
   const [showManageCutting, setShowManageCutting] = useState(false);
@@ -227,65 +123,117 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [showManageMaterial, setShowManageMaterial] = useState(false);
   const [showManageExclusiveCat, setShowManageExclusiveCat] = useState(false);
 
-  // List bersih: default + custom, dikurangi yang sudah dihapus admin
-  const cleanCuttingsList = cuttingsList.filter((c) => !removedCuttings.includes(c.value));
-  const cleanKaosCategoriesList = kaosCategoriesList.filter(
-    (c) => !removedKaosCats.includes(String(c).toLowerCase())
+  // Sync lists when products or current product changes
+  useEffect(() => {
+    setKaosCategoriesList(getAllKaosCategories(products, product?.kaos_category || product?.category_label));
+    setCuttingsList(getAllCuttings(products, product?.cutting_type));
+    setMaterialsList(getAllMaterials(products, product?.material));
+    setExclusiveCategories(getAllExclusiveCategories(products, product?.exclusive_category));
+  }, [products, product]);
+
+  // List bersih: default + custom + products, dikurangi yang sudah dihapus admin
+  const cleanCuttingsList = cuttingsList.filter(
+    (c) => !removedCuttings.includes(String(c.value).toLowerCase().trim())
   );
-  const cleanMaterialsList = materialsList.filter((m) => !removedMaterials.includes(m));
+  const cleanKaosCategoriesList = kaosCategoriesList.filter(
+    (c) => !removedKaosCats.includes(String(c).toLowerCase().trim())
+  );
+  const cleanMaterialsList = materialsList.filter(
+    (m) => !removedMaterials.includes(String(m).toLowerCase().trim())
+  );
   const cleanExclusiveCategories = exclusiveCategories.filter(
-    (c) => !removedExclusiveCats.includes(c.value)
+    (c) => !removedExclusiveCats.includes(String(c.value).toLowerCase().trim())
   );
 
-  // Hapus item dari list (tombstone permanen + cek pemakaian produk)
+  // Hapus item dari list (migrasi otomatis produk yang memakai + tombstone permanen)
   const handleDeleteListItem = ({ kind, value }) => {
     const labelMap = {
       cuttings: {
         key: REMOVED_CUTTINGS_KEY,
+        customKey: CUSTOM_CUTTINGS_KEY,
         fields: ['cutting_type'],
         current: formData.cutting_type,
         setCurrent: (next) => setFormData((prev) => ({ ...prev, cutting_type: next })),
         cleanList: cleanCuttingsList,
+        defaultFallback: 'oversized',
       },
       kaosCat: {
         key: REMOVED_KAOS_CAT_KEY,
+        customKey: CUSTOM_KAOS_CAT_KEY,
         fields: ['kaos_category', 'category_label'],
         current: (formData.category_label || '').toUpperCase(),
         setCurrent: (next) =>
           setFormData((prev) => ({ ...prev, category_label: next, kaos_category: next })),
         cleanList: cleanKaosCategoriesList,
+        defaultFallback: 'KASUAL',
       },
       materials: {
         key: REMOVED_MATERIALS_KEY,
+        customKey: CUSTOM_MATERIALS_KEY,
         fields: ['material'],
         current: formData.material,
         setCurrent: (next) => setFormData((prev) => ({ ...prev, material: next })),
         cleanList: cleanMaterialsList,
+        defaultFallback: 'Cotton Combed 24s',
       },
       exclusiveCat: {
         key: REMOVED_EXCLUSIVE_CAT_KEY,
+        customKey: CUSTOM_EXCLUSIVE_CAT_KEY,
         fields: ['exclusive_category'],
         current: formData.exclusive_category,
         setCurrent: (next) => setFormData((prev) => ({ ...prev, exclusive_category: next })),
         cleanList: cleanExclusiveCategories,
+        defaultFallback: 'dilio',
       },
     };
 
     const conf = labelMap[kind];
     if (!conf || !value) return;
 
-    const usedCount = countProductsUsing(conf.fields, value);
+    const lowerVal = String(value).toLowerCase().trim();
+    const affectedProducts = (products || []).filter((p) =>
+      conf.fields.some((f) => String(p[f] || '').toLowerCase().trim() === lowerVal)
+    );
+    const usedCount = affectedProducts.length;
+
     const warnText =
       usedCount > 0
-        ? `Nilai "${value}" masih dipakai oleh ${usedCount} produk di katalog.\n\nTetap hapus dari daftar pilihan? (Produk yang sudah memakai tidak akan berubah, hanya pilihannya yang hilang dari dropdown/filter.)`
-        : `Hapus "${value}" dari daftar pilihan?`;
+        ? `"${value}" sedang dipakai oleh ${usedCount} produk di katalog.\n\nHapus item ini? ${usedCount} produk tersebut akan otomatis dialihkan ke "${conf.defaultFallback}" agar tidak lagi memunculkan tab/filter "${value}" di website.`
+        : `Hapus "${value}" dari daftar pilihan dan filter website?`;
+
     if (!window.confirm(warnText)) return;
 
+    // 1. Migrasi produk yang memakai item ini di database & state
+    if (usedCount > 0 && typeof updateProduct === 'function') {
+      affectedProducts.forEach((p) => {
+        const patch = {};
+        conf.fields.forEach((f) => {
+          patch[f] = conf.defaultFallback;
+        });
+        updateProduct(p.id, patch);
+      });
+    }
+
+    // 2. Hapus dari custom list localStorage jika ada
+    try {
+      const customSaved = JSON.parse(localStorage.getItem(conf.customKey) || '[]');
+      if (Array.isArray(customSaved)) {
+        const updatedCustom = customSaved.filter((item) => {
+          const itemVal = typeof item === 'object' && item !== null ? item.value : item;
+          return String(itemVal).toLowerCase().trim() !== lowerVal;
+        });
+        localStorage.setItem(conf.customKey, JSON.stringify(updatedCustom));
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. Tambah ke daftar tombstone dihapus
     const nextRemoved =
-      kind === 'kaosCat' ? [...removedKaosCats, String(value).toLowerCase()]
-      : kind === 'exclusiveCat' ? [...removedExclusiveCats, value]
-      : kind === 'cuttings' ? [...removedCuttings, value]
-      : [...removedMaterials, value];
+      kind === 'kaosCat' ? [...new Set([...removedKaosCats, lowerVal])]
+      : kind === 'exclusiveCat' ? [...new Set([...removedExclusiveCats, lowerVal])]
+      : kind === 'cuttings' ? [...new Set([...removedCuttings, lowerVal])]
+      : [...new Set([...removedMaterials, lowerVal])];
 
     const setterMap = {
       cuttings: setRemovedCuttings,
@@ -296,21 +244,20 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     setterMap[kind](nextRemoved);
     writeRemovedValues(conf.key, nextRemoved);
 
-    // Kalau nilai form saat ini adalah yang dihapus, pindahkan ke pilihan lain
-    if (String(conf.current || '').toLowerCase() === String(value).toLowerCase()) {
-      const remaining = conf.cleanList.find((item) => {
-        const itemVal = kind === 'kaosCat' ? String(item).toLowerCase() : item.value;
-        return String(itemVal).toLowerCase() !== String(value).toLowerCase();
-      });
-      const fallback =
-        kind === 'kaosCat'
-          ? remaining || 'KASUAL'
-          : kind === 'cuttings'
-          ? remaining?.value || 'oversized'
-          : kind === 'exclusiveCat'
-          ? remaining?.value || ''
-          : remaining || 'Cotton Combed 24s';
-      conf.setCurrent(fallback);
+    // 4. Update state lokal
+    if (kind === 'kaosCat') {
+      setKaosCategoriesList((prev) => prev.filter((c) => String(c).toLowerCase().trim() !== lowerVal));
+    } else if (kind === 'cuttings') {
+      setCuttingsList((prev) => prev.filter((c) => String(c.value).toLowerCase().trim() !== lowerVal));
+    } else if (kind === 'materials') {
+      setMaterialsList((prev) => prev.filter((m) => String(m).toLowerCase().trim() !== lowerVal));
+    } else if (kind === 'exclusiveCat') {
+      setExclusiveCategories((prev) => prev.filter((c) => String(c.value).toLowerCase().trim() !== lowerVal));
+    }
+
+    // 5. Jika nilai form saat ini adalah item yang dihapus, alihkan ke fallback
+    if (String(conf.current || '').toLowerCase().trim() === lowerVal) {
+      conf.setCurrent(conf.defaultFallback);
     }
   };
 
@@ -634,6 +581,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         // ignore
       }
     }
+    const lower = trimmed.toLowerCase();
+    if (removedMaterials.includes(lower)) {
+      const next = removedMaterials.filter((m) => m !== lower);
+      setRemovedMaterials(next);
+      writeRemovedValues(REMOVED_MATERIALS_KEY, next);
+    }
     setFormData((prev) => ({ ...prev, material: trimmed }));
     setNewMaterialInput('');
     setShowAddMaterial(false);
@@ -659,6 +612,11 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         // ignore
       }
     }
+    if (removedCuttings.includes(slug)) {
+      const next = removedCuttings.filter((c) => c !== slug);
+      setRemovedCuttings(next);
+      writeRemovedValues(REMOVED_CUTTINGS_KEY, next);
+    }
     setFormData((prev) => ({ ...prev, cutting_type: slug }));
     setNewCuttingInput('');
     setShowAddCutting(false);
@@ -676,6 +634,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       } catch {
         // ignore
       }
+    }
+    const lower = trimmed.toLowerCase();
+    if (removedKaosCats.includes(lower)) {
+      const next = removedKaosCats.filter((c) => c !== lower);
+      setRemovedKaosCats(next);
+      writeRemovedValues(REMOVED_KAOS_CAT_KEY, next);
     }
     setFormData((prev) => ({
       ...prev,
@@ -743,6 +707,11 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       } catch {
         // ignore
       }
+    }
+    if (removedExclusiveCats.includes(slug)) {
+      const next = removedExclusiveCats.filter((c) => c !== slug);
+      setRemovedExclusiveCats(next);
+      writeRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY, next);
     }
     setFormData((prev) => ({ ...prev, exclusive_category: slug }));
     setNewCategoryInput('');

@@ -27,6 +27,7 @@ import {
 import { useProducts } from '../context/ProductContext';
 import { formatRupiah, safeColors, computeDiscountInfo } from '../utils/helpers';
 import ProductFormModal from '../components/admin/ProductFormModal';
+import ManageCategoriesModal from '../components/admin/ManageCategoriesModal';
 
 // Urutan produk di slider [LIMITED EDITION] Homepage (disimpan lokal, diatur dari tabel admin)
 const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
@@ -80,6 +81,7 @@ export default function AdminDashboardPage() {
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
+  const [manageCategoriesModalOpen, setManageCategoriesModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
@@ -470,6 +472,15 @@ export default function AdminDashboardPage() {
               </button>
 
               <button
+                onClick={() => setManageCategoriesModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs sm:text-sm font-bold shadow-2xs transition-colors cursor-pointer"
+                title="Kelola & hapus kategori kaos, cutting, bahan, atau exclusive"
+              >
+                <Tag className="w-4 h-4 text-neutral-600" />
+                <span>Kelola Kategori</span>
+              </button>
+
+              <button
                 onClick={exportProductsJSON}
                 className="inline-flex items-center gap-1.5 px-3 py-2.5 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 hover:bg-neutral-50 transition-colors"
                 title="Unduh backup data JSON"
@@ -751,6 +762,14 @@ export default function AdminDashboardPage() {
             setEditingProduct(null);
           }}
           onSave={handleSaveProduct}
+        />
+      )}
+
+      {/* Manage Categories & Filters Modal */}
+      {manageCategoriesModalOpen && (
+        <ManageCategoriesModal
+          isOpen={manageCategoriesModalOpen}
+          onClose={() => setManageCategoriesModalOpen(false)}
         />
       )}
 
