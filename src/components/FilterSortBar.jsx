@@ -25,8 +25,8 @@ export default function FilterSortBar({
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 sm:mb-10">
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
+      {/* Filter Tabs (Horizontal Scrollbar Visible) */}
+      <div className="flex items-center gap-2 visible-horizontal-scrollbar pb-2.5">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.value;
           return (

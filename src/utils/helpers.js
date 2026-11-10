@@ -395,3 +395,86 @@ export function flattenProductsByColor(products) {
       };
     });
 }
+
+export const PRODUCT_CLICKS_KEY = 'kaos_dilio_product_clicks';
+
+/**
+ * Records a click event for a specific product and persists to localStorage
+ */
+export function recordProductClick(productId) {
+  if (!productId) return;
+  try {
+    const raw = localStorage.getItem(PRODUCT_CLICKS_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    map[productId] = (Number(map[productId]) || 0) + 1;
+    localStorage.setItem(PRODUCT_CLICKS_KEY, JSON.stringify(map));
+    window.dispatchEvent(new CustomEvent('kaos_dilio_click_updated', { detail: { productId, map } }));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Reads all product click records from localStorage
+ */
+export function getProductClicksMap() {
+  try {
+    const raw = localStorage.getItem(PRODUCT_CLICKS_KEY);
+    return raw && typeof JSON.parse(raw) === 'object' ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Resets product clicks counter
+ */
+export function resetProductClicks() {
+  try {
+    localStorage.removeItem(PRODUCT_CLICKS_KEY);
+    window.dispatchEvent(new CustomEvent('kaos_dilio_click_updated', { detail: { map: {} } }));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Parses and formats video URL (supports YouTube watch/shorts/youtu.be and direct mp4/webm/data)
+ */
+export function parseVideoMedia(url) {
+  if (!url || typeof url !== 'string') return null;
+  const clean = url.trim();
+  if (!clean) return null;
+
+  // 1. YouTube Shorts: e.g. https://youtube.com/shorts/sFuadTJm8bw?si=RUS9ZUBI9bgJ8EGW
+  const shortsMatch = clean.match(/(?:youtube\.com|youtu\.be)\/shorts\/([a-zA-Z0-9_-]{8,15})/i);
+  if (shortsMatch && shortsMatch[1]) {
+    return {
+      type: 'youtube',
+      videoId: shortsMatch[1],
+      embedUrl: `https://www.youtube-nocookie.com/embed/${shortsMatch[1]}?autoplay=1&rel=0`,
+      originalUrl: clean,
+    };
+  }
+
+  // 2. YouTube Standard: watch?v=... or youtu.be/... or embed/...
+  const ytMatch = clean.match(
+    /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{8,15})/i
+  );
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: 'youtube',
+      videoId: ytMatch[1],
+      embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0`,
+      originalUrl: clean,
+    };
+  }
+
+  // 3. Direct video (MP4, WebM, base64 data:video, etc.)
+  return {
+    type: 'direct',
+    embedUrl: clean,
+    originalUrl: clean,
+  };
+}
+

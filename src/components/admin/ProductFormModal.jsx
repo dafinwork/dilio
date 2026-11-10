@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2, Plus, Trash2, Star, Clock, Sparkles, Ruler } from 'lucide-react';
+import { X, Check, Loader2, Plus, Trash2, Star, Clock, Sparkles, Ruler, Video, Play } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { safeColors, formatNumberDots, parseNumberDots, computeDiscountInfo } from '../../utils/helpers';
 import { getStoredSizeCharts } from '../SizeChartModal';
@@ -63,6 +63,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     material: 'Cotton Combed 24s',
     priceText: '65.000',
     originalPriceText: '',
+    stock: 100,
+    video_url: '',
     description: '',
     image_url: '',
     images: [],
@@ -300,6 +302,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         material: product.material || 'Cotton Combed 24s',
         priceText: formatNumberDots(product.price || 0),
         originalPriceText: formatNumberDots(product.original_price || ''),
+        stock: typeof product.stock === 'number' ? product.stock : 100,
+        video_url: product.video_url || '',
         description: product.description || '',
         image_url: initialImages[0] || product.image_url || '',
         images: initialImages,
@@ -342,6 +346,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         material: 'Cotton Combed 24s',
         priceText: '185.000',
         originalPriceText: '220.000',
+        stock: 100,
+        video_url: '',
         description: 'Koleksi eksklusif limited edition dengan desain spesial dan bahan premium.',
         image_url: '',
         images: [],
@@ -371,6 +377,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         material: 'Cotton Combed 24s',
         priceText: '65.000',
         originalPriceText: '',
+        stock: 100,
+        video_url: '',
         description: 'Potongan longgar dengan drop shoulder, cocok untuk gaya streetwear.',
         image_url: '',
         images: [],
@@ -457,6 +465,53 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     }
 
     setIsUploading(false);
+  };
+
+  // Handle Video File Upload (MP4 / WebM)
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      alert('File video melebihi batas 50MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `video-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (!uploadError && uploadData) {
+        const { data: publicUrlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        if (publicUrlData?.publicUrl) {
+          setFormData((prev) => ({ ...prev, video_url: publicUrlData.publicUrl }));
+          setIsUploading(false);
+          return;
+        }
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, video_url: reader.result }));
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, video_url: reader.result }));
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Angle Image Upload (Belakang, Kiri, Kanan untuk Studio Custom)
@@ -794,9 +849,11 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
 
     const payload = {
       ...restData,
-      product_group: isExcl ? 'eksklusif' : 'harian',
+      product_group: isExcl ? 'eksklusif' : (formData.product_group === 'custom' ? 'custom' : 'harian'),
       price: numericPrice,
       original_price: numericOriginalPrice > 0 ? numericOriginalPrice : null,
+      stock: Math.max(0, parseInt(formData.stock, 10) || 0),
+      video_url: (formData.video_url || '').trim(),
       images: formData.images,
       image_url: formData.images[0] || formData.image_url || '',
       is_preorder: Boolean(formData.is_preorder),
@@ -809,7 +866,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       category_label: formData.category_label || 'KASUAL',
       size_chart: Array.isArray(formData.size_chart) ? formData.size_chart : [],
       sablon_type: null,
-      exclusive_category: isExcl ? formData.exclusive_category : null,
+      exclusive_category: null,
       placeholder_title: formData.placeholder_title || formData.name,
       colors: safeColors(formData.colors),
       mockup_angles: formData.is_customizable ? (formData.mockup_angles || null) : null,
@@ -980,6 +1037,25 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               )}
             </div>
 
+            {/* Jumlah Stok Produk */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                Jumlah Stok Produk (Pcs)
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="stock"
+                value={formData.stock ?? 100}
+                onChange={handleChange}
+                placeholder="100"
+                className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl font-bold text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900 text-xs sm:text-sm"
+              />
+              <span className="text-[10px] text-neutral-400 mt-1 block">
+                Jumlah stok fisik yang tersedia untuk kaos ini (akan diakumulasi ke Total Stok di Dashboard).
+              </span>
+            </div>
+
             {/* Ceklis 1: Pre-Order Toggle & Duration */}
             <div className="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80 space-y-2">
               <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
@@ -1022,118 +1098,33 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Khusus Form Katalog Exclusive: Pilihan Kategori dibuat ceklis (seperti Pre-Order) */}
-            {formData.product_group === 'eksklusif' && (
-              <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/80 space-y-2">
-                <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formData.exclusive_category)}
-                    onChange={(e) => {
-                      if (!e.target.checked) {
-                        setFormData((prev) => ({ ...prev, exclusive_category: '' }));
-                      } else {
-                        const firstCat = cleanExclusiveCategories[0]?.value || '';
-                        setFormData((prev) => ({ ...prev, exclusive_category: firstCat }));
-                      }
-                    }}
-                    className="w-4 h-4 rounded text-neutral-900 focus:ring-neutral-900"
-                  />
-                  <span>👑 Kategori Khusus Exclusive</span>
-                </label>
+            {/* Ceklis 2: Kategori Khusus Exclusive (Foto 1 - disederhanakan cukup ceklis saja) */}
+            <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/80 space-y-1">
+              <label className="inline-flex items-center gap-2 cursor-pointer font-bold text-neutral-900 text-xs uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  name="is_exclusive"
+                  checked={Boolean(formData.is_exclusive || formData.product_group === 'eksklusif')}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFormData((prev) => ({
+                      ...prev,
+                      is_exclusive: checked,
+                      product_group: checked ? 'eksklusif' : (prev.product_group === 'eksklusif' ? 'harian' : prev.product_group),
+                      exclusive_category: null,
+                    }));
+                  }}
+                  className="w-4 h-4 rounded text-neutral-900 focus:ring-neutral-900"
+                />
+                <span>👑 Kategori Khusus Exclusive</span>
+              </label>
 
-                <p className="text-[10px] text-neutral-500">
-                  {Boolean(formData.exclusive_category)
-                    ? 'Baju akan masuk ke tab kategori yang dipilih di bawah.'
-                    : 'Kosongkan jika baju eksklusif ini tidak ada kategori khusus (langsung tampil di "Semua").'}
-                </p>
-
-                {Boolean(formData.exclusive_category) && (
-                  <div className="space-y-2 pt-1 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-[11px] font-bold text-neutral-700">
-                        Pilih Kategori:
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowAddCategory(!showAddCategory)}
-                          className="text-[10px] font-bold text-neutral-900 hover:underline flex items-center gap-0.5 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Tambah</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowManageExclusiveCat(!showManageExclusiveCat)}
-                          className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Kelola</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <select
-                      name="exclusive_category"
-                      value={formData.exclusive_category}
-                      onChange={handleChange}
-                      className="w-full px-3 py-1.5 bg-white border border-neutral-300 rounded-xl font-medium text-xs focus:ring-2 focus:ring-neutral-900"
-                    >
-                      {cleanExclusiveCategories.map((cat) => (
-                        <option key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    {showManageExclusiveCat && (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex flex-wrap gap-1.5">
-                          {cleanExclusiveCategories.map((cat) => (
-                            <span
-                              key={cat.value}
-                              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-white border border-neutral-200 rounded-full text-[10px] font-semibold text-neutral-800"
-                            >
-                              {cat.label}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDeleteListItem({ kind: 'exclusiveCat', value: cat.value })
-                                }
-                                className="p-0.5 text-neutral-400 hover:text-red-600 rounded cursor-pointer"
-                                title={`Hapus ${cat.label}`}
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {showAddCategory && (
-                      <div className="flex gap-1.5 pt-1">
-                        <input
-                          type="text"
-                          value={newCategoryInput}
-                          onChange={(e) => setNewCategoryInput(e.target.value)}
-                          placeholder="Nama kategori exclusive baru..."
-                          className="flex-1 px-2.5 py-1 bg-white border border-neutral-300 rounded-lg text-xs"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddNewCategory}
-                          className="px-2.5 py-1 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-neutral-800 cursor-pointer"
-                        >
-                          Simpan
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+              <p className="text-[10px] text-neutral-500">
+                {Boolean(formData.is_exclusive || formData.product_group === 'eksklusif')
+                  ? 'Baju akan masuk ke tab kategori Exclusive di katalog utama.'
+                  : 'Centang jika produk ini merupakan koleksi limited edition / exclusive.'}
+              </p>
+            </div>
 
             {/* Ceklis 3: Fitur Desain Custom Kaos Ini + Upload Sudut Mockup */}
             <div className={`bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 space-y-3 ${formData.product_group === "eksklusif" ? "sm:col-span-2" : "sm:col-span-1"}`}>
@@ -1728,6 +1719,67 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* Video Produk (Opsional - YouTube Link atau Upload Video) */}
+                <div className="bg-white p-3.5 rounded-xl border border-neutral-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Video className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Video Produk (Opsional - Link YouTube atau Upload File)</span>
+                    </label>
+                    {formData.video_url && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, video_url: '' }))}
+                        className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Hapus Video</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <span className="block text-[10px] font-semibold text-neutral-500 mb-1">
+                        Pilihan 1: Masukkan Link YouTube / MP4 Online
+                      </span>
+                      <input
+                        type="url"
+                        value={formData.video_url && !formData.video_url.startsWith('data:video') ? formData.video_url : ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, video_url: e.target.value }))}
+                        placeholder="https://youtube.com/watch?v=... atau https://...mp4"
+                        className="w-full px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs font-medium focus:bg-white focus:ring-2 focus:ring-neutral-900"
+                      />
+                    </div>
+
+                    <div>
+                      <span className="block text-[10px] font-semibold text-neutral-500 mb-1">
+                        Pilihan 2: Upload File Video (.mp4, .webm)
+                      </span>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        disabled={isUploading}
+                        onChange={handleVideoUpload}
+                        className="w-full text-xs text-neutral-600 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-800 cursor-pointer disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  {formData.video_url && (
+                    <div className="p-2 bg-purple-50 rounded-lg border border-purple-200/80 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-purple-600 text-white flex items-center justify-center shrink-0">
+                        <Play className="w-3 h-3 fill-white" />
+                      </div>
+                      <span className="text-[11px] font-bold text-purple-900 truncate flex-1">
+                        {formData.video_url.startsWith('data:video')
+                          ? 'File video lokal terlampir'
+                          : formData.video_url}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Uploaded Images Gallery Grid */}

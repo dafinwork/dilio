@@ -2,6 +2,7 @@
  * Category, Cutting, Material, and Exclusive Category Manager
  * Centralizes defaults, persistence, and synchronization with products
  */
+import { computeDiscountInfo, normalizeCutting } from './helpers';
 
 export const DEFAULT_MATERIALS = [
   'Heavyweight 16s',
@@ -197,4 +198,106 @@ export function getAllExclusiveCategories(products = [], currentVal = null) {
   }
 
   return Array.from(map.values());
+}
+
+export const IGNORED_MATERIAL_LABELS = new Set([
+  'cotton combed 24s',
+  'cotton combed 20s',
+  'cotton combed 30s',
+  'heavyweight 16s',
+  'heavyweight cotton 16s',
+  'washed cotton 20s',
+  'partner brand',
+  'limited collab',
+  'limited edition',
+  'graphic tees',
+  'basic',
+  'streetwear',
+]);
+
+export function getAppCategoryTabs(products = []) {
+  let removedCats = [];
+  try {
+    const removed = JSON.parse(localStorage.getItem(REMOVED_KAOS_CAT_KEY));
+    if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase().trim());
+  } catch {}
+
+  const baseTabs = [
+    { label: 'Semua Kategori', value: 'all' },
+    { label: '👕 Kaos Harian', value: 'harian' },
+    { label: '✨ Kaos Custom', value: 'custom' },
+    { label: '👑 Exclusive', value: 'exclusive' },
+    { label: '🏷️ SALE!', value: 'sale' },
+  ].filter((t) => t.value === 'all' || !removedCats.includes(t.value));
+
+  const known = new Set(baseTabs.map((t) => t.value));
+  known.add('eksklusif');
+  known.add('casual');
+
+  const addTab = (raw) => {
+    if (!raw || typeof raw !== 'string') return;
+    const trimmed = raw.trim();
+    const lower = trimmed.toLowerCase();
+    if (!lower || known.has(lower) || IGNORED_MATERIAL_LABELS.has(lower)) return;
+    if (removedCats.includes(lower)) return;
+    known.add(lower);
+    const label = trimmed.replace(/\b\w/g, (c) => c.toUpperCase());
+    baseTabs.push({ label, value: lower });
+  };
+
+  try {
+    const saved = localStorage.getItem(CUSTOM_KAOS_CAT_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) parsed.forEach(addTab);
+    }
+  } catch {}
+
+  (products || []).forEach((p) => {
+    addTab(p.kaos_category);
+    addTab(p.category_label);
+  });
+
+  return baseTabs;
+}
+
+export function filterMatchesCategory(p, targetCat) {
+  if (!targetCat || targetCat === 'all') return true;
+  const target = targetCat.toLowerCase().trim();
+
+  // Special Tab: SALE!
+  if (target === 'sale') {
+    return computeDiscountInfo(p.price, p.original_price).hasDiscount;
+  }
+
+  // Special Tab: Exclusive
+  if (target === 'exclusive' || target === 'eksklusif') {
+    return Boolean(p.is_exclusive || p.product_group === 'eksklusif');
+  }
+
+  // Special Tab: Kaos Harian
+  if (target === 'harian') {
+    return (
+      p.product_group === 'harian' ||
+      (!p.is_exclusive && p.product_group !== 'eksklusif' && p.product_group !== 'custom')
+    );
+  }
+
+  // Special Tab: Kaos Custom
+  if (target === 'custom') {
+    return p.product_group === 'custom' || Boolean(p.is_customizable);
+  }
+
+  const rawCat = (p.kaos_category || p.category_label || '').toLowerCase().trim();
+  if (target === 'kasual' || target === 'casual') {
+    return (
+      rawCat === 'kasual' ||
+      rawCat === 'casual' ||
+      rawCat.includes('kasual') ||
+      rawCat.includes('casual') ||
+      normalizeCutting(p.cutting_type) === 'kasual'
+    );
+  }
+
+  return rawCat === target || rawCat.includes(target) || normalizeCutting(p.cutting_type) === target;
 }

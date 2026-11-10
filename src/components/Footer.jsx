@@ -132,11 +132,18 @@ export default function Footer() {
 
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
-          <p>© {new Date().getFullYear()} Kaos Dilio - Kaos Polos Custom. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-neutral-500">
-            <Link to="/admin" className="hover:text-white transition-colors flex items-center gap-1">
-              <span>🔐 CMS Admin Panel</span>
+          <p>
+            © {new Date().getFullYear()} Kaos Dilio - Kaos Polos Custom. All rights reserved
+            <Link
+              to="/admin"
+              className="text-neutral-500 hover:text-neutral-400 cursor-default select-none transition-colors"
+              title=""
+            >
+              .
             </Link>
+          </p>
+          <div className="text-neutral-500 text-[11px]">
+            <span>Solusi Kaos Polos &amp; Sablon Terpercaya</span>
           </div>
         </div>
       </div>

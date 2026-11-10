@@ -8,6 +8,7 @@ import ProductModal from '../components/ProductModal';
 import ShopeeColorFilter from '../components/ShopeeColorFilter';
 import { useProducts } from '../context/ProductContext';
 import { readCatalogOrderMap } from '../components/admin/SliderReorderModal';
+import { getAppCategoryTabs, filterMatchesCategory } from '../utils/categoryManager';
 import {
   extractUniqueColorsFromProducts,
   normalizeCutting,
@@ -16,30 +17,6 @@ import {
   getClosestColorId,
   computeDiscountInfo,
 } from '../utils/helpers';
-
-const DEFAULT_CATEGORY_TABS = [
-  { label: 'Semua Kategori', value: 'all' },
-  { label: '🏷️ SALE!', value: 'sale' },
-  { label: '👑 Exclusive', value: 'exclusive' },
-  { label: 'Polo', value: 'polo' },
-  { label: 'Hoodie', value: 'hoodie' },
-  { label: 'Kasual', value: 'kasual' },
-];
-
-const IGNORED_MATERIAL_LABELS = new Set([
-  'cotton combed 24s',
-  'cotton combed 20s',
-  'cotton combed 30s',
-  'heavyweight 16s',
-  'heavyweight cotton 16s',
-  'washed cotton 20s',
-  'partner brand',
-  'limited collab',
-  'limited edition',
-  'graphic tees',
-  'basic',
-  'streetwear',
-]);
 
 export default function HomePage() {
   const { products: allProducts } = useProducts();
@@ -116,54 +93,8 @@ export default function HomePage() {
     setSearchParams({});
   };
 
-  // Top Category Tabs
-  const categoryTabs = useMemo(() => {
-    let removedCats = [];
-    try {
-      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_kaos_categories'));
-      if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase());
-    } catch {
-      // ignore
-    }
-
-    const tabs = DEFAULT_CATEGORY_TABS.filter((t) => !removedCats.includes(t.value));
-    const known = new Set(tabs.map((t) => t.value));
-    known.add('casual');
-
-    const addTabIfNew = (rawCat) => {
-      if (!rawCat || typeof rawCat !== 'string') return;
-      const trimmed = rawCat.trim();
-      const lower = trimmed.toLowerCase();
-      if (!lower || known.has(lower) || IGNORED_MATERIAL_LABELS.has(lower)) return;
-      if (removedCats.includes(lower)) return;
-      known.add(lower);
-      const formattedLabel = trimmed
-        .toLowerCase()
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      tabs.push({
-        label: formattedLabel,
-        value: lower,
-      });
-    };
-
-    try {
-      const savedCats = localStorage.getItem('kaos_dilio_custom_kaos_categories');
-      if (savedCats) {
-        const parsed = JSON.parse(savedCats);
-        if (Array.isArray(parsed)) {
-          parsed.forEach(addTabIfNew);
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    allProducts.forEach((p) => {
-      addTabIfNew(p.kaos_category || p.category_label);
-    });
-
-    return tabs;
-  }, [allProducts]);
+  // Top Category Tabs (Synchronized with Admin)
+  const categoryTabs = useMemo(() => getAppCategoryTabs(allProducts), [allProducts]);
 
   // Sidebar Cutting Options
   const cuttingOptions = useMemo(() => {
@@ -244,34 +175,6 @@ export default function HomePage() {
     return counts;
   }, [flattenedCatalog, cuttingOptions]);
 
-  const matchesCategory = (p, targetCat) => {
-    if (!targetCat || targetCat === 'all') return true;
-    const target = targetCat.toLowerCase().trim();
-
-    // Special Tab: SALE!
-    if (target === 'sale') {
-      const { hasDiscount } = computeDiscountInfo(p.price, p.original_price);
-      return hasDiscount;
-    }
-
-    // Special Tab: Exclusive
-    if (target === 'exclusive' || target === 'eksklusif') {
-      return Boolean(p.is_exclusive || p.product_group === 'eksklusif');
-    }
-
-    const rawCat = (p.kaos_category || p.category_label || '').toLowerCase().trim();
-    if (target === 'kasual' || target === 'casual') {
-      return (
-        rawCat === 'kasual' ||
-        rawCat === 'casual' ||
-        rawCat.includes('kasual') ||
-        rawCat.includes('casual') ||
-        normalizeCutting(p.cutting_type) === 'kasual'
-      );
-    }
-    return rawCat === target || rawCat.includes(target) || normalizeCutting(p.cutting_type) === target;
-  };
-
   // Dynamic count of products per color in current scope
   const colorCounts = useMemo(() => {
     const counts = {};
@@ -282,7 +185,7 @@ export default function HomePage() {
 
     let scopeProducts = flattenedCatalog;
     if (activeCategory !== 'all') {
-      scopeProducts = scopeProducts.filter((p) => matchesCategory(p, activeCategory));
+      scopeProducts = scopeProducts.filter((p) => filterMatchesCategory(p, activeCategory));
     }
     if (activeCutting !== 'all') {
       scopeProducts = scopeProducts.filter(
@@ -315,7 +218,7 @@ export default function HomePage() {
 
     // 1. Filter by Top Category Tabs
     if (activeCategory !== 'all') {
-      list = list.filter((p) => matchesCategory(p, activeCategory));
+      list = list.filter((p) => filterMatchesCategory(p, activeCategory));
     }
 
     // 2. Filter by Sidebar Tshirt Cut

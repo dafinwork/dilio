@@ -57,6 +57,8 @@ const sanitizeProduct = (p) => {
     extra_colors_count: Number(p.extra_colors_count) || 0,
     colors: safeColors(p.colors),
     is_new: Boolean(p.is_new),
+    stock: typeof p.stock === 'number' ? p.stock : 100,
+    video_url: p.video_url || null,
     is_exclusive: Boolean(p.is_exclusive || p.product_group === 'eksklusif'),
     is_customizable:
       typeof p.is_customizable === 'boolean'
@@ -143,6 +145,13 @@ export function ProductProvider({ children }) {
                   ? localItem.images
                   : cloudRow.images,
               original_price: cloudRow.original_price ?? localItem.original_price ?? null,
+              stock:
+                typeof localItem.stock === 'number'
+                  ? localItem.stock
+                  : typeof cloudRow.stock === 'number'
+                  ? cloudRow.stock
+                  : 100,
+              video_url: (localItem.video_url || cloudRow.video_url || '').trim() || null,
               is_preorder:
                 cloudRow.is_preorder !== undefined ? cloudRow.is_preorder : localItem.is_preorder,
               preorder_duration: cloudRow.preorder_duration || localItem.preorder_duration || '',
@@ -155,9 +164,18 @@ export function ProductProvider({ children }) {
             });
           });
 
+          const cloudIds = new Set(data.map((c) => c.id));
+          const localOnly = [];
+          localMap.forEach((localItem, id) => {
+            if (!cloudIds.has(id)) {
+              localOnly.push(localItem);
+            }
+          });
+          const allMerged = [...localOnly, ...merged];
+
           if (isMounted) {
-            setProducts(merged);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+            setProducts(allMerged);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allMerged));
             setCloudStatus('connected');
           }
         } else {
@@ -330,6 +348,8 @@ export function ProductProvider({ children }) {
       placeholder_bg: p.placeholder_bg || '#E5E7EB',
       placeholder_text_color: p.placeholder_text_color || '#374151',
       extra_colors_count: Number(p.extra_colors_count) || 0,
+      stock: typeof p.stock === 'number' ? p.stock : 100,
+      video_url: (p.video_url || '').trim() || null,
       mockup_angles:
         p.mockup_angles && typeof p.mockup_angles === 'object' ? p.mockup_angles : null,
       created_at: p.created_at || new Date().toISOString(),
@@ -351,17 +371,16 @@ export function ProductProvider({ children }) {
       created_at: new Date().toISOString(),
     });
 
-    // Optimistic local state update
-    setProducts((prev) => [newProduct, ...prev]);
-
-    // Save to localStorage immediately
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([newProduct, ...parsed]));
-    } catch (e) {
-      console.warn('LocalStorage save warning:', e);
-    }
+    // Optimistic local state update and immediate localStorage persistence
+    setProducts((prev) => {
+      const next = [newProduct, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {
+        console.warn('LocalStorage save warning:', e);
+      }
+      return next;
+    });
 
     // Direct sync to Supabase Cloud
     try {
@@ -377,6 +396,8 @@ export function ProductProvider({ children }) {
           size_chart: _sc,
           mockup_angles: _ma,
           is_customizable: _ic,
+          stock: _st,
+          video_url: _vu,
           ...cloudSafe
         } = newProduct;
         await supabase.from('products').insert([cloudSafe]);
@@ -391,8 +412,8 @@ export function ProductProvider({ children }) {
   // Update existing product
   const updateProduct = async (id, updatedFields) => {
     let finalUpdated = null;
-    setProducts((prev) =>
-      prev.map((item) => {
+    setProducts((prev) => {
+      const next = prev.map((item) => {
         if (item.id === id) {
           finalUpdated = toDatabasePayload({
             ...item,
@@ -401,8 +422,14 @@ export function ProductProvider({ children }) {
           return finalUpdated;
         }
         return item;
-      })
-    );
+      });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {
+        console.warn('LocalStorage save warning:', e);
+      }
+      return next;
+    });
 
     // Direct sync to Supabase Cloud
     try {
@@ -419,6 +446,8 @@ export function ProductProvider({ children }) {
             size_chart: _sc,
             mockup_angles: _ma,
             is_customizable: _ic,
+            stock: _st,
+            video_url: _vu,
             ...cloudSafe
           } = finalUpdated;
           await supabase.from('products').update(cloudSafe).eq('id', id);
@@ -433,7 +462,15 @@ export function ProductProvider({ children }) {
 
   // Delete product
   const deleteProduct = async (id) => {
-    setProducts((prev) => prev.filter((item) => item.id !== id));
+    setProducts((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {
+        console.warn('LocalStorage save warning:', e);
+      }
+      return next;
+    });
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) {

@@ -1,10 +1,25 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatRupiah, computeDiscountInfo } from '../utils/helpers';
+import { formatRupiah, computeDiscountInfo, recordProductClick } from '../utils/helpers';
 
 export default function ProductCard({ product, onSelect }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+
+  const handleClick = () => {
+    if (product?.id) {
+      recordProductClick(product.id);
+    }
+    if (onSelect) onSelect(product);
+  };
+
+  const handleOpenVideo = (e) => {
+    e.stopPropagation();
+    if (product?.id) {
+      recordProductClick(product.id);
+    }
+    if (onSelect) onSelect({ ...product, initialViewMode: 'video' });
+  };
 
   // Resolve images list safely before any hook or return
   const images =
@@ -34,7 +49,7 @@ export default function ProductCard({ product, onSelect }) {
 
   return (
     <div
-      onClick={() => onSelect && onSelect(product)}
+      onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -61,7 +76,30 @@ export default function ProductCard({ product, onSelect }) {
               New
             </span>
           )}
+          {product.video_url && (
+            <button
+              type="button"
+              onClick={handleOpenVideo}
+              className="px-2 py-0.5 bg-red-600 text-white text-[9px] font-black tracking-wider rounded-sm shadow-xs uppercase flex items-center gap-1 cursor-pointer hover:bg-red-700 transition-colors"
+              title="Putar video produk"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+              <span>▶ Video</span>
+            </button>
+          )}
         </div>
+
+        {/* Hover Video Indicator */}
+        {product.video_url && (
+          <div className="absolute inset-0 z-15 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+            <div className="px-3 py-1.5 bg-neutral-900/85 backdrop-blur-xs rounded-full text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg border border-white/20">
+              <span className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-[9px] font-bold leading-none">
+                ▶
+              </span>
+              <span>Lihat Video</span>
+            </div>
+          </div>
+        )}
 
         {/* Floating Badges Right (Pre-Order matching Image 2, Discount & Multi-image count) */}
         <div className="absolute top-3.5 right-3.5 z-10 flex flex-col gap-1.5 items-end">

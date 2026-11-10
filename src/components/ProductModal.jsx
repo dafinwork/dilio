@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush } from 'lucide-react';
-import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting, computeDiscountInfo } from '../utils/helpers';
+import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush, Play } from 'lucide-react';
+import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting, computeDiscountInfo, parseVideoMedia } from '../utils/helpers';
 import SizeChartModal from './SizeChartModal';
 
 export default function ProductModal({ product, onClose }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [viewMode, setViewMode] = useState('image'); // 'image' | 'video'
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     setActiveImageIndex(0);
+    setViewMode(product?.initialViewMode || 'image');
   }, [product]);
 
   useEffect(() => {
@@ -29,14 +31,16 @@ export default function ProductModal({ product, onClose }) {
       ? [product.image_url]
       : [];
 
-  // Auto-slide every 3.5 seconds if product has multiple photos (pauses on hover)
+  const videoMedia = useMemo(() => parseVideoMedia(product?.video_url), [product?.video_url]);
+
+  // Auto-slide every 3.5 seconds if product has multiple photos (pauses on hover or when video active)
   useEffect(() => {
-    if (!product || images.length <= 1 || isPaused) return;
+    if (!product || images.length <= 1 || isPaused || viewMode === 'video') return;
     const timer = setInterval(() => {
       setActiveImageIndex((prev) => (prev + 1) % images.length);
     }, 3500);
     return () => clearInterval(timer);
-  }, [product, images.length, isPaused]);
+  }, [product, images.length, isPaused, viewMode]);
 
   // Early return ONLY after all hooks have been declared unconditionally
   if (!product) return null;
@@ -48,12 +52,14 @@ export default function ProductModal({ product, onClose }) {
 
   const nextImage = () => {
     if (images.length > 1) {
+      setViewMode('image');
       setActiveImageIndex((prev) => (prev + 1) % images.length);
     }
   };
 
   const prevImage = () => {
     if (images.length > 1) {
+      setViewMode('image');
       setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
     }
   };
@@ -153,7 +159,29 @@ export default function ProductModal({ product, onClose }) {
                 )}
 
                 {/* Main Visual Display - matches ProductCard 1:1 (object-cover edge-to-edge without padding) */}
-                {currentImage ? (
+                {viewMode === 'video' && videoMedia ? (
+                  videoMedia.type === 'youtube' ? (
+                    <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+                      <iframe
+                        src={videoMedia.embedUrl}
+                        title={`${product.name} Video`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+                      <video
+                        src={videoMedia.embedUrl}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  )
+                ) : currentImage ? (
                   <img
                     src={currentImage}
                     alt={`${product.name} foto ${activeImageIndex + 1}`}
@@ -168,8 +196,8 @@ export default function ProductModal({ product, onClose }) {
                   </div>
                 )}
 
-                {/* Left / Right Arrow Buttons if multiple images */}
-                {images.length > 1 && (
+                {/* Left / Right Arrow Buttons if multiple images (only in image mode) */}
+                {viewMode === 'image' && images.length > 1 && (
                   <>
                     <button
                       type="button"
@@ -197,16 +225,19 @@ export default function ProductModal({ product, onClose }) {
                 )}
               </div>
 
-              {/* Multi-Image Thumbnail Row */}
-              {images.length > 1 && (
+              {/* Multi-Media Thumbnail Row (Photos + Video) */}
+              {(images.length > 1 || Boolean(videoMedia)) && (
                 <div className="p-3 bg-white border-t border-neutral-100 flex items-center gap-2 overflow-x-auto scrollbar-none">
                   {images.map((imgUrl, idx) => (
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setActiveImageIndex(idx)}
+                      onClick={() => {
+                        setViewMode('image');
+                        setActiveImageIndex(idx);
+                      }}
                       className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                        activeImageIndex === idx
+                        viewMode === 'image' && activeImageIndex === idx
                           ? 'border-neutral-900 scale-105 shadow-xs'
                           : 'border-neutral-200 opacity-60 hover:opacity-100'
                       }`}
@@ -218,6 +249,24 @@ export default function ProductModal({ product, onClose }) {
                       />
                     </button>
                   ))}
+
+                  {videoMedia && (
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('video')}
+                      className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer flex flex-col items-center justify-center bg-neutral-900 text-white ${
+                        viewMode === 'video'
+                          ? 'border-purple-600 ring-2 ring-purple-500 scale-105 shadow-xs bg-purple-950'
+                          : 'border-neutral-700 opacity-80 hover:opacity-100'
+                      }`}
+                      title="Tonton Video Produk"
+                    >
+                      <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                      <span className="text-[9px] font-black uppercase tracking-wider mt-0.5 text-purple-200">
+                        Video
+                      </span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

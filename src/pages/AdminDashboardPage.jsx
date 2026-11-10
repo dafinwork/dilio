@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -22,9 +22,23 @@ import {
   Clock,
   Tag,
   Image as ImageIcon,
+  Package,
+  MousePointerClick,
+  BarChart3,
+  Video,
+  Play,
+  X,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
-import { formatRupiah, safeColors, computeDiscountInfo } from '../utils/helpers';
+import {
+  formatRupiah,
+  safeColors,
+  computeDiscountInfo,
+  formatNumberDots,
+  getProductClicksMap,
+  resetProductClicks,
+} from '../utils/helpers';
+import { getAppCategoryTabs, filterMatchesCategory } from '../utils/categoryManager';
 import ProductFormModal from '../components/admin/ProductFormModal';
 import SliderReorderModal from '../components/admin/SliderReorderModal';
 import BannerSettingsModal from '../components/admin/BannerSettingsModal';
@@ -101,21 +115,50 @@ export default function AdminDashboardPage() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  // Stats calculation
+  // Product Clicks tracking & Ranking Modal state
+  const [clicksMap, setClicksMap] = useState(() => getProductClicksMap());
+  const [isClicksRankingOpen, setIsClicksRankingOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClicksChange = () => setClicksMap(getProductClicksMap());
+    window.addEventListener('kaos_dilio_click_updated', handleClicksChange);
+    return () => window.removeEventListener('kaos_dilio_click_updated', handleClicksChange);
+  }, []);
+
+  // Stats calculation (Foto 3: TOTAL PRODUK, TOTAL STOK, KAOS CUSTOM)
   const stats = useMemo(() => {
+    const totalStock = products.reduce(
+      (acc, p) => acc + (typeof p.stock === 'number' ? p.stock : 100),
+      0
+    );
     return {
       total: products.length,
+      totalStock,
       harian: products.filter((p) => p.product_group === 'harian').length,
       custom: products.filter((p) => p.product_group === 'custom').length,
       eksklusif: products.filter((p) => p.product_group === 'eksklusif').length,
     };
   }, [products]);
 
+  // Ranking data for product clicks
+  const rankingData = useMemo(() => {
+    const list = products.map((p) => ({
+      product: p,
+      clicks: Number(clicksMap[p.id]) || 0,
+    }));
+    list.sort((a, b) => b.clicks - a.clicks);
+    const totalClicks = list.reduce((acc, item) => acc + item.clicks, 0);
+    const topItem = list[0] && list[0].clicks > 0 ? list[0] : null;
+    return { list, totalClicks, topItem };
+  }, [products, clicksMap]);
+
+  // Categories list synchronized with Homepage
+  const categoryTabs = useMemo(() => getAppCategoryTabs(products), [products]);
+
   // Filtered products list
   const filteredProducts = useMemo(() => {
     return products.filter((item) => {
-      const matchCategory =
-        categoryFilter === 'all' || item.product_group === categoryFilter;
+      const matchCategory = filterMatchesCategory(item, categoryFilter);
 
       const query = searchQuery.toLowerCase().trim();
       const matchSearch =
@@ -369,7 +412,7 @@ export default function AdminDashboardPage() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4 sm:space-y-5">
-        {/* Stats Row */}
+        {/* Stats Row - Foto 3: TOTAL PRODUK, TOTAL STOK, KAOS CUSTOM + Tracker Klik */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
             <div className="flex items-center justify-between text-neutral-400 mb-1.5">
@@ -381,26 +424,51 @@ export default function AdminDashboardPage() {
 
           <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
             <div className="flex items-center justify-between text-neutral-400 mb-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Kaos Harian</span>
-              <Shirt className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Total Stok</span>
+              <Package className="w-3.5 h-3.5 text-blue-600" />
             </div>
-            <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.harian}</p>
+            <div className="flex items-baseline gap-1">
+              <p className="text-xl sm:text-2xl font-black text-neutral-900">
+                {formatNumberDots(stats.totalStock)}
+              </p>
+              <span className="text-xs font-bold text-neutral-500">Pcs</span>
+            </div>
           </div>
 
           <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
             <div className="flex items-center justify-between text-neutral-400 mb-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider">Kaos Custom</span>
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             </div>
             <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.custom}</p>
           </div>
 
-          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
-            <div className="flex items-center justify-between text-neutral-400 mb-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Limited Edition (Banner)</span>
-              <Crown className="w-3.5 h-3.5" />
+          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/80 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-neutral-400 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Produk Terpopuler</span>
+                <MousePointerClick className="w-3.5 h-3.5 text-purple-600" />
+              </div>
+              <p
+                className="text-xs sm:text-sm font-black text-neutral-900 truncate"
+                title={rankingData.topItem ? rankingData.topItem.product.name : 'Belum ada klik'}
+              >
+                {rankingData.topItem ? rankingData.topItem.product.name : 'Belum Ada Klik'}
+              </p>
+              <span className="text-[10px] text-neutral-500 font-semibold block mt-0.5">
+                {rankingData.topItem
+                  ? `${rankingData.topItem.clicks} klik (${rankingData.totalClicks} total)`
+                  : 'Klik produk di katalog'}
+              </span>
             </div>
-            <p className="text-xl sm:text-2xl font-black text-neutral-900">{stats.eksklusif}</p>
+            <button
+              type="button"
+              onClick={() => setIsClicksRankingOpen(true)}
+              className="mt-1.5 text-[10px] font-bold text-purple-700 hover:text-purple-900 hover:underline inline-flex items-center gap-1 cursor-pointer self-start"
+            >
+              <BarChart3 className="w-3 h-3" />
+              <span>Lihat Ranking Klik</span>
+            </button>
           </div>
         </div>
 
@@ -486,20 +554,18 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-neutral-100 scrollbar-none">
-            {[
-              { label: 'Semua Kategori', value: 'all' },
-              { label: '👕 Kaos Harian', value: 'harian' },
-              { label: '✨ Kaos Custom', value: 'custom' },
-              { label: '👑 Limited Edition (Banner Exclusive)', value: 'eksklusif' },
-            ].map((tab) => {
-              const isActive = categoryFilter === tab.value;
+          {/* Category Filter Pills (Seragam dengan Homepage + Scrollbar Horizontal Terlihat) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-neutral-100 visible-horizontal-scrollbar pb-2.5">
+            {categoryTabs.map((tab) => {
+              const isActive =
+                categoryFilter === tab.value ||
+                (tab.value === 'exclusive' && categoryFilter === 'eksklusif') ||
+                (tab.value === 'eksklusif' && categoryFilter === 'exclusive');
               return (
                 <button
                   key={tab.value}
                   onClick={() => setCategoryFilter(tab.value)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-neutral-900 text-white shadow-2xs'
                       : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70 hover:text-neutral-900'
@@ -577,6 +643,12 @@ export default function AdminDashboardPage() {
                             <span>PO</span>
                           </span>
                         )}
+                        {item.video_url && (
+                          <span className="inline-flex items-center gap-0.5 px-1 py-0.2 bg-purple-100 text-purple-800 text-[8px] font-black rounded-xs">
+                            <Play className="w-2 h-2 fill-purple-800" />
+                            <span>VIDEO</span>
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-[11px] text-neutral-500 space-y-0.5">
@@ -589,7 +661,7 @@ export default function AdminDashboardPage() {
                           )}
                         </p>
                         <p className="truncate text-neutral-400 text-[10px]">
-                          {item.material || '-'}{item.category_label ? ` • ${item.category_label}` : ''}
+                          {item.material || '-'}{item.category_label ? ` • ${item.category_label}` : ''} • <span className="font-bold text-neutral-600">Stok: {item.stock ?? 100} pcs</span>
                         </p>
                       </div>
 
@@ -749,6 +821,12 @@ export default function AdminDashboardPage() {
                                   <span>PO</span>
                                 </span>
                               )}
+                              {item.video_url && (
+                                <span className="inline-flex items-center gap-0.5 px-1 py-0.2 bg-purple-100 text-purple-800 text-[8px] font-black rounded-xs">
+                                  <Play className="w-2 h-2 fill-purple-800" />
+                                  <span>VIDEO</span>
+                                </span>
+                              )}
                             </div>
                             <span className="text-[10px] text-neutral-400 font-mono block mt-0.5">
                               {item.id}
@@ -767,14 +845,16 @@ export default function AdminDashboardPage() {
                         </span>
                       </td>
 
-                      {/* Material */}
+                      {/* Material & Stock */}
                       <td className="py-2 px-3">
                         <span className="font-medium text-neutral-700 block text-xs">
                           {item.material || '-'}
                         </span>
-                        <span className="text-[10px] text-neutral-400">
-                          {item.category_label || '-'}
-                        </span>
+                        <div className="flex items-center gap-1 text-[10px] text-neutral-400 mt-0.5">
+                          <span>{item.category_label || '-'}</span>
+                          <span>•</span>
+                          <span className="font-bold text-neutral-600">Stok: {item.stock ?? 100} pcs</span>
+                        </div>
                       </td>
 
                       {/* Price */}
@@ -931,6 +1011,139 @@ export default function AdminDashboardPage() {
                 className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-xs cursor-pointer"
               >
                 Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Ranking Klik Produk */}
+      {isClicksRankingOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-neutral-900">
+                    Statistik Produk Paling Sering Di-Klik
+                  </h3>
+                  <p className="text-[11px] text-neutral-500">
+                    Total {rankingData.totalClicks} kali produk dilihat oleh pembeli
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsClicksRankingOpen(false)}
+                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-900 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body: List of Products */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-2.5 flex-1 text-xs">
+              {rankingData.list.length > 0 ? (
+                rankingData.list.map((item, idx) => {
+                  const pct =
+                    rankingData.totalClicks > 0
+                      ? Math.round((item.clicks / rankingData.totalClicks) * 100)
+                      : 0;
+                  const thumb =
+                    (Array.isArray(item.product.images) && item.product.images[0]) ||
+                    item.product.image_url;
+
+                  return (
+                    <div
+                      key={item.product.id}
+                      className="p-2.5 rounded-xl border border-neutral-100 bg-neutral-50/60 hover:bg-neutral-50 transition-colors flex items-center gap-3"
+                    >
+                      {/* Rank Number */}
+                      <span
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                          idx === 0
+                            ? 'bg-amber-400 text-neutral-950 shadow-xs'
+                            : idx === 1
+                            ? 'bg-neutral-300 text-neutral-800'
+                            : idx === 2
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-white text-neutral-500 border border-neutral-200'
+                        }`}
+                      >
+                        #{idx + 1}
+                      </span>
+
+                      {/* Thumbnail */}
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt={item.product.name}
+                          className="w-10 h-12 rounded-lg object-cover border border-neutral-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-12 rounded-lg bg-neutral-200 flex items-center justify-center text-[9px] font-bold text-neutral-500 shrink-0">
+                          Foto
+                        </div>
+                      )}
+
+                      {/* Product Info & Bar */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-neutral-900 truncate">
+                            {item.product.name}
+                          </span>
+                          <span className="font-black text-neutral-900 shrink-0 text-xs">
+                            {item.clicks}{' '}
+                            <span className="text-[10px] text-neutral-400 font-semibold">klik</span>
+                          </span>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full bg-neutral-200 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                          <div
+                            className="bg-purple-600 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-neutral-400 mt-1">
+                          <span className="capitalize">{item.product.product_group || 'Katalog'}</span>
+                          <span>{pct}% dari total klik</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-neutral-400">
+                  Belum ada produk yang diklik.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Reset semua statistik klik produk kembali ke 0?')) {
+                    resetProductClicks();
+                    showToast('Statistik klik berhasil direset!');
+                  }
+                }}
+                className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Reset Data Klik</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsClicksRankingOpen(false)}
+                className="px-4 py-1.5 bg-neutral-900 text-white rounded-xl text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+              >
+                Tutup
               </button>
             </div>
           </div>

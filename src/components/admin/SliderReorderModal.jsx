@@ -16,7 +16,7 @@ export function readCatalogOrderMap() {
 }
 
 export default function SliderReorderModal({ isOpen, onClose, products = [], onOrderChanged }) {
-  const [filterGroup, setFilterGroup] = useState('all'); // 'all', 'eksklusif', 'harian'
+  const [filterGroup, setFilterGroup] = useState('all'); // 'all', 'harian', 'custom', 'eksklusif'
   const [items, setItems] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -31,9 +31,13 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
       targetProducts = products.filter(
         (p) => p.product_group === 'eksklusif' || p.is_exclusive === true
       );
+    } else if (filterGroup === 'custom') {
+      targetProducts = products.filter(
+        (p) => p.product_group === 'custom' || p.is_customizable === true
+      );
     } else if (filterGroup === 'harian') {
       targetProducts = products.filter(
-        (p) => p.product_group === 'harian' || (!p.is_exclusive && p.product_group !== 'eksklusif')
+        (p) => p.product_group === 'harian' || (!p.is_exclusive && p.product_group !== 'eksklusif' && p.product_group !== 'custom')
       );
     }
 
@@ -178,7 +182,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
         </div>
 
         {/* Filter Category Scope Tabs */}
-        <div className="px-4 sm:px-6 py-2.5 bg-neutral-100/70 border-b border-neutral-200 flex items-center justify-between gap-3 overflow-x-auto">
+        <div className="px-4 sm:px-6 py-2.5 bg-neutral-100/70 border-b border-neutral-200 flex items-center justify-between gap-3 visible-horizontal-scrollbar pb-2">
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider hidden sm:inline">
               Lingkup:
@@ -196,17 +200,6 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
             </button>
             <button
               type="button"
-              onClick={() => setFilterGroup('eksklusif')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                filterGroup === 'eksklusif'
-                  ? 'bg-amber-500 text-neutral-950 shadow-2xs'
-                  : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
-              }`}
-            >
-              👑 Exclusive
-            </button>
-            <button
-              type="button"
               onClick={() => setFilterGroup('harian')}
               className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 filterGroup === 'harian'
@@ -215,6 +208,28 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
               }`}
             >
               👕 Kaos Harian
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterGroup('custom')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                filterGroup === 'custom'
+                  ? 'bg-neutral-900 text-white shadow-2xs'
+                  : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
+              }`}
+            >
+              ✨ Kaos Custom
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterGroup('eksklusif')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                filterGroup === 'eksklusif'
+                  ? 'bg-amber-500 text-neutral-950 shadow-2xs'
+                  : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
+              }`}
+            >
+              👑 Exclusive
             </button>
           </div>
 
