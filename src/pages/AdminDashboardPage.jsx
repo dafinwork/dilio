@@ -21,11 +21,13 @@ import {
   Copy,
   Clock,
   Tag,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import { formatRupiah, safeColors, computeDiscountInfo } from '../utils/helpers';
 import ProductFormModal from '../components/admin/ProductFormModal';
 import SliderReorderModal from '../components/admin/SliderReorderModal';
+import BannerSettingsModal from '../components/admin/BannerSettingsModal';
 
 // Urutan produk di slider [LIMITED EDITION] Homepage (disimpan lokal, diatur dari tabel admin)
 const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
@@ -80,6 +82,7 @@ export default function AdminDashboardPage() {
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [sliderReorderModalOpen, setSliderReorderModalOpen] = useState(false);
+  const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
@@ -419,6 +422,15 @@ export default function AdminDashboardPage() {
             {/* Quick Actions */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
+                onClick={() => setBannerModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                title="Pengaturan Slide Banner Foto di Bagian Atas Homepage"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                <span>Pengaturan Banner</span>
+              </button>
+
+              <button
                 onClick={() => {
                   setEditingProduct({
                     product_group: 'eksklusif',
@@ -439,7 +451,7 @@ export default function AdminDashboardPage() {
                   setEditingProduct(null);
                   setModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Tambah Produk</span>
@@ -448,10 +460,10 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => setSliderReorderModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-                title="Geser dan susun urutan tampilan kartu kaos di banner Limited Edition Homepage"
+                title="Geser dan susun urutan posisi produk di seluruh katalog"
               >
                 <Crown className="w-3.5 h-3.5 text-amber-600" />
-                <span>Urutan Slider</span>
+                <span>Urutan Katalog</span>
               </button>
 
               <button
@@ -886,8 +898,16 @@ export default function AdminDashboardPage() {
           products={products}
           onOrderChanged={() => {
             setSliderOrderTick((t) => t + 1);
-            showToast('Urutan slider Exclusive Homepage berhasil diperbarui!');
+            showToast('Urutan posisi produk katalog berhasil diperbarui!');
           }}
+        />
+      )}
+
+      {/* Banner Settings Modal */}
+      {bannerModalOpen && (
+        <BannerSettingsModal
+          isOpen={bannerModalOpen}
+          onClose={() => setBannerModalOpen(false)}
         />
       )}
 

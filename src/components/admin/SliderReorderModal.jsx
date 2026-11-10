@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
-import { X, GripVertical, Crown, Check, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, GripVertical, Crown, Check, ArrowLeft, ArrowRight, Sparkles, Layers, Shirt } from 'lucide-react';
 
-const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
+export const CATALOG_ORDER_KEY = 'kaos_dilio_catalog_order';
+export const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
 
-function readSliderOrderMap() {
+export function readCatalogOrderMap() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(SLIDER_ORDER_KEY));
+    const parsed =
+      JSON.parse(localStorage.getItem(CATALOG_ORDER_KEY)) ||
+      JSON.parse(localStorage.getItem(SLIDER_ORDER_KEY));
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
@@ -13,6 +16,7 @@ function readSliderOrderMap() {
 }
 
 export default function SliderReorderModal({ isOpen, onClose, products = [], onOrderChanged }) {
+  const [filterGroup, setFilterGroup] = useState('all'); // 'all', 'eksklusif', 'harian'
   const [items, setItems] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -22,12 +26,19 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
   useEffect(() => {
     if (!isOpen) return;
 
-    const exclusive = products.filter(
-      (p) => p.product_group === 'eksklusif' || p.is_exclusive === true
-    );
+    let targetProducts = products;
+    if (filterGroup === 'eksklusif') {
+      targetProducts = products.filter(
+        (p) => p.product_group === 'eksklusif' || p.is_exclusive === true
+      );
+    } else if (filterGroup === 'harian') {
+      targetProducts = products.filter(
+        (p) => p.product_group === 'harian' || (!p.is_exclusive && p.product_group !== 'eksklusif')
+      );
+    }
 
-    const orderMap = readSliderOrderMap();
-    const sorted = [...exclusive].sort((a, b) => {
+    const orderMap = readCatalogOrderMap();
+    const sorted = [...targetProducts].sort((a, b) => {
       const ordA = typeof orderMap[a.id] === 'number' ? orderMap[a.id] : 9999;
       const ordB = typeof orderMap[b.id] === 'number' ? orderMap[b.id] : 9999;
       if (ordA !== ordB) return ordA - ordB;
@@ -35,17 +46,22 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
     });
 
     setItems(sorted);
-  }, [isOpen, products]);
+  }, [isOpen, products, filterGroup]);
 
   if (!isOpen) return null;
 
   const persistOrder = (newList) => {
-    const newMap = {};
+    const existingMap = readCatalogOrderMap();
+    const newMap = { ...existingMap };
+
     newList.forEach((p, idx) => {
       newMap[p.id] = idx;
     });
+
     try {
+      localStorage.setItem(CATALOG_ORDER_KEY, JSON.stringify(newMap));
       localStorage.setItem(SLIDER_ORDER_KEY, JSON.stringify(newMap));
+      window.dispatchEvent(new Event('kaos_dilio_order_updated'));
     } catch {
       // ignore
     }
@@ -125,7 +141,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
     setDragOverIndex(null);
   };
 
-  // Keyboard / Click swap helper (move left / move right)
+  // Quick Move Arrows
   const handleShift = (fromIndex, toIndex) => {
     if (toIndex < 0 || toIndex >= items.length) return;
     const updated = [...items];
@@ -137,51 +153,97 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-4xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200">
         {/* Header */}
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/80">
           <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center shadow-xs font-black shrink-0">
-              <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-950" />
+              <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-950" />
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-black text-neutral-900 leading-tight">
-                Susun Urutan Slider Exclusive
+                Atur Urutan &amp; Posisi Produk Katalog
               </h3>
               <p className="text-[11px] sm:text-xs text-neutral-500 line-clamp-1">
-                Tahan &amp; geser (drag &amp; drop) kartu untuk mengatur urutan di Homepage.
+                Tahan &amp; geser (drag &amp; drop) atau klik tombol panah untuk mengatur urutan produk di katalog.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content Notice */}
-        <div className="px-4 sm:px-6 py-2 sm:py-2.5 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between text-xs text-amber-900">
+        {/* Filter Category Scope Tabs */}
+        <div className="px-4 sm:px-6 py-2.5 bg-neutral-100/70 border-b border-neutral-200 flex items-center justify-between gap-3 overflow-x-auto">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider hidden sm:inline">
+              Lingkup:
+            </span>
+            <button
+              type="button"
+              onClick={() => setFilterGroup('all')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                filterGroup === 'all'
+                  ? 'bg-neutral-900 text-white shadow-2xs'
+                  : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
+              }`}
+            >
+              Semua Produk ({products.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterGroup('eksklusif')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                filterGroup === 'eksklusif'
+                  ? 'bg-amber-500 text-neutral-950 shadow-2xs'
+                  : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
+              }`}
+            >
+              👑 Exclusive
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterGroup('harian')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                filterGroup === 'harian'
+                  ? 'bg-neutral-900 text-white shadow-2xs'
+                  : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
+              }`}
+            >
+              👕 Kaos Harian
+            </button>
+          </div>
+
+          {savedNotice && (
+            <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full text-xs shrink-0 animate-in fade-in">
+              <Check className="w-3.5 h-3.5" />
+              <span>Urutan Tersimpan</span>
+            </span>
+          )}
+        </div>
+
+        {/* Instruction Bar */}
+        <div className="px-4 sm:px-6 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs text-amber-900">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
             <span className="text-[11px] sm:text-xs">
-              Kartu paling kiri atas (<b>#1</b>) adalah yang tampil pertama kali di slider Homepage.
+              Produk dengan nomor urut <b>#1</b> akan tampil di posisi teratas/paling awal katalog.
             </span>
           </div>
-          {savedNotice && (
-            <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] animate-in fade-in duration-150 shrink-0 ml-2">
-              <Check className="w-3 h-3" />
-              Tersimpan
-            </span>
-          )}
+          <span className="text-[11px] font-bold text-amber-800 shrink-0">
+            {items.length} Kaos
+          </span>
         </div>
 
         {/* Draggable Cards Grid */}
         <div className="p-3 sm:p-6 overflow-y-auto flex-1">
           {items.length === 0 ? (
             <div className="text-center py-12 text-neutral-400 text-xs">
-              Belum ada produk Limited Edition (Exclusive) yang terdaftar.
+              Belum ada produk pada kategori ini.
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5">
@@ -215,9 +277,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
                   >
                     {/* Rank Badge */}
                     <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-neutral-950/85 text-white text-[10px] sm:text-[11px] font-black shadow-xs backdrop-blur-xs">
-                      {index === 0 ? (
-                        <Crown className="w-3 h-3 text-amber-400" />
-                      ) : null}
+                      {index === 0 ? <Crown className="w-3 h-3 text-amber-400" /> : null}
                       <span>#{index + 1}</span>
                     </div>
 
@@ -249,7 +309,10 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
 
                     {/* Info & Shift controls */}
                     <div className="p-2 sm:p-2.5 bg-white border-t border-neutral-100 space-y-1">
-                      <p className="text-[11px] sm:text-xs font-extrabold text-neutral-900 truncate leading-snug" title={item.name}>
+                      <p
+                        className="text-[11px] sm:text-xs font-extrabold text-neutral-900 truncate leading-snug"
+                        title={item.name}
+                      >
                         {item.name}
                       </p>
                       <p className="text-[10px] sm:text-[11px] text-neutral-500 font-mono">
@@ -270,7 +333,9 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
                         >
                           <ArrowLeft className="w-3.5 h-3.5" />
                         </button>
-                        <span className="text-[9px] sm:text-[10px] text-neutral-400 font-medium">geser</span>
+                        <span className="text-[9px] sm:text-[10px] text-neutral-400 font-medium">
+                          geser
+                        </span>
                         <button
                           type="button"
                           disabled={index === items.length - 1}
@@ -295,7 +360,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
         {/* Footer */}
         <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
           <span className="text-[10px] sm:text-[11px] text-neutral-500">
-            Otomatis tersimpan ke Homepage.
+            Perubahan posisi langsung tersimpan dan diterapkan di katalog utama.
           </span>
           <button
             onClick={onClose}

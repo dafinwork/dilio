@@ -13,6 +13,7 @@ export default function FilterSortBar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const sortOptions = [
+    { label: 'Rekomendasi', value: 'rekomendasi' },
     { label: 'Terbaru', value: 'latest' },
     { label: 'Harga: Rendah ke Tinggi', value: 'price_asc' },
     { label: 'Harga: Tinggi ke Rendah', value: 'price_desc' },

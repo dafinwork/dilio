@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Filter, Check, X, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, Check, X, RotateCcw, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react';
 import { BASE_COLORS } from '../utils/helpers';
 
 const DEFAULT_CUTTING_OPTIONS = [
@@ -24,6 +24,7 @@ export default function ShopeeColorFilter({
   totalCount = 0,
   isOpenMobile = false,
   onCloseMobile,
+  onHideFilter,
 }) {
   const [colorExpanded, setColorExpanded] = useState(true);
   const [cuttingExpanded, setCuttingExpanded] = useState(true);
@@ -42,19 +43,32 @@ export default function ShopeeColorFilter({
             Filter Pencarian
           </span>
         </div>
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={() => {
-              onResetColors();
-              if (onCuttingChange) onCuttingChange('all');
-            }}
-            className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Hapus Semua</span>
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                onResetColors();
+                if (onCuttingChange) onCuttingChange('all');
+              }}
+              className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
+            </button>
+          )}
+          {onHideFilter && (
+            <button
+              type="button"
+              onClick={onHideFilter}
+              className="hidden lg:flex items-center gap-0.5 text-[11px] font-bold text-neutral-400 hover:text-neutral-900 px-1.5 py-1 rounded-md hover:bg-neutral-100 cursor-pointer transition-colors"
+              title="Sembunyikan filter pencarian"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Tutup</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 1. Tshirt Cut */}
