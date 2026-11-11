@@ -53,7 +53,18 @@ export default function HomePage() {
     if (kat) setActiveCategory(kat);
     const cut = searchParams.get('cutting');
     if (cut) setActiveCutting(normalizeCutting(cut));
-  }, [searchParams]);
+
+    // Deep-link to open shared product directly (?p=prod-id or ?produk=prod-id)
+    const prodParam = searchParams.get('p') || searchParams.get('produk');
+    if (prodParam && Array.isArray(allProducts) && allProducts.length > 0) {
+      const target = allProducts.find(
+        (p) => p.id === prodParam || p.slug === prodParam
+      );
+      if (target) {
+        setSelectedProduct(target);
+      }
+    }
+  }, [searchParams, allProducts]);
 
   const handleCategoryChange = (val) => {
     setActiveCategory(val);
@@ -443,7 +454,14 @@ export default function HomePage() {
       {/* Quick Modal Detail */}
       <ProductModal
         product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
+        onClose={() => {
+          setSelectedProduct(null);
+          if (searchParams.has('p') || searchParams.has('produk')) {
+            searchParams.delete('p');
+            searchParams.delete('produk');
+            setSearchParams(searchParams, { replace: true });
+          }
+        }}
       />
     </div>
   );

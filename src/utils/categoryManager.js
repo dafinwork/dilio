@@ -222,17 +222,18 @@ export function getAppCategoryTabs(products = []) {
     if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase().trim());
   } catch {}
 
+  // 2 Kategori default khusus permanen: SALE dulu baru Exclusive (tidak bisa dihapus/diubah)
   const baseTabs = [
     { label: 'Semua Kategori', value: 'all' },
-    { label: '👕 Kaos Harian', value: 'harian' },
-    { label: '✨ Kaos Custom', value: 'custom' },
-    { label: '👑 Exclusive', value: 'exclusive' },
     { label: '🏷️ SALE!', value: 'sale' },
-  ].filter((t) => t.value === 'all' || !removedCats.includes(t.value));
+    { label: '👑 Exclusive', value: 'exclusive' },
+  ];
 
   const known = new Set(baseTabs.map((t) => t.value));
   known.add('eksklusif');
   known.add('casual');
+  known.add('harian');
+  known.add('custom');
 
   const addTab = (raw) => {
     if (!raw || typeof raw !== 'string') return;
@@ -241,7 +242,7 @@ export function getAppCategoryTabs(products = []) {
     if (!lower || known.has(lower) || IGNORED_MATERIAL_LABELS.has(lower)) return;
     if (removedCats.includes(lower)) return;
     known.add(lower);
-    const label = trimmed.replace(/\b\w/g, (c) => c.toUpperCase());
+    const label = trimmed.toUpperCase();
     baseTabs.push({ label, value: lower });
   };
 
@@ -265,27 +266,14 @@ export function filterMatchesCategory(p, targetCat) {
   if (!targetCat || targetCat === 'all') return true;
   const target = targetCat.toLowerCase().trim();
 
-  // Special Tab: SALE!
+  // Special Tab 1: SALE!
   if (target === 'sale') {
     return computeDiscountInfo(p.price, p.original_price).hasDiscount;
   }
 
-  // Special Tab: Exclusive
+  // Special Tab 2: Exclusive
   if (target === 'exclusive' || target === 'eksklusif') {
     return Boolean(p.is_exclusive || p.product_group === 'eksklusif');
-  }
-
-  // Special Tab: Kaos Harian
-  if (target === 'harian') {
-    return (
-      p.product_group === 'harian' ||
-      (!p.is_exclusive && p.product_group !== 'eksklusif' && p.product_group !== 'custom')
-    );
-  }
-
-  // Special Tab: Kaos Custom
-  if (target === 'custom') {
-    return p.product_group === 'custom' || Boolean(p.is_customizable);
   }
 
   const rawCat = (p.kaos_category || p.category_label || '').toLowerCase().trim();

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush, Play } from 'lucide-react';
+import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush, Play, Share2, Check } from 'lucide-react';
 import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting, computeDiscountInfo, parseVideoMedia } from '../utils/helpers';
 import SizeChartModal from './SizeChartModal';
 
@@ -9,11 +9,40 @@ export default function ProductModal({ product, onClose }) {
   const [viewMode, setViewMode] = useState('image'); // 'image' | 'video'
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setActiveImageIndex(0);
     setViewMode(product?.initialViewMode || 'image');
+    setCopied(false);
   }, [product]);
+
+  const handleShare = async () => {
+    if (!product) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}#/?p=${encodeURIComponent(product.id)}`;
+    const shareData = {
+      title: product.name,
+      text: `Lihat produk ${product.name} di Kaos Dilio: ${formatRupiah(product.price)}`,
+      url: shareUrl,
+    };
+
+    if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Salin link produk ini:', shareUrl);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -328,6 +357,10 @@ export default function ProductModal({ product, onClose }) {
                       <span className="font-semibold text-neutral-800">{product.material}</span>
                     </div>
                   )}
+                  <div className="flex items-center justify-between py-0.5">
+                    <span className="text-neutral-400">Sisa Stok:</span>
+                    <span className="font-bold text-neutral-900">{product.stock ?? 100} pcs</span>
+                  </div>
                   {product.cutting_type && (
                     <div className="flex items-center justify-between py-0.5">
                       <span className="text-neutral-400">Pola Potongan:</span>
@@ -379,8 +412,8 @@ export default function ProductModal({ product, onClose }) {
                   </div>
                 )}
 
-                {/* Size Chart Trigger Button */}
-                <div className="pt-1">
+                {/* Action Buttons: Size Chart & Share */}
+                <div className="pt-1 flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setSizeChartOpen(true)}
@@ -388,6 +421,29 @@ export default function ProductModal({ product, onClose }) {
                   >
                     <Ruler className="w-3.5 h-3.5 text-neutral-700" />
                     <span>Lihat Panduan Size Chart Kaos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      copied
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : 'bg-white hover:bg-neutral-50 text-neutral-700 border-neutral-200'
+                    }`}
+                    title="Bagikan produk ini"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Tautan Disalin!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5 text-neutral-600" />
+                        <span>Bagikan</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

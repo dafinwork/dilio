@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Check } from 'lucide-react';
 import { formatRupiah, computeDiscountInfo, recordProductClick } from '../utils/helpers';
 
 export default function ProductCard({ product, onSelect }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleClick = () => {
     if (product?.id) {
@@ -19,6 +20,34 @@ export default function ProductCard({ product, onSelect }) {
       recordProductClick(product.id);
     }
     if (onSelect) onSelect({ ...product, initialViewMode: 'video' });
+  };
+
+  const handleShare = async (e) => {
+    e.stopPropagation();
+    if (!product) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}#/?p=${encodeURIComponent(product.id)}`;
+    const shareData = {
+      title: product.name,
+      text: `Lihat produk ${product.name} di Kaos Dilio: ${formatRupiah(product.price)}`,
+      url: shareUrl,
+    };
+
+    if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // Fallback to clipboard if cancelled or failed
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Salin link produk ini:', shareUrl);
+    }
   };
 
   // Resolve images list safely before any hook or return
@@ -55,7 +84,7 @@ export default function ProductCard({ product, onSelect }) {
         setIsHovered(false);
         setImgIdx(0); // return to primary thumbnail when mouse leaves
       }}
-      className="group cursor-pointer flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-100/80 shadow-2xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+      className="group relative cursor-pointer flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-100/80 shadow-2xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
     >
       {/* Visual Image / Placeholder Box */}
       <div
@@ -206,31 +235,69 @@ export default function ProductCard({ product, onSelect }) {
           </p>
         </div>
 
-        {/* Price Section */}
-        <div className="mt-4 pt-2 flex items-baseline justify-between border-t border-neutral-100">
-          {hasDiscount ? (
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-neutral-400 line-through">
-                  {formatRupiah(displayOriginalPrice)}
-                </span>
-                {discountPercent > 0 && (
-                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1 py-0.2 rounded">
-                    Hemat {formatRupiah(savings)}
+        {/* Price & Actions Section (Stok & Share) */}
+        <div className="mt-3 pt-2.5 flex items-end justify-between gap-2 border-t border-neutral-100">
+          {/* Price */}
+          <div className="flex flex-col min-w-0">
+            {hasDiscount ? (
+              <>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] text-neutral-400 line-through">
+                    {formatRupiah(displayOriginalPrice)}
                   </span>
-                )}
-              </div>
-              <span className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
+                  {discountPercent > 0 && (
+                    <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 py-0.2 rounded">
+                      -{discountPercent}%
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm sm:text-base font-black text-neutral-900 tracking-tight truncate">
+                  {formatRupiah(product.price)}
+                </span>
+              </>
+            ) : (
+              <span className="text-sm sm:text-base font-black text-neutral-900 tracking-tight truncate">
                 {formatRupiah(product.price)}
               </span>
-            </div>
-          ) : (
-            <span className="text-base sm:text-lg font-extrabold text-neutral-900 tracking-tight">
-              {formatRupiah(product.price)}
+            )}
+          </div>
+
+          {/* Sisa Stok & Tombol Share */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 whitespace-nowrap"
+              title="Jumlah stok tersedia"
+            >
+              Stok: <span className="text-neutral-900 font-extrabold">{product.stock ?? 100}</span>
             </span>
-          )}
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                copied
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 scale-105'
+                  : 'bg-white hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 border-neutral-200'
+              }`}
+              title={copied ? 'Tautan disalin!' : 'Bagikan produk ini'}
+              aria-label="Bagikan produk"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <Share2 className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Floating Copied Toast on Card */}
+      {copied && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-neutral-950 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg pointer-events-none animate-in fade-in zoom-in-95">
+          Tautan Disalin!
+        </div>
+      )}
     </div>
   );
 }
