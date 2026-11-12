@@ -225,7 +225,7 @@ export default function ProductCard({ product, onSelect }) {
           </span>
 
           {/* Product Title */}
-          <h3 className="font-extrabold text-neutral-900 text-xs sm:text-base leading-snug group-hover:text-neutral-700 transition-colors line-clamp-2 min-h-[1.8rem] sm:min-h-0 sm:line-clamp-1">
+          <h3 className="font-bold text-neutral-900 text-xs sm:text-base leading-snug group-hover:text-neutral-700 transition-colors line-clamp-2 min-h-[1.8rem] sm:min-h-0 sm:line-clamp-1">
             {product.name}
           </h3>
 

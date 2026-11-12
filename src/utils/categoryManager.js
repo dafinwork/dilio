@@ -242,7 +242,7 @@ export function getAppCategoryTabs(products = []) {
     if (!lower || known.has(lower) || IGNORED_MATERIAL_LABELS.has(lower)) return;
     if (removedCats.includes(lower)) return;
     known.add(lower);
-    const label = trimmed.toUpperCase();
+    const label = trimmed.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
     baseTabs.push({ label, value: lower });
   };
 

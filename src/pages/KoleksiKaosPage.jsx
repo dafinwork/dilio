@@ -200,12 +200,9 @@ export default function KoleksiKaosPage() {
       // ignore
     }
 
-    allProducts.forEach((p) => {
-      if (p.cutting_type) addCutIfNew(p.cutting_type);
-    });
-
+    // Hanya 5 cut standar (+ cut custom dari admin); tidak diturunkan dari data produk.
     return base;
-  }, [allProducts]);
+  }, []);
 
   // Combined catalog source: Daily products (harian) + [LIMITED EDITION] Exclusive products
   const catalogSource = useMemo(() => {

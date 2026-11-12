@@ -155,12 +155,10 @@ export default function HomePage() {
       // ignore
     }
 
-    allProducts.forEach((p) => {
-      if (p.cutting_type) addCutIfNew(p.cutting_type);
-    });
-
+    // Cutting dari data produk tidak ditambahkan otomatis: hanya 5 cut standar
+    // (+ cut custom dari admin) agar nilai uji coba seperti "baru-bayu1" tidak muncul.
     return base;
-  }, [allProducts]);
+  }, []);
 
   // Catalog source: All products (harian + custom + exclusive)
   const catalogSource = allProducts;
@@ -313,7 +311,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setMobileFilterOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-neutral-900 text-white rounded-xl text-xs font-bold shadow-2xs cursor-pointer hover:bg-neutral-800 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 bg-neutral-900 text-white rounded-xl text-xs font-semibold shadow-2xs cursor-pointer hover:bg-neutral-800 transition-colors"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Filter Pencarian</span>

@@ -53,7 +53,7 @@ export default function FilterSortBar({
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 border border-neutral-200 rounded-xl text-xs sm:text-sm font-medium text-neutral-700 hover:border-neutral-400 bg-white shadow-2xs transition-colors"
+              className="inline-flex items-center gap-2 px-3.5 py-2 border border-neutral-200 rounded-xl text-xs sm:text-sm font-semibold text-neutral-700 hover:border-neutral-400 bg-white shadow-2xs transition-colors"
             >
               <ArrowUpDown className="w-3.5 h-3.5 text-neutral-500" />
               <span>Urutkan: {currentSortLabel}</span>
