@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, GripVertical, Crown, Check, ArrowLeft, ArrowRight, Sparkles, Layers, Shirt } from 'lucide-react';
-import { getAppCategoryTabs, filterMatchesCategory } from '../../utils/categoryManager';
+import { getAppCategoryTabs, filterMatchesCategory, syncStoreConfigToCloud } from '../../utils/categoryManager';
 
 export const CATALOG_ORDER_KEY = 'kaos_dilio_catalog_order';
 export const SLIDER_ORDER_KEY = 'kaos_dilio_slider_order';
@@ -57,6 +57,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
       localStorage.setItem(CATALOG_ORDER_KEY, JSON.stringify(newMap));
       localStorage.setItem(SLIDER_ORDER_KEY, JSON.stringify(newMap));
       window.dispatchEvent(new Event('kaos_dilio_order_updated'));
+      syncStoreConfigToCloud();
     } catch {
       // ignore
     }

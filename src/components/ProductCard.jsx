@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Share2, Check } from 'lucide-react';
 import { formatRupiah, computeDiscountInfo, recordProductClick } from '../utils/helpers';
+import { getDisplayCategoryLabel } from '../utils/categoryManager';
 
 export default function ProductCard({ product, onSelect }) {
   const [imgIdx, setImgIdx] = useState(0);
@@ -219,9 +220,7 @@ export default function ProductCard({ product, onSelect }) {
               isMinimalist ? 'text-indigo-600' : 'text-neutral-500'
             }`}
           >
-            {product.kaos_category
-              ? product.kaos_category.toUpperCase()
-              : product.category_label || product.material || 'COTTON COMBED'}
+            {getDisplayCategoryLabel(product)}
           </span>
 
           {/* Product Title */}

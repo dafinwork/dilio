@@ -38,7 +38,11 @@ import {
   getProductClicksMap,
   resetProductClicks,
 } from '../utils/helpers';
-import { getAppCategoryTabs, filterMatchesCategory } from '../utils/categoryManager';
+import {
+  getAppCategoryTabs,
+  filterMatchesCategory,
+  getDisplayCategoryLabel,
+} from '../utils/categoryManager';
 import ProductFormModal from '../components/admin/ProductFormModal';
 import SliderReorderModal from '../components/admin/SliderReorderModal';
 import BannerSettingsModal from '../components/admin/BannerSettingsModal';
@@ -152,8 +156,15 @@ export default function AdminDashboardPage() {
     return { list, totalClicks, topItem };
   }, [products, clicksMap]);
 
-  // Categories list synchronized with Homepage
-  const categoryTabs = useMemo(() => getAppCategoryTabs(products), [products]);
+  // Categories list synchronized with Homepage & Cloud Config
+  const [configTick, setConfigTick] = useState(0);
+  useEffect(() => {
+    const handleConfigChange = () => setConfigTick((t) => t + 1);
+    window.addEventListener('kaos_dilio_config_updated', handleConfigChange);
+    return () => window.removeEventListener('kaos_dilio_config_updated', handleConfigChange);
+  }, []);
+
+  const categoryTabs = useMemo(() => getAppCategoryTabs(products), [products, configTick]);
 
   // Filtered products list
   const filteredProducts = useMemo(() => {
@@ -661,7 +672,7 @@ export default function AdminDashboardPage() {
                           )}
                         </p>
                         <p className="truncate text-neutral-400 text-[10px]">
-                          {item.material || '-'}{item.category_label ? ` • ${item.category_label}` : ''} • <span className="font-bold text-neutral-600">Stok: {item.stock ?? 100} pcs</span>
+                          {item.material || '-'} • {getDisplayCategoryLabel(item)} • <span className="font-bold text-neutral-600">Stok: {item.stock ?? 100} pcs</span>
                         </p>
                       </div>
 
@@ -851,7 +862,7 @@ export default function AdminDashboardPage() {
                           {item.material || '-'}
                         </span>
                         <div className="flex items-center gap-1 text-[10px] text-neutral-400 mt-0.5">
-                          <span>{item.category_label || '-'}</span>
+                          <span>{getDisplayCategoryLabel(item)}</span>
                           <span>•</span>
                           <span className="font-bold text-neutral-600">Stok: {item.stock ?? 100} pcs</span>
                         </div>

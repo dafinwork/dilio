@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import initialProductsData from '../data/products.json';
 import { supabase } from '../lib/supabase';
 import { safeColors } from '../utils/helpers';
+import { STORE_CONFIG_PRODUCT_ID, applyCloudStoreConfig } from '../utils/categoryManager';
 
 const ProductContext = createContext();
 
@@ -78,7 +79,10 @@ export function ProductProvider({ children }) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const initialMap = new Map(initialProductsData.map((p) => [p.id, p]));
-          const updated = parsed.map((item) => {
+          const filtered = parsed.filter(
+            (item) => item && item.id !== STORE_CONFIG_PRODUCT_ID && item.product_group !== '__config__'
+          );
+          const updated = filtered.map((item) => {
             const initial = initialMap.get(item.id);
             if (initial && (!item.image_url || item.image_url === '') && initial.image_url) {
               return {
@@ -90,15 +94,9 @@ export function ProductProvider({ children }) {
             return item;
           });
 
-          // Also prepend any new initial products (like harian-fitted-1, harian-kasual-1, etc.)
-          const parsedIds = new Set(parsed.map((p) => p.id));
-          initialProductsData.forEach((init) => {
-            if (!parsedIds.has(init.id)) {
-              updated.unshift(init);
-            }
-          });
-
-          return updated.map(sanitizeProduct);
+          if (updated.length > 0) {
+            return updated.map(sanitizeProduct);
+          }
         }
       }
     } catch (e) {
@@ -107,9 +105,14 @@ export function ProductProvider({ children }) {
     return initialProductsData.map(sanitizeProduct);
   });
 
+  const productsRef = useRef(products);
+  useEffect(() => {
+    productsRef.current = products;
+  }, [products]);
+
   const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connected' | 'connecting' | 'offline'
 
-  // Fetch live products from Supabase on mount, merging extended local fields
+  // Fetch live products and store config from Supabase on mount
   useEffect(() => {
     let isMounted = true;
     async function loadCloudProducts() {
@@ -120,62 +123,23 @@ export function ProductProvider({ children }) {
           .order('created_at', { ascending: false });
 
         if (!error && Array.isArray(data) && data.length > 0) {
-          let localMap = new Map();
-          try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              if (Array.isArray(parsed)) {
-                localMap = new Map(parsed.map((item) => [item.id, item]));
-              }
-            }
-          } catch {
-            // ignore
+          const configRow = data.find(
+            (r) => r.id === STORE_CONFIG_PRODUCT_ID || r.product_group === '__config__'
+          );
+          if (configRow && configRow.mockup_angles && typeof configRow.mockup_angles === 'object') {
+            applyCloudStoreConfig(configRow.mockup_angles);
           }
 
-          const merged = data.map((cloudRow) => {
-            const localItem = localMap.get(cloudRow.id);
-            if (!localItem) return sanitizeProduct(cloudRow);
-            return sanitizeProduct({
-              ...cloudRow,
-              images:
-                Array.isArray(cloudRow.images) && cloudRow.images.length > 1
-                  ? cloudRow.images
-                  : Array.isArray(localItem.images) && localItem.images.length > 0
-                  ? localItem.images
-                  : cloudRow.images,
-              original_price: cloudRow.original_price ?? localItem.original_price ?? null,
-              stock:
-                typeof localItem.stock === 'number'
-                  ? localItem.stock
-                  : typeof cloudRow.stock === 'number'
-                  ? cloudRow.stock
-                  : 100,
-              video_url: (localItem.video_url || cloudRow.video_url || '').trim() || null,
-              is_preorder:
-                cloudRow.is_preorder !== undefined ? cloudRow.is_preorder : localItem.is_preorder,
-              preorder_duration: cloudRow.preorder_duration || localItem.preorder_duration || '',
-              kaos_category:
-                cloudRow.kaos_category || localItem.kaos_category || cloudRow.category_label || '',
-              size_chart:
-                Array.isArray(cloudRow.size_chart) && cloudRow.size_chart.length > 0
-                  ? cloudRow.size_chart
-                  : localItem.size_chart || null,
-            });
-          });
+          const productRows = data.filter(
+            (r) => r.id !== STORE_CONFIG_PRODUCT_ID && r.product_group !== '__config__'
+          );
 
-          const cloudIds = new Set(data.map((c) => c.id));
-          const localOnly = [];
-          localMap.forEach((localItem, id) => {
-            if (!cloudIds.has(id)) {
-              localOnly.push(localItem);
-            }
-          });
-          const allMerged = [...localOnly, ...merged];
+          const merged = productRows.map((cloudRow) => sanitizeProduct(cloudRow));
 
           if (isMounted) {
-            setProducts(allMerged);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(allMerged));
+            productsRef.current = merged;
+            setProducts(merged);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
             setCloudStatus('connected');
           }
         } else {
@@ -197,7 +161,11 @@ export function ProductProvider({ children }) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
-            setProducts(parsed.map(sanitizeProduct));
+            const sanitized = parsed
+              .filter((p) => p && p.id !== STORE_CONFIG_PRODUCT_ID && p.product_group !== '__config__')
+              .map(sanitizeProduct);
+            productsRef.current = sanitized;
+            setProducts(sanitized);
           }
         } catch {
           // ignore
@@ -411,15 +379,27 @@ export function ProductProvider({ children }) {
 
   // Update existing product
   const updateProduct = async (id, updatedFields) => {
-    let finalUpdated = null;
+    const existingItem = productsRef.current.find((item) => item.id === id);
+    const finalUpdated = existingItem
+      ? toDatabasePayload({
+          ...existingItem,
+          ...updatedFields,
+        })
+      : null;
+
+    if (finalUpdated) {
+      productsRef.current = productsRef.current.map((item) =>
+        item.id === id ? finalUpdated : item
+      );
+    }
+
     setProducts((prev) => {
       const next = prev.map((item) => {
         if (item.id === id) {
-          finalUpdated = toDatabasePayload({
+          return toDatabasePayload({
             ...item,
             ...updatedFields,
           });
-          return finalUpdated;
         }
         return item;
       });
@@ -433,8 +413,9 @@ export function ProductProvider({ children }) {
 
     // Direct sync to Supabase Cloud
     try {
-      if (finalUpdated) {
-        const { error } = await supabase.from('products').update(finalUpdated).eq('id', id);
+      const payloadToSync = finalUpdated || updatedFields;
+      if (payloadToSync) {
+        const { error } = await supabase.from('products').update(payloadToSync).eq('id', id);
         if (error) {
           // Fallback retry without newer columns if remote table hasn't added them yet
           const {
@@ -449,7 +430,7 @@ export function ProductProvider({ children }) {
             stock: _st,
             video_url: _vu,
             ...cloudSafe
-          } = finalUpdated;
+          } = payloadToSync;
           await supabase.from('products').update(cloudSafe).eq('id', id);
         }
         return { success: true };

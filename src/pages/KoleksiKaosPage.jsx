@@ -7,6 +7,13 @@ import ProductModal from '../components/ProductModal';
 import ShopeeColorFilter from '../components/ShopeeColorFilter';
 import { useProducts } from '../context/ProductContext';
 import {
+  getAppCategoryTabs,
+  getActiveCuttingOptions,
+  filterMatchesCategory,
+  REMOVED_CUTTINGS_KEY,
+  readRemovedValues,
+} from '../utils/categoryManager';
+import {
   extractUniqueColorsFromProducts,
   normalizeCutting,
   flattenProductsByColor,
@@ -14,31 +21,20 @@ import {
   getClosestColorId,
 } from '../utils/helpers';
 
-const DEFAULT_CATEGORY_TABS = [
-  { label: 'Semua Kategori', value: 'all' },
-  { label: 'Kasual', value: 'kasual' },
-  { label: 'Polo', value: 'polo' },
-  { label: 'Olahraga', value: 'olahraga' },
-];
-
-const IGNORED_MATERIAL_LABELS = new Set([
-  'cotton combed 24s',
-  'cotton combed 20s',
-  'cotton combed 30s',
-  'heavyweight 16s',
-  'heavyweight cotton 16s',
-  'washed cotton 20s',
-  'partner brand',
-  'limited collab',
-  'limited edition',
-  'graphic tees',
-  'basic',
-  'streetwear',
-]);
-
 export default function KoleksiKaosPage() {
   const { products: allProducts } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [configTick, setConfigTick] = useState(0);
+
+  useEffect(() => {
+    const handleConfigChange = () => setConfigTick((t) => t + 1);
+    window.addEventListener('kaos_dilio_config_updated', handleConfigChange);
+    window.addEventListener('kaos_dilio_order_updated', handleConfigChange);
+    return () => {
+      window.removeEventListener('kaos_dilio_config_updated', handleConfigChange);
+      window.removeEventListener('kaos_dilio_order_updated', handleConfigChange);
+    };
+  }, []);
 
   // Top Bar Filter: Kategori Jenis Kaos (Kasual, Polo, Olahraga)
   const initialCategory = searchParams.get('kategori') || 'all';
@@ -99,110 +95,22 @@ export default function KoleksiKaosPage() {
     setSearchParams({});
   };
 
-  // Top Category Tabs (Kasual, Polo, Olahraga + custom categories from Admin)
-  const categoryTabs = useMemo(() => {
-    // Respect admin's "removed" categories (tombstone list from CMS delete feature)
-    let removedCats = [];
-    try {
-      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_kaos_categories'));
-      if (Array.isArray(removed)) removedCats = removed.map((c) => String(c).toLowerCase());
-    } catch {
-      // ignore
-    }
+  // Top Category Tabs (Synchronized with Admin & Supabase Cloud)
+  const categoryTabs = useMemo(
+    () => getAppCategoryTabs(allProducts),
+    [allProducts, configTick]
+  );
 
-    const tabs = DEFAULT_CATEGORY_TABS.filter((t) => !removedCats.includes(t.value));
-    const known = new Set(tabs.map((t) => t.value));
-    known.add('casual'); // alias for kasual
+  // Sidebar Cutting Options (Synchronized with Admin & Supabase Cloud)
+  const cuttingOptions = useMemo(
+    () => getActiveCuttingOptions(),
+    [configTick]
+  );
 
-    const addTabIfNew = (rawCat) => {
-      if (!rawCat || typeof rawCat !== 'string') return;
-      const trimmed = rawCat.trim();
-      const lower = trimmed.toLowerCase();
-      if (!lower || known.has(lower) || IGNORED_MATERIAL_LABELS.has(lower)) return;
-      if (removedCats.includes(lower)) return;
-      known.add(lower);
-      const formattedLabel = trimmed
-        .toLowerCase()
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      tabs.push({
-        label: formattedLabel,
-        value: lower,
-      });
-    };
-
-    try {
-      const savedCats = localStorage.getItem('kaos_dilio_custom_kaos_categories');
-      if (savedCats) {
-        const parsed = JSON.parse(savedCats);
-        if (Array.isArray(parsed)) {
-          parsed.forEach(addTabIfNew);
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    allProducts.forEach((p) => {
-      if (p.product_group === 'harian' || p.product_group === 'eksklusif' || p.is_exclusive) {
-        addTabIfNew(p.kaos_category || p.category_label);
-      }
-    });
-
-    return tabs;
-  }, [allProducts]);
-
-  // Sidebar Cutting Options (Default 5 + custom cuttings from Admin)
-  const cuttingOptions = useMemo(() => {
-    // Respect admin's "removed" cuttings (tombstone list from CMS delete feature)
-    let removedCuttings = [];
-    try {
-      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_cuttings'));
-      if (Array.isArray(removed)) removedCuttings = removed.map((c) => String(c).toLowerCase());
-    } catch {
-      // ignore
-    }
-
-    const base = [
-      { label: 'Semua Cut', value: 'all' },
-      { label: 'Oversized', value: 'oversized' },
-      { label: 'Regular', value: 'regular' },
-      { label: 'Fitted', value: 'fitted' },
-      { label: 'Boxy', value: 'boxy' },
-      { label: 'Long Sleeve', value: 'long-sleeve' },
-    ].filter((c) => c.value === 'all' || !removedCuttings.includes(c.value));
-
-    const known = new Set(base.map((b) => b.value));
-    const ignored = new Set(['kasual', 'casual', 'polo', 'olahraga']);
-
-    const addCutIfNew = (val, lbl) => {
-      if (!val) return;
-      const norm = normalizeCutting(val);
-      if (!norm || known.has(norm) || ignored.has(norm)) return;
-      if (removedCuttings.includes(norm)) return;
-      known.add(norm);
-      const formatted =
-        lbl ||
-        norm
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-      base.push({ label: formatted, value: norm });
-    };
-
-    try {
-      const saved = localStorage.getItem('kaos_dilio_custom_cuttings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((c) => addCutIfNew(c.value, c.label));
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    // Hanya 5 cut standar (+ cut custom dari admin); tidak diturunkan dari data produk.
-    return base;
-  }, []);
+  const removedCuttingsSet = useMemo(
+    () => new Set(readRemovedValues(REMOVED_CUTTINGS_KEY)),
+    [configTick]
+  );
 
   // Combined catalog source: Daily products (harian) + [LIMITED EDITION] Exclusive products
   const catalogSource = useMemo(() => {
@@ -225,28 +133,14 @@ export default function KoleksiKaosPage() {
   const cuttingCounts = useMemo(() => {
     const counts = { all: flattenedCatalog.length };
     cuttingOptions.slice(1).forEach((t) => {
-      counts[t.value] = flattenedCatalog.filter(
-        (p) => normalizeCutting(p.cutting_type) === t.value
-      ).length;
+      counts[t.value] = flattenedCatalog.filter((p) => {
+        const norm = normalizeCutting(p?.cutting_type);
+        const eff = !norm || removedCuttingsSet.has(norm) ? 'oversized' : norm;
+        return eff === t.value;
+      }).length;
     });
     return counts;
-  }, [flattenedCatalog]);
-
-  const matchesCategory = (p, targetCat) => {
-    if (!targetCat || targetCat === 'all') return true;
-    const target = targetCat.toLowerCase().trim();
-    const rawCat = (p.kaos_category || p.category_label || '').toLowerCase().trim();
-    if (target === 'kasual' || target === 'casual') {
-      return (
-        rawCat === 'kasual' ||
-        rawCat === 'casual' ||
-        rawCat.includes('kasual') ||
-        rawCat.includes('casual') ||
-        normalizeCutting(p.cutting_type) === 'kasual'
-      );
-    }
-    return rawCat === target || rawCat.includes(target) || normalizeCutting(p.cutting_type) === target;
-  };
+  }, [flattenedCatalog, cuttingOptions, removedCuttingsSet]);
 
   // Dynamic count of products per color in current scope
   const colorCounts = useMemo(() => {
@@ -258,12 +152,14 @@ export default function KoleksiKaosPage() {
 
     let scopeProducts = flattenedCatalog;
     if (activeCategory !== 'all') {
-      scopeProducts = scopeProducts.filter((p) => matchesCategory(p, activeCategory));
+      scopeProducts = scopeProducts.filter((p) => filterMatchesCategory(p, activeCategory));
     }
     if (activeCutting !== 'all') {
-      scopeProducts = scopeProducts.filter(
-        (p) => normalizeCutting(p.cutting_type) === activeCutting
-      );
+      scopeProducts = scopeProducts.filter((p) => {
+        const norm = normalizeCutting(p?.cutting_type);
+        const eff = !norm || removedCuttingsSet.has(norm) ? 'oversized' : norm;
+        return eff === activeCutting;
+      });
     }
 
     scopeProducts.forEach((p) => {
@@ -283,7 +179,7 @@ export default function KoleksiKaosPage() {
     });
 
     return counts;
-  }, [availableColors, flattenedCatalog, activeCategory, activeCutting]);
+  }, [availableColors, flattenedCatalog, activeCategory, activeCutting, removedCuttingsSet]);
 
   // Filtered & sorted products based on Kategori + Cutting + Color
   const filteredProducts = useMemo(() => {
@@ -291,12 +187,16 @@ export default function KoleksiKaosPage() {
 
     // 1. Filter by Top Category Tabs (Kasual, Polo, Olahraga, or custom)
     if (activeCategory !== 'all') {
-      list = list.filter((p) => matchesCategory(p, activeCategory));
+      list = list.filter((p) => filterMatchesCategory(p, activeCategory));
     }
 
     // 2. Filter by Sidebar Tshirt Cut
     if (activeCutting !== 'all') {
-      list = list.filter((p) => normalizeCutting(p.cutting_type) === activeCutting);
+      list = list.filter((p) => {
+        const norm = normalizeCutting(p?.cutting_type);
+        const eff = !norm || removedCuttingsSet.has(norm) ? 'oversized' : norm;
+        return eff === activeCutting;
+      });
     }
 
     // 3. Filter by Colors (General color family + exact hex match)

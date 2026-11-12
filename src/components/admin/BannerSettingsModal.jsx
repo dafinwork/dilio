@@ -18,6 +18,7 @@ import {
   DEFAULT_BANNER_SLIDES,
   getStoredBannerSlides,
 } from '../home/SliderBanner';
+import { syncStoreConfigToCloud } from '../../utils/categoryManager';
 
 export default function BannerSettingsModal({ isOpen, onClose }) {
   const [slides, setSlides] = useState([]);
@@ -47,6 +48,7 @@ export default function BannerSettingsModal({ isOpen, onClose }) {
     try {
       localStorage.setItem(BANNER_STORAGE_KEY, JSON.stringify(newSlides));
       window.dispatchEvent(new Event('kaos_dilio_banner_updated'));
+      syncStoreConfigToCloud();
     } catch {
       // ignore
     }

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { X, MessageCircle, Ruler, Clock, ChevronLeft, ChevronRight, Tag, Brush, Play, Share2, Check } from 'lucide-react';
 import { formatRupiah, getWhatsAppUrl, safeColors, getColorName, normalizeCutting, computeDiscountInfo, parseVideoMedia } from '../utils/helpers';
+import { getDisplayCategoryLabel } from '../utils/categoryManager';
 import SizeChartModal from './SizeChartModal';
 
 export default function ProductModal({ product, onClose }) {
@@ -305,7 +306,7 @@ export default function ProductModal({ product, onClose }) {
               <div className="space-y-3">
                 {/* Category Label */}
                 <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  {product.category_label || product.material || 'KATALOG KAOS'}
+                  {getDisplayCategoryLabel(product)}
                 </span>
 
                 <h2 className="text-xl font-black text-neutral-900 leading-snug">

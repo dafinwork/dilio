@@ -24,6 +24,7 @@ import {
   getAllCuttings,
   getAllMaterials,
   getAllExclusiveCategories,
+  syncStoreConfigToCloud,
 } from '../../utils/categoryManager';
 
 const PRESET_BG_COLORS = [
@@ -125,12 +126,21 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
   const [showManageMaterial, setShowManageMaterial] = useState(false);
   const [showManageExclusiveCat, setShowManageExclusiveCat] = useState(false);
 
-  // Sync lists when products or current product changes
+  // Sync lists when products, current product, or cloud config changes
   useEffect(() => {
-    setKaosCategoriesList(getAllKaosCategories(products, product?.kaos_category || product?.category_label));
-    setCuttingsList(getAllCuttings(products, product?.cutting_type));
-    setMaterialsList(getAllMaterials(products, product?.material));
-    setExclusiveCategories(getAllExclusiveCategories(products, product?.exclusive_category));
+    const refreshLists = () => {
+      setRemovedKaosCats(readRemovedValues(REMOVED_KAOS_CAT_KEY));
+      setRemovedCuttings(readRemovedValues(REMOVED_CUTTINGS_KEY));
+      setRemovedMaterials(readRemovedValues(REMOVED_MATERIALS_KEY));
+      setRemovedExclusiveCats(readRemovedValues(REMOVED_EXCLUSIVE_CAT_KEY));
+      setKaosCategoriesList(getAllKaosCategories(products, product?.kaos_category || product?.category_label));
+      setCuttingsList(getAllCuttings(products, product?.cutting_type));
+      setMaterialsList(getAllMaterials(products, product?.material));
+      setExclusiveCategories(getAllExclusiveCategories(products, product?.exclusive_category));
+    };
+    refreshLists();
+    window.addEventListener('kaos_dilio_config_updated', refreshLists);
+    return () => window.removeEventListener('kaos_dilio_config_updated', refreshLists);
   }, [products, product]);
 
   // List bersih: default + custom + products, dikurangi yang sudah dihapus admin
@@ -147,8 +157,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     (c) => !removedExclusiveCats.includes(String(c.value).toLowerCase().trim())
   );
 
-  // Hapus item dari list (migrasi otomatis produk yang memakai + tombstone permanen)
-  const handleDeleteListItem = ({ kind, value }) => {
+  // Hapus item dari list (migrasi otomatis produk yang memakai + tombstone permanen + sync Supabase)
+  const handleDeleteListItem = async ({ kind, value }) => {
     const labelMap = {
       cuttings: {
         key: REMOVED_CUTTINGS_KEY,
@@ -163,7 +173,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         key: REMOVED_KAOS_CAT_KEY,
         customKey: CUSTOM_KAOS_CAT_KEY,
         fields: ['kaos_category', 'category_label'],
-        current: (formData.category_label || '').toUpperCase(),
+        current: (formData.kaos_category || formData.category_label || '').toUpperCase(),
         setCurrent: (next) =>
           setFormData((prev) => ({ ...prev, category_label: next, kaos_category: next })),
         cleanList: cleanKaosCategoriesList,
@@ -206,14 +216,27 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     if (!window.confirm(warnText)) return;
 
     // 1. Migrasi produk yang memakai item ini di database & state
-    if (usedCount > 0 && typeof updateProduct === 'function') {
-      affectedProducts.forEach((p) => {
-        const patch = {};
-        conf.fields.forEach((f) => {
-          patch[f] = conf.defaultFallback;
-        });
-        updateProduct(p.id, patch);
+    if (usedCount > 0) {
+      const patch = {};
+      conf.fields.forEach((f) => {
+        patch[f] = conf.defaultFallback;
       });
+      if (typeof updateProduct === 'function') {
+        for (const p of affectedProducts) {
+          await updateProduct(p.id, patch);
+        }
+      }
+      try {
+        await supabase
+          .from('products')
+          .update(patch)
+          .in(
+            'id',
+            affectedProducts.map((p) => p.id)
+          );
+      } catch {
+        // ignore
+      }
     }
 
     // 2. Hapus dari custom list localStorage jika ada
@@ -230,7 +253,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       // ignore
     }
 
-    // 3. Tambah ke daftar tombstone dihapus
+    // 3. Tambah ke daftar tombstone dihapus & sync ke Supabase Cloud
     const nextRemoved =
       kind === 'kaosCat' ? [...new Set([...removedKaosCats, lowerVal])]
       : kind === 'exclusiveCat' ? [...new Set([...removedExclusiveCats, lowerVal])]
@@ -245,6 +268,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     };
     setterMap[kind](nextRemoved);
     writeRemovedValues(conf.key, nextRemoved);
+    await syncStoreConfigToCloud();
 
     // 4. Update state lokal
     if (kind === 'kaosCat') {
@@ -278,14 +302,23 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
       return chart.rows.map((r) => ({ ...r }));
     };
 
+    const currentRemovedCuttings = readRemovedValues(REMOVED_CUTTINGS_KEY);
+    const currentRemovedKaosCats = readRemovedValues(REMOVED_KAOS_CAT_KEY);
+
     if (product && (product.id || product.is_copy)) {
       const initialImages = Array.isArray(product.images) && product.images.length > 0
         ? product.images
         : product.image_url
         ? [product.image_url]
         : [];
-      const cutType = product.cutting_type || 'oversized';
-      const catLabel = (product.kaos_category || product.category_label || 'KASUAL').toUpperCase();
+      const rawCutType = product.cutting_type || 'oversized';
+      const cutType = currentRemovedCuttings.includes(String(rawCutType).toLowerCase().trim())
+        ? 'oversized'
+        : rawCutType;
+      const rawCatLabel = (product.kaos_category || product.category_label || 'KASUAL').toUpperCase();
+      const catLabel = currentRemovedKaosCats.includes(rawCatLabel.toLowerCase().trim())
+        ? 'KASUAL'
+        : rawCatLabel;
       const initialSizeChart =
         Array.isArray(product.size_chart) && product.size_chart.length > 0
           ? product.size_chart.map((r) => ({ ...r }))
@@ -341,8 +374,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
         cutting_type: 'oversized',
         sablon_type: 'plastisol',
         exclusive_category: 'dilio',
-        category_label: 'STREETWEAR',
-        kaos_category: 'STREETWEAR',
+        category_label: 'KASUAL',
+        kaos_category: 'KASUAL',
         material: 'Cotton Combed 24s',
         priceText: '185.000',
         originalPriceText: '220.000',
@@ -645,6 +678,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     setFormData((prev) => ({ ...prev, material: trimmed }));
     setNewMaterialInput('');
     setShowAddMaterial(false);
+    syncStoreConfigToCloud();
   };
 
   // Add new cutting type
@@ -675,6 +709,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     setFormData((prev) => ({ ...prev, cutting_type: slug }));
     setNewCuttingInput('');
     setShowAddCutting(false);
+    syncStoreConfigToCloud();
   };
 
   // Add new kaos category (Kasual, Polo, Olahraga, Hoodie, etc.)
@@ -703,6 +738,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     }));
     setNewKaosCategoryInput('');
     setShowAddKaosCategory(false);
+    syncStoreConfigToCloud();
   };
 
   // Size chart row handlers
@@ -771,6 +807,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
     setFormData((prev) => ({ ...prev, exclusive_category: slug }));
     setNewCategoryInput('');
     setShowAddCategory(false);
+    syncStoreConfigToCloud();
   };
 
   const handleChange = (e) => {
@@ -1279,8 +1316,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSave }) {
                 {showManageCutting && (
                   <div className="mt-2 space-y-2 animate-in fade-in duration-150">
                     <span className="text-[10px] text-neutral-500 block">
-                      Item yang dihapus tidak tampil lagi di dropdown, filter sidebar katalog, dan tab
-                      kategori (termasuk opsi default bawaan). Produk yang memakai tidak ikut berubah.
+                      Cutting yang dihapus akan otomatis dialihkan ke Oversized Fit pada produk yang
+                      memakainya agar opsi filter sidebar di website langsung bersih di semua perangkat.
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {cleanCuttingsList.map((cut) => (

@@ -8,7 +8,13 @@ import ProductModal from '../components/ProductModal';
 import ShopeeColorFilter from '../components/ShopeeColorFilter';
 import { useProducts } from '../context/ProductContext';
 import { readCatalogOrderMap } from '../components/admin/SliderReorderModal';
-import { getAppCategoryTabs, filterMatchesCategory } from '../utils/categoryManager';
+import {
+  getAppCategoryTabs,
+  getActiveCuttingOptions,
+  filterMatchesCategory,
+  REMOVED_CUTTINGS_KEY,
+  readRemovedValues,
+} from '../utils/categoryManager';
 import {
   extractUniqueColorsFromProducts,
   normalizeCutting,
@@ -38,13 +44,17 @@ export default function HomePage() {
   // Filter feature: Hide / Munculkan Kembali (Desktop sidebar collapse)
   const [isFilterVisible, setIsFilterVisible] = useState(true);
 
-  // Reorder map tick to listen for Admin order updates
+  // Reorder & cloud config tick to listen for Admin updates
   const [orderTick, setOrderTick] = useState(0);
 
   useEffect(() => {
     const handleOrderChange = () => setOrderTick((t) => t + 1);
     window.addEventListener('kaos_dilio_order_updated', handleOrderChange);
-    return () => window.removeEventListener('kaos_dilio_order_updated', handleOrderChange);
+    window.addEventListener('kaos_dilio_config_updated', handleOrderChange);
+    return () => {
+      window.removeEventListener('kaos_dilio_order_updated', handleOrderChange);
+      window.removeEventListener('kaos_dilio_config_updated', handleOrderChange);
+    };
   }, []);
 
   // Sync with URL parameters
@@ -104,61 +114,22 @@ export default function HomePage() {
     setSearchParams({});
   };
 
-  // Top Category Tabs (Synchronized with Admin)
-  const categoryTabs = useMemo(() => getAppCategoryTabs(allProducts), [allProducts]);
+  // Top Category Tabs (Synchronized with Admin & Supabase Cloud)
+  const categoryTabs = useMemo(
+    () => getAppCategoryTabs(allProducts),
+    [allProducts, orderTick]
+  );
 
-  // Sidebar Cutting Options
-  const cuttingOptions = useMemo(() => {
-    let removedCuttings = [];
-    try {
-      const removed = JSON.parse(localStorage.getItem('kaos_dilio_removed_cuttings'));
-      if (Array.isArray(removed)) removedCuttings = removed.map((c) => String(c).toLowerCase());
-    } catch {
-      // ignore
-    }
+  // Sidebar Cutting Options (Synchronized with Admin & Supabase Cloud)
+  const cuttingOptions = useMemo(
+    () => getActiveCuttingOptions(),
+    [orderTick]
+  );
 
-    const base = [
-      { label: 'Semua Cut', value: 'all' },
-      { label: 'Oversized', value: 'oversized' },
-      { label: 'Regular', value: 'regular' },
-      { label: 'Fitted', value: 'fitted' },
-      { label: 'Boxy', value: 'boxy' },
-      { label: 'Long Sleeve', value: 'long-sleeve' },
-    ].filter((c) => c.value === 'all' || !removedCuttings.includes(c.value));
-
-    const known = new Set(base.map((b) => b.value));
-    const ignored = new Set(['kasual', 'casual', 'polo', 'olahraga']);
-
-    const addCutIfNew = (val, lbl) => {
-      if (!val) return;
-      const norm = normalizeCutting(val);
-      if (!norm || known.has(norm) || ignored.has(norm)) return;
-      if (removedCuttings.includes(norm)) return;
-      known.add(norm);
-      const formatted =
-        lbl ||
-        norm
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-      base.push({ label: formatted, value: norm });
-    };
-
-    try {
-      const saved = localStorage.getItem('kaos_dilio_custom_cuttings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((c) => addCutIfNew(c.value, c.label));
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    // Cutting dari data produk tidak ditambahkan otomatis: hanya 5 cut standar
-    // (+ cut custom dari admin) agar nilai uji coba seperti "baru-bayu1" tidak muncul.
-    return base;
-  }, []);
+  const removedCuttingsSet = useMemo(
+    () => new Set(readRemovedValues(REMOVED_CUTTINGS_KEY)),
+    [orderTick]
+  );
 
   // Catalog source: All products (harian + custom + exclusive)
   const catalogSource = allProducts;
@@ -177,12 +148,14 @@ export default function HomePage() {
   const cuttingCounts = useMemo(() => {
     const counts = { all: flattenedCatalog.length };
     cuttingOptions.slice(1).forEach((t) => {
-      counts[t.value] = flattenedCatalog.filter(
-        (p) => normalizeCutting(p.cutting_type) === t.value
-      ).length;
+      counts[t.value] = flattenedCatalog.filter((p) => {
+        const norm = normalizeCutting(p?.cutting_type);
+        const eff = !norm || removedCuttingsSet.has(norm) ? 'oversized' : norm;
+        return eff === t.value;
+      }).length;
     });
     return counts;
-  }, [flattenedCatalog, cuttingOptions]);
+  }, [flattenedCatalog, cuttingOptions, removedCuttingsSet]);
 
   // Dynamic count of products per color in current scope
   const colorCounts = useMemo(() => {
@@ -197,9 +170,11 @@ export default function HomePage() {
       scopeProducts = scopeProducts.filter((p) => filterMatchesCategory(p, activeCategory));
     }
     if (activeCutting !== 'all') {
-      scopeProducts = scopeProducts.filter(
-        (p) => normalizeCutting(p.cutting_type) === activeCutting
-      );
+      scopeProducts = scopeProducts.filter((p) => {
+        const norm = normalizeCutting(p?.cutting_type);
+        const eff = !norm || removedCuttingsSet.has(norm) ? 'oversized' : norm;
+        return eff === activeCutting;
+      });
     }
 
     scopeProducts.forEach((p) => {
@@ -219,7 +194,7 @@ export default function HomePage() {
     });
 
     return counts;
-  }, [availableColors, flattenedCatalog, activeCategory, activeCutting]);
+  }, [availableColors, flattenedCatalog, activeCategory, activeCutting, removedCuttingsSet]);
 
   // Filtered & sorted products based on Kategori + Cutting + Color + Custom Reorder
   const filteredProducts = useMemo(() => {
@@ -232,7 +207,11 @@ export default function HomePage() {
 
     // 2. Filter by Sidebar Tshirt Cut
     if (activeCutting !== 'all') {
-      list = list.filter((p) => normalizeCutting(p.cutting_type) === activeCutting);
+      list = list.filter((p) => {
+        const norm = normalizeCutting(p?.cutting_type);
+        const eff = !norm || removedCuttingsSet.has(norm) ? 'oversized' : norm;
+        return eff === activeCutting;
+      });
     }
 
     // 3. Filter by Colors
