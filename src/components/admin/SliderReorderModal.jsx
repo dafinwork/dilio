@@ -150,7 +150,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl sm:rounded-3xl max-w-4xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200">
         {/* Header */}
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/80">
+        <div className="shrink-0 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/80">
           <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center shadow-xs font-black shrink-0">
               <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-950" />
@@ -173,47 +173,49 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
         </div>
 
         {/* Filter Category Scope Tabs (Sinkron dengan Homepage & Admin Panel) */}
-        <div className="px-4 sm:px-6 py-2.5 bg-neutral-100/70 border-b border-neutral-200 flex items-center justify-between gap-3 visible-horizontal-scrollbar pb-2">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider hidden sm:inline">
-              Lingkup:
-            </span>
-            {categoryTabs.map((tab) => {
-              const count = tab.value === 'all'
-                ? products.length
-                : products.filter((p) => filterMatchesCategory(p, tab.value)).length;
-              const isActive =
-                filterGroup === tab.value ||
-                (tab.value === 'exclusive' && filterGroup === 'eksklusif') ||
-                (tab.value === 'eksklusif' && filterGroup === 'exclusive');
+        <div className="shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 bg-neutral-100/90 border-b border-neutral-200">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto visible-horizontal-scrollbar py-1 w-full">
+              <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider shrink-0 mr-1">
+                Lingkup:
+              </span>
+              {categoryTabs.map((tab) => {
+                const count = tab.value === 'all'
+                  ? products.length
+                  : products.filter((p) => filterMatchesCategory(p, tab.value)).length;
+                const isActive =
+                  filterGroup === tab.value ||
+                  (tab.value === 'exclusive' && filterGroup === 'eksklusif') ||
+                  (tab.value === 'eksklusif' && filterGroup === 'exclusive');
 
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setFilterGroup(tab.value)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? 'bg-neutral-900 text-white shadow-2xs'
-                      : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
-                  }`}
-                >
-                  {tab.value === 'all' ? `Semua Produk (${count})` : `${tab.label} (${count})`}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    onClick={() => setFilterGroup(tab.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                      isActive
+                        ? 'bg-neutral-900 text-white shadow-2xs'
+                        : 'bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
+                    }`}
+                  >
+                    {tab.value === 'all' ? `Semua Produk (${count})` : `${tab.label} (${count})`}
+                  </button>
+                );
+              })}
+            </div>
+
+            {savedNotice && (
+              <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full text-xs shrink-0 animate-in fade-in">
+                <Check className="w-3.5 h-3.5" />
+                <span>Urutan Tersimpan</span>
+              </span>
+            )}
           </div>
-
-          {savedNotice && (
-            <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full text-xs shrink-0 animate-in fade-in">
-              <Check className="w-3.5 h-3.5" />
-              <span>Urutan Tersimpan</span>
-            </span>
-          )}
         </div>
 
         {/* Instruction Bar */}
-        <div className="px-4 sm:px-6 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs text-amber-900">
+        <div className="shrink-0 px-4 sm:px-6 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs text-amber-900">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
             <span className="text-[11px] sm:text-xs">
@@ -344,7 +346,7 @@ export default function SliderReorderModal({ isOpen, onClose, products = [], onO
         </div>
 
         {/* Footer */}
-        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
+        <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
           <span className="text-[10px] sm:text-[11px] text-neutral-500">
             Perubahan posisi langsung tersimpan dan diterapkan di katalog utama.
           </span>
